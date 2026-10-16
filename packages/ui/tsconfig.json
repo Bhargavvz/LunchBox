@@ -1,0 +1,4 @@
+{
+  "extends": "@lunchbox/config/tsconfig/expo.json",
+  "include": ["src"]
+}

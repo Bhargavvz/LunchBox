@@ -1,0 +1,115 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, prod]
+        default: staging
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  backend-image:
+    name: Build backend image (Jib)
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - id: meta
+        run: echo "image=${{ steps.ecr.outputs.registry }}/lunchbox-${{ github.event.inputs.environment || 'staging' }}/backend:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: Jib build & push
+        working-directory: backend
+        run: gradle --no-daemon jib -x test
+        env:
+          JIB_IMAGE: ${{ steps.ecr.outputs.registry }}/lunchbox-${{ github.event.inputs.environment || 'staging' }}/backend
+          IMAGE_TAG: ${{ github.sha }}
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.meta.outputs.image }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+  backend-deploy:
+    name: Roll out to ECS
+    needs: backend-image
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: Render task definition with the new image
+        run: |
+          ENV=${{ github.event.inputs.environment || 'staging' }}
+          aws ecs describe-task-definition --task-definition lunchbox-$ENV-backend \
+            --query taskDefinition > td.json
+          jq --arg IMG "${{ needs.backend-image.outputs.image }}" \
+            '.containerDefinitions[0].image = $IMG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            td.json > td-new.json
+      - uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: td-new.json
+          service: backend
+          cluster: lunchbox-${{ github.event.inputs.environment || 'staging' }}
+          wait-for-service-stability: true
+
+  admin:
+    name: Deploy admin panel (S3 + CloudFront)
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm generate:api
+        env:
+          OPENAPI_SOURCE: docs/api/openapi.json
+      - run: pnpm --filter @lunchbox/admin build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
+          NEXT_PUBLIC_WS_URL: ${{ vars.WS_URL }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.FIREBASE_WEB_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
+          NEXT_PUBLIC_GOOGLE_MAPS_KEY: ${{ vars.GOOGLE_MAPS_WEB_KEY }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - run: |
+          aws s3 sync apps/admin/out "s3://${{ vars.ADMIN_BUCKET }}" --delete --cache-control "public,max-age=300"
+          aws s3 cp "s3://${{ vars.ADMIN_BUCKET }}/_next" "s3://${{ vars.ADMIN_BUCKET }}/_next" --recursive \
+            --metadata-directive REPLACE --cache-control "public,max-age=31536000,immutable"
+          aws cloudfront create-invalidation --distribution-id "${{ vars.ADMIN_DISTRIBUTION_ID }}" --paths "/*"

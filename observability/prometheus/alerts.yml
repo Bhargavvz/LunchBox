@@ -1,0 +1,49 @@
+# Prometheus alerting rules for metrics exposed at /actuator/prometheus (scraped inside the VPC).
+groups:
+  - name: lunchbox-api
+    rules:
+      - alert: ApiLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{uri=~"/api/.*"}[5m]))) > 0.3
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: API p95 latency above 300 ms target
+      - alert: ApiErrorRateHigh
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) > 0.01
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: More than 1% of API requests are failing
+  - name: lunchbox-domain
+    rules:
+      - alert: OutboxBacklog
+        expr: increase(lunchbox_outbox_failed_total[10m]) > 5
+        labels: { severity: page }
+        annotations:
+          summary: Domain events are not reaching RabbitMQ (notifications and earnings delayed)
+      - alert: OrdersUnassignedAfterCutoff
+        expr: increase(lunchbox_dispatch_unassigned_total[30m]) > 0
+        labels: { severity: warn }
+        annotations:
+          summary: Some orders could not be assigned — schedule more partner shifts
+      - alert: OptimizerFallingBack
+        expr: increase(lunchbox_dispatch_optimizer_fallback_total[1h]) > 3
+        labels: { severity: warn }
+        annotations:
+          summary: OR-Tools failed and the heuristic optimiser was used
+      - alert: ImpossibleSpeedAnomalies
+        expr: increase(lunchbox_anomaly_impossible_speed_total[15m]) > 20
+        labels: { severity: warn }
+        annotations:
+          summary: Many GPS fixes rejected for impossible speed (spoofing or device issues)
+      - alert: HandoverOutsideGeofence
+        expr: increase(lunchbox_anomaly_handover_outside_geofence_total[30m]) > 3
+        labels: { severity: warn }
+        annotations:
+          summary: Partners attempting handovers away from schools
+      - alert: TrackingIngestSlow
+        expr: histogram_quantile(0.95, sum by (le) (rate(lunchbox_tracking_ingest_seconds_bucket[5m]))) > 0.2
+        for: 10m
+        labels: { severity: warn }
+        annotations:
+          summary: Location ingest is slow; live tracking latency budget at risk

@@ -1,0 +1,34 @@
+{
+  "cli": { "version": ">= 12.0.0", "appVersionSource": "remote" },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": { "APP_ENV": "development" }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "staging",
+      "env": {
+        "APP_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://api.staging.lunchbox.in",
+        "EXPO_PUBLIC_WS_URL": "wss://api.staging.lunchbox.in/ws"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "env": {
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://api.lunchbox.in",
+        "EXPO_PUBLIC_WS_URL": "wss://api.lunchbox.in/ws"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": { "track": "internal", "serviceAccountKeyPath": "./play-service-account.json" },
+      "ios": { "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID" }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# Local development against docker-compose. All third parties run as sandbox fakes.
+lunchbox:
+  security:
+    # 32 zero-bytes keys: local only. Production values come from Secrets Manager.
+    pii-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    qr-signing-key: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+    require-admin-mfa: false
+    cors-allowed-origins: http://localhost:3000,http://localhost:8081
+  storage:
+    endpoint: http://localhost:4566
+    path-style: true
+    handover-bucket: lunchbox-local-handover
+    kyc-bucket: lunchbox-local-kyc
+
+management:
+  tracing:
+    sampling:
+      probability: 0.0
+
+logging:
+  structured:
+    format:
+      console: ""
+  level:
+    com.lunchbox: DEBUG

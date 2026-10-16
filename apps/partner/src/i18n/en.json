@@ -1,0 +1,94 @@
+{
+  "auth": {
+    "welcome": "Sign in with the mobile number registered with LunchBox operations.",
+    "phone": "Mobile number",
+    "phoneHint": "We will send a 6-digit code by SMS",
+    "sendCode": "Send code",
+    "code": "Verification code",
+    "verify": "Verify",
+    "invalidPhone": "Enter a valid 10-digit Indian mobile number",
+    "resend": "Resend code"
+  },
+  "tabs": { "route": "Route", "earnings": "Earnings", "profile": "Profile" },
+  "shift": {
+    "start": "Start shift",
+    "end": "End shift",
+    "none": "You are not scheduled today",
+    "active": "Shift active since {{time}}"
+  },
+  "route": {
+    "title": "Today's route",
+    "start": "Start route",
+    "empty": "No deliveries assigned yet",
+    "distance": "{{km}} km · about {{minutes}} min",
+    "navigate": "Navigate",
+    "pickup": "Pickup",
+    "drop": "School drop",
+    "eta": "ETA {{time}}",
+    "window": "Window {{from}} – {{to}}",
+    "completed": "Route completed. Great work!",
+    "trackingDenied": "Allow location \"All the time\" so parents can follow the delivery."
+  },
+  "stop": {
+    "arrived": "I have arrived",
+    "callParent": "Call parent",
+    "calling": "Your phone will ring first, then the parent",
+    "instructions": "Instructions",
+    "enterOtp": "Enter pickup code",
+    "confirmOtp": "Confirm pickup",
+    "scanQr": "Scan QR instead",
+    "pickupFailed": "Parent unavailable",
+    "failReason": "Reason",
+    "handover": "Hand over with photo",
+    "deliveryFailed": "Report delivery problem",
+    "lunchboxes": "{{count}} lunchbox(es) for this school",
+    "queued": "Saved offline — will sync when you're back online"
+  },
+  "handover": {
+    "title": "Handover photo",
+    "hint": "Take a clear photo of the lunchboxes at the school reception.",
+    "capture": "Take photo",
+    "retake": "Retake",
+    "submit": "Submit handover",
+    "uploading": "Uploading…"
+  },
+  "issue": {
+    "title": "Report an issue",
+    "sos": "SOS — I need help now",
+    "type": "What happened?",
+    "description": "Details (optional)",
+    "send": "Send to operations",
+    "sent": "Operations has been alerted."
+  },
+  "earnings": {
+    "title": "Earnings",
+    "week": "Last 7 days",
+    "month": "This month",
+    "balance": "Unpaid balance",
+    "payouts": "Payouts",
+    "noPayouts": "No payouts yet"
+  },
+  "profile": {
+    "title": "Profile",
+    "vehicle": "Vehicle",
+    "capacity": "Capacity",
+    "rating": "Rating",
+    "pendingSync": "{{count}} action(s) waiting to sync",
+    "syncNow": "Sync now",
+    "signOut": "Sign out"
+  },
+  "notApproved": {
+    "title": "Account not active",
+    "retry": "Check again",
+    "signOut": "Use another number"
+  },
+  "issueTypes": {
+    "SOS": "Emergency / SOS",
+    "ACCIDENT": "Accident",
+    "VEHICLE_BREAKDOWN": "Vehicle breakdown",
+    "PARENT_UNREACHABLE": "Parent unreachable",
+    "SCHOOL_CLOSED": "School closed",
+    "OTHER": "Other"
+  },
+  "common": { "cancel": "Cancel", "retry": "Try again", "back": "Back" }
+}

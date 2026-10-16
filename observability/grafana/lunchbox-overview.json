@@ -1,0 +1,51 @@
+{
+  "title": "LunchBox · Overview",
+  "uid": "lunchbox-overview",
+  "schemaVersion": 39,
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "Asia/Kolkata",
+  "templating": { "list": [{ "name": "datasource", "type": "datasource", "query": "prometheus" }] },
+  "panels": [
+    {
+      "type": "timeseries", "title": "API p95 latency (s)", "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{uri=~\"/api/.*\"}[5m])))", "legendFormat": "{{uri}}" }],
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green" }, { "color": "red", "value": 0.3 }] } } }
+    },
+    {
+      "type": "timeseries", "title": "Requests / s by status", "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "sum by (status) (rate(http_server_requests_seconds_count[1m]))", "legendFormat": "{{status}}" }]
+    },
+    {
+      "type": "timeseries", "title": "Order transitions / min", "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "sum by (to) (rate(lunchbox_orders_transitions_total[5m])) * 60", "legendFormat": "{{to}}" }]
+    },
+    {
+      "type": "timeseries", "title": "Location pings accepted / rejected per s", "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "sum by (result) (rate(lunchbox_tracking_pings_total[1m]))", "legendFormat": "{{result}}" }]
+    },
+    {
+      "type": "stat", "title": "Outbox publish failures (1h)", "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "sum(increase(lunchbox_outbox_failed_total[1h]))" }]
+    },
+    {
+      "type": "stat", "title": "Notifications sent (1h)", "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "sum by (channel) (increase(lunchbox_notifications_sent_total[1h]))", "legendFormat": "{{channel}}" }]
+    },
+    {
+      "type": "stat", "title": "Rate-limited requests (1h)", "gridPos": { "x": 12, "y": 16, "w": 6, "h": 4 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "sum by (policy) (increase(lunchbox_ratelimit_rejected_total[1h]))", "legendFormat": "{{policy}}" }]
+    },
+    {
+      "type": "stat", "title": "Route optimisation p95 (s)", "gridPos": { "x": 18, "y": 16, "w": 6, "h": 4 },
+      "datasource": { "uid": "${datasource}" },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(lunchbox_dispatch_route_optimisation_seconds_bucket[1h])))" }]
+    }
+  ]
+}

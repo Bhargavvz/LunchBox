@@ -1,0 +1,62 @@
+# Login → consent → add child → subscribe → track. Runs against a dev build pointed at a local backend with
+# fake integrations and the Firebase Auth emulator test number +91 98765 43210 / code 123456.
+appId: in.lunchbox.parent.development
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "phone-input"
+- inputText: "9876543210"
+- tapOn:
+    id: "send-code"
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+- tapOn:
+    id: "verify-code"
+- tapOn:
+    id: "first-name"
+- inputText: "Asha"
+- tapOn:
+    id: "terms"
+- tapOn:
+    id: "register-submit"
+- tapOn:
+    id: "consent-child"
+- tapOn:
+    id: "consent-submit"
+- assertVisible: "Today's lunchboxes"
+- tapOn: "Children"
+- tapOn:
+    id: "add-child"
+- tapOn:
+    id: "child-first-name"
+- inputText: "Meera"
+- tapOn:
+    id: "school-search"
+- inputText: "Delhi"
+- tapOn: "Delhi Public School"
+- tapOn:
+    id: "child-class"
+- inputText: "4"
+- tapOn:
+    id: "child-save"
+- assertVisible: "Choose a plan"
+- tapOn: "Add address"
+- tapOn:
+    id: "address-line1"
+- inputText: "12 Lotus Residency"
+- tapOn:
+    id: "address-city"
+- inputText: "Bengaluru"
+- tapOn:
+    id: "address-pincode"
+- inputText: "560025"
+- tapOn:
+    id: "address-save"
+- tapOn: "Monthly.*"
+- tapOn:
+    id: "subscribe-pay"
+- assertVisible: "Your plan is active.*"
+- tapOn: "Done"
+- assertVisible: "Today's lunchboxes"

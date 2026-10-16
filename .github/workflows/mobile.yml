@@ -1,0 +1,51 @@
+name: Mobile releases
+
+on:
+  push:
+    tags: ['parent-v*', 'partner-v*']
+  workflow_dispatch:
+    inputs:
+      app:
+        type: choice
+        options: [parent, partner]
+      profile:
+        type: choice
+        options: [preview, production]
+        default: preview
+
+permissions:
+  contents: read
+
+jobs:
+  eas-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm generate:api
+        env:
+          OPENAPI_SOURCE: docs/api/openapi.json
+      - name: Resolve app and profile
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "app=${{ github.event.inputs.app }}" >> "$GITHUB_OUTPUT"
+            echo "profile=${{ github.event.inputs.profile }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "app=${GITHUB_REF_NAME%%-v*}" >> "$GITHUB_OUTPUT"
+            echo "profile=production" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build on EAS (Firebase config files come from EAS file secrets)
+        working-directory: apps/${{ steps.target.outputs.app }}
+        run: eas build --platform all --profile ${{ steps.target.outputs.profile }} --non-interactive --no-wait

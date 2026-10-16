@@ -1,0 +1,36 @@
+# Partner login → start shift → start route → pickup with OTP → handover. Requires a KYC-approved partner with
+# phone +91 98765 43211 (Firebase emulator test code 123456), an assigned order for today, and the parent's OTP in
+# the PICKUP_OTP env var (read it from the parent app or GET /api/v1/orders/{id}/pickup-code).
+appId: in.lunchbox.partner.development
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "phone-input"
+- inputText: "9876543211"
+- tapOn:
+    id: "send-code"
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+- tapOn:
+    id: "verify-code"
+- assertVisible: "Today's route"
+- tapOn:
+    id: "start-shift"
+- tapOn:
+    id: "start-route"
+- tapOn: "1\\. Pickup"
+- tapOn:
+    id: "otp"
+- inputText: ${PICKUP_OTP}
+- tapOn:
+    id: "confirm-pickup"
+- tapOn: "2\\. School drop"
+- tapOn:
+    id: "handover"
+- tapOn:
+    id: "capture"
+- tapOn:
+    id: "submit-handover"
+- assertVisible: "Route completed.*"

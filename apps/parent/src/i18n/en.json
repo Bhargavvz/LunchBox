@@ -1,0 +1,166 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "retry": "Try again",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "done": "Done"
+  },
+  "auth": {
+    "welcome": "From home to school, fresh meals, brighter futures.",
+    "phone": "Mobile number",
+    "phoneHint": "We will send a 6-digit code by SMS",
+    "sendCode": "Send code",
+    "code": "Verification code",
+    "verify": "Verify",
+    "invalidPhone": "Enter a valid 10-digit Indian mobile number",
+    "resend": "Resend code"
+  },
+  "register": {
+    "title": "Tell us about you",
+    "firstName": "First name",
+    "lastName": "Last name (optional)",
+    "language": "Language",
+    "terms": "I accept the Terms of Service and Privacy Policy",
+    "termsRequired": "You must accept to continue"
+  },
+  "consent": {
+    "title": "Parental consent",
+    "intro": "Under India's Digital Personal Data Protection Act, we need your verifiable consent as the parent or lawful guardian before we store any information about your child.",
+    "childData": "I am the parent or lawful guardian and I consent to LunchBox processing my child's name, school, class and allergy notes only to deliver lunch.",
+    "liveTracking": "Show me my delivery partner's live location during an active delivery.",
+    "marketing": "Send me offers and updates (optional).",
+    "required": "Parental consent is required to add a child.",
+    "give": "Give consent"
+  },
+  "tabs": {
+    "today": "Today",
+    "children": "Children",
+    "calendar": "Calendar",
+    "alerts": "Alerts",
+    "account": "Account"
+  },
+  "today": {
+    "title": "Today's lunchboxes",
+    "none": "No pickups today",
+    "noneHint": "Pickups appear here on school days for children with an active plan.",
+    "pickupWindow": "Pickup {{from}} – {{to}}",
+    "showCode": "Show pickup code",
+    "track": "Track",
+    "deadline": "Reaches school by {{time}}"
+  },
+  "code": {
+    "title": "Pickup code",
+    "instructions": "Hand the lunchbox only to a partner who confirms this code or scans the QR.",
+    "refreshing": "QR refreshes automatically"
+  },
+  "track": {
+    "title": "Live tracking",
+    "eta": "Arriving in {{eta}}",
+    "etaSchool": "Reaching school in {{eta}}",
+    "callPartner": "Call partner",
+    "calling": "Your phone will ring shortly",
+    "consentOff": "Live location is off. Enable it under Account → Privacy.",
+    "partner": "Your delivery partner",
+    "handoverPhoto": "View handover photo"
+  },
+  "children": {
+    "title": "Your children",
+    "add": "Add child",
+    "firstName": "First name",
+    "lastName": "Last name (optional)",
+    "school": "School",
+    "searchSchool": "Search your school",
+    "className": "Class",
+    "section": "Section",
+    "rollNumber": "Roll number",
+    "allergies": "Allergies or notes for the school (optional)",
+    "subscribe": "Start lunch plan",
+    "planActive": "Plan active",
+    "remove": "Remove child",
+    "removeConfirm": "This cancels the child's lunch plan. Continue?"
+  },
+  "address": {
+    "title": "Pickup addresses",
+    "add": "Add address",
+    "label": "Label (e.g. Home)",
+    "line1": "Flat / house and building",
+    "line2": "Street and area (optional)",
+    "landmark": "Landmark (optional)",
+    "city": "City",
+    "pincode": "PIN code",
+    "instructions": "Instructions for the partner (optional)",
+    "pin": "Drag the map to place the pin on your door",
+    "useLocation": "Use my location",
+    "default": "Default"
+  },
+  "subscribe": {
+    "title": "Choose a plan",
+    "days": "Pickup days",
+    "address": "Pickup address",
+    "startDate": "Start date",
+    "pay": "Pay {{amount}}",
+    "success": "Your plan is active. Pickups start {{date}}.",
+    "perPeriod": "{{price}} per {{period}}",
+    "maxDays": "Up to {{count}} days a week"
+  },
+  "calendar": {
+    "title": "Leave days",
+    "intro": "Tap a school day to skip pickup. Changes close at the daily cut-off.",
+    "onLeave": "On leave",
+    "holiday": "School holiday",
+    "chooseChild": "Choose a child"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "You're all caught up",
+    "markAll": "Mark all read"
+  },
+  "account": {
+    "title": "Account",
+    "profile": "Profile",
+    "language": "Language",
+    "addresses": "Addresses",
+    "plans": "Lunch plans",
+    "payments": "Payments & invoices",
+    "orders": "Order history",
+    "privacy": "Privacy",
+    "export": "Download my data",
+    "exportDone": "Your data has been prepared.",
+    "delete": "Delete account",
+    "deleteConfirm": "This permanently deletes your account and your children's data. Payment records are kept as required by law. Continue?",
+    "signOut": "Sign out",
+    "cancelPlan": "Cancel plan"
+  },
+  "payments": {
+    "title": "Payments",
+    "invoice": "Invoice",
+    "paidOn": "Paid on {{date}}",
+    "empty": "No payments yet"
+  },
+  "status": {
+    "SCHEDULED": "Scheduled",
+    "ASSIGNED": "Partner assigned",
+    "REASSIGNED": "Finding a partner",
+    "PARTNER_EN_ROUTE": "Partner on the way",
+    "PICKED_UP": "Picked up",
+    "IN_TRANSIT": "On the way to school",
+    "AT_SCHOOL": "At school",
+    "DELIVERED": "Delivered",
+    "CANCELLED": "Cancelled",
+    "PICKUP_FAILED": "Pickup missed",
+    "DELIVERY_FAILED": "Delivery problem"
+  },
+  "days": {
+    "MONDAY": "Mon",
+    "TUESDAY": "Tue",
+    "WEDNESDAY": "Wed",
+    "THURSDAY": "Thu",
+    "FRIDAY": "Fri",
+    "SATURDAY": "Sat",
+    "SUNDAY": "Sun"
+  }
+}

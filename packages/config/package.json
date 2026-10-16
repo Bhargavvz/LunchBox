@@ -1,0 +1,24 @@
+{
+  "name": "@lunchbox/config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./prettier": "./prettier.cjs",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/expo.json": "./tsconfig/expo.json",
+    "./tsconfig/next.json": "./tsconfig/next.json",
+    "./eslint/base": "./eslint/base.mjs",
+    "./eslint/react-native": "./eslint/react-native.mjs"
+  },
+  "dependencies": {
+    "@eslint/js": "9.13.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-react": "7.37.1",
+    "eslint-plugin-react-hooks": "5.0.0",
+    "globals": "15.11.0",
+    "typescript-eslint": "8.11.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.13.0"
+  }
+}

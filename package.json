@@ -1,0 +1,28 @@
+{
+  "name": "lunchbox",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "scripts": {
+    "dev:infra": "docker compose up -d",
+    "dev:backend": "cd backend && ./gradlew bootRun --args=--spring.profiles.active=local",
+    "dev:admin": "pnpm --filter @lunchbox/admin dev",
+    "dev:parent": "pnpm --filter @lunchbox/parent start",
+    "dev:partner": "pnpm --filter @lunchbox/partner start",
+    "generate:api": "pnpm --filter @lunchbox/api-client generate",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\""
+  },
+  "devDependencies": {
+    "@lunchbox/config": "workspace:*",
+    "prettier": "3.3.3",
+    "turbo": "2.1.3",
+    "typescript": "5.6.3"
+  }
+}

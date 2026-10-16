@@ -1,0 +1,8 @@
+{
+  "extends": "@lunchbox/config/tsconfig/expo.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
+  },
+  "include": ["app", "src", "app.config.ts", "jest.setup.ts", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}

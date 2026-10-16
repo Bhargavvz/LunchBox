@@ -1,0 +1,37 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    listener:
+      simple:
+        retry:
+          max-attempts: 2
+          initial-interval: 100ms
+
+lunchbox:
+  security:
+    pii-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    qr-signing-key: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+    require-admin-mfa: true
+  storage:
+    handover-bucket: test-handover
+    kyc-bucket: test-kyc
+  bootstrap:
+    super-admin-email: ""
+  firebase:
+    # Token verification is replaced by TestBeans; this only avoids needing Google credentials in CI.
+    emulator-host: localhost:9099
+
+management:
+  tracing:
+    sampling:
+      probability: 0.0
+
+logging:
+  structured:
+    format:
+      console: ""
+  level:
+    com.lunchbox: INFO
+    org.springframework.messaging.simp.stomp: WARN

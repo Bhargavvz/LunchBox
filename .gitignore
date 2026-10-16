@@ -1,0 +1,48 @@
+node_modules/
+.pnpm-store/
+.turbo/
+dist/
+build/
+out/
+.next/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+
+# backend
+backend/.gradle/
+backend/build/
+backend/bin/
+
+# expo
+apps/*/.expo/
+apps/*/ios/
+apps/*/android/
+apps/*/web-build/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# generated api client
+packages/api-client/src/generated/
+
+# terraform
+infra/terraform/**/.terraform/
+infra/terraform/**/*.tfstate
+infra/terraform/**/*.tfstate.*
+infra/terraform/**/*.tfvars
+!infra/terraform/**/*.tfvars.example
+
+# playwright
+apps/admin/test-results/
+apps/admin/playwright-report/

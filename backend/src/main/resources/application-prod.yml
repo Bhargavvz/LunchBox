@@ -1,0 +1,25 @@
+# Production / staging. Every secret is injected by ECS from AWS Secrets Manager.
+lunchbox:
+  integrations:
+    razorpay:
+      mode: live
+    razorpayx:
+      mode: live
+    msg91:
+      mode: live
+    exotel:
+      mode: live
+    idfy:
+      mode: live
+    fcm:
+      mode: live
+  storage:
+    endpoint: ""
+    path-style: false
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+sentry:
+  traces-sample-rate: 0.05
