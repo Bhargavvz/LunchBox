@@ -67,8 +67,12 @@ public class Payout extends BaseEntity {
         }
     }
 
+    /**
+     * @return true if this call marked the payout processed. A payout already failed or reversed stays that way:
+     * webhooks can arrive out of order and the reversal has already credited the ledger back.
+     */
     boolean processed(String utr, Instant at) {
-        if (status == Status.PROCESSED) {
+        if (status == Status.PROCESSED || status == Status.FAILED || status == Status.REVERSED) {
             return false;
         }
         this.status = Status.PROCESSED;
