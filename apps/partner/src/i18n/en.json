@@ -7,14 +7,35 @@
     "code": "Verification code",
     "verify": "Verify",
     "invalidPhone": "Enter a valid 10-digit Indian mobile number",
-    "resend": "Resend code"
+    "resend": "Resend code",
+    "tagline": "Every lunchbox, on time, in safe hands.",
+    "partner": "Partner",
+    "phoneTitle": "Sign in with your mobile",
+    "codeTitle": "Enter the 6-digit code",
+    "codeSentTo": "Sent to",
+    "changeNumber": "Change number",
+    "resendIn": "Resend code in {{seconds}}s",
+    "legal": "Use the number registered with LunchBox operations.",
+    "errors": {
+      "wrongCode": "That code doesn't match. Check the SMS and try again.",
+      "expired": "This code has expired. Ask for a new one.",
+      "tooMany": "Too many attempts. Please wait a few minutes and try again.",
+      "network": "No internet connection. Check your network and try again."
+    }
   },
-  "tabs": { "route": "Route", "earnings": "Earnings", "profile": "Profile" },
+  "tabs": {
+    "route": "Route",
+    "earnings": "Earnings",
+    "profile": "Profile"
+  },
   "shift": {
     "start": "Start shift",
     "end": "End shift",
     "none": "You are not scheduled today",
-    "active": "Shift active since {{time}}"
+    "active": "Shift active since {{time}}",
+    "noneHint": "Operations will schedule your next shift. Pull down to refresh.",
+    "onShift": "On shift",
+    "planned": "Shift {{from}} – {{to}}"
   },
   "route": {
     "title": "Today's route",
@@ -27,7 +48,19 @@
     "eta": "ETA {{time}}",
     "window": "Window {{from}} – {{to}}",
     "completed": "Route completed. Great work!",
-    "trackingDenied": "Allow location \"All the time\" so parents can follow the delivery."
+    "trackingDenied": "Allow location \"All the time\" so parents can follow the delivery.",
+    "allStops": "All stops",
+    "completedHint_one": "1 stop done today. Thank you!",
+    "completedHint_other": "{{count}} stops done today. Thank you!",
+    "deadline": "By {{time}}",
+    "emptyHint": "Assignments usually arrive before the morning pickup window.",
+    "km": "km",
+    "minutes": "min",
+    "next": "Next stop",
+    "open": "Open stop",
+    "progress": "{{done}} of {{total}} stops done",
+    "stopOf": "Stop {{n}} of {{total}}",
+    "stops": "Stops"
   },
   "stop": {
     "arrived": "I have arrived",
@@ -41,8 +74,36 @@
     "failReason": "Reason",
     "handover": "Hand over with photo",
     "deliveryFailed": "Report delivery problem",
-    "lunchboxes": "{{count}} lunchbox(es) for this school",
-    "queued": "Saved offline — will sync when you're back online"
+    "queued": "Saved offline — will sync when you're back online",
+    "title": "Stop",
+    "arrivedAt": "Arrived at {{time}}",
+    "arrivedShort": "You're at the stop",
+    "childLine": "Lunch for {{child}} · Class {{cls}}",
+    "deliveryFailedN": "Report problem with lunchbox {{n}}",
+    "landmark": "Near {{landmark}}",
+    "notFound": "This stop is no longer on your route.",
+    "pickedUp": "Pickup confirmed",
+    "problemTitle": "Something wrong?",
+    "reported": "Reported to operations",
+    "verifyTitle": "Verify pickup",
+    "verifyHint": "Ask {{name}} for the 6-digit code, or scan the QR on their phone.",
+    "lunchboxes_one": "1 lunchbox for this school",
+    "lunchboxes_other": "{{count}} lunchboxes for this school",
+    "reasons": {
+      "noAnswer": "Parent not answering",
+      "notReady": "Lunchbox not ready",
+      "wrongAddress": "Can't find the address",
+      "schoolClosed": "School is closed",
+      "refused": "School refused the lunchbox",
+      "damaged": "Lunchbox damaged"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "ARRIVED": "Arrived",
+      "COMPLETED": "Done",
+      "FAILED": "Failed",
+      "SKIPPED": "Skipped"
+    }
   },
   "handover": {
     "title": "Handover photo",
@@ -50,7 +111,14 @@
     "capture": "Take photo",
     "retake": "Retake",
     "submit": "Submit handover",
-    "uploading": "Uploading…"
+    "uploading": "Uploading…",
+    "captured": "Photo ready",
+    "confirming": "Confirming handover…",
+    "done": "Handover complete",
+    "geofence": "Your location is checked against the school gate, so submit from the school.",
+    "permissionTitle": "Camera needed",
+    "preview": "Handover photo preview",
+    "uploadFailed": "Photo upload failed ({{status}}). Try again."
   },
   "issue": {
     "title": "Report an issue",
@@ -58,7 +126,13 @@
     "type": "What happened?",
     "description": "Details (optional)",
     "send": "Send to operations",
-    "sent": "Operations has been alerted."
+    "sent": "Operations has been alerted.",
+    "call112": "Call 112",
+    "emergencyTitle": "If anyone is hurt or in danger, call emergency services now.",
+    "locationNote": "Your current location is attached so operations can reach you.",
+    "queuedTitle": "Saved — will send when online",
+    "sentHint": "Someone from operations will call you shortly. Stay where it is safe.",
+    "sosHint": "Alerts operations immediately with your location."
   },
   "earnings": {
     "title": "Earnings",
@@ -66,21 +140,58 @@
     "month": "This month",
     "balance": "Unpaid balance",
     "payouts": "Payouts",
-    "noPayouts": "No payouts yet"
+    "noPayouts": "No payouts yet",
+    "breakdown": "Breakdown",
+    "emptyHint": "Earnings appear here as you complete deliveries.",
+    "emptyTitle": "Nothing earned yet",
+    "inProgress": "In progress",
+    "tapHint": "Tap a day to see what you earned.",
+    "workedDays_one": "From 1 working day",
+    "workedDays_other": "From {{count}} working days",
+    "payoutStatus": {
+      "PENDING": "Pending",
+      "PROCESSING": "Processing",
+      "PROCESSED": "Paid",
+      "FAILED": "Failed",
+      "REVERSED": "Reversed"
+    }
   },
   "profile": {
     "title": "Profile",
     "vehicle": "Vehicle",
     "capacity": "Capacity",
     "rating": "Rating",
-    "pendingSync": "{{count}} action(s) waiting to sync",
     "syncNow": "Sync now",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "attempts_one": "1 attempt",
+    "attempts_other": "{{count}} attempts",
+    "capacityHint": "lunchboxes per trip",
+    "dismiss": "Dismiss",
+    "language": "Language",
+    "sync": "Offline actions",
+    "version": "Version {{version}}",
+    "pendingSync_one": "1 action waiting to sync",
+    "pendingSync_other": "{{count}} actions waiting to sync",
+    "vehicleType": {
+      "BICYCLE": "Bicycle",
+      "SCOOTER": "Scooter",
+      "MOTORCYCLE": "Motorcycle",
+      "EV_SCOOTER": "Electric scooter",
+      "CAR": "Car"
+    },
+    "actions": {
+      "pickup": "Pickup",
+      "pickupFailed": "Missed pickup",
+      "handover": "Handover",
+      "deliveryFailed": "Delivery problem",
+      "issue": "Issue report"
+    }
   },
   "notApproved": {
     "title": "Account not active",
     "retry": "Check again",
-    "signOut": "Use another number"
+    "signOut": "Use another number",
+    "hint": "Your account is waiting for verification by LunchBox operations. We'll let you know once you can start."
   },
   "issueTypes": {
     "SOS": "Emergency / SOS",
@@ -90,5 +201,22 @@
     "SCHOOL_CLOSED": "School closed",
     "OTHER": "Other"
   },
-  "common": { "cancel": "Cancel", "retry": "Try again", "back": "Back" }
+  "common": {
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "back": "Back",
+    "loading": "Loading…",
+    "problem": "Something went wrong"
+  },
+  "scan": {
+    "title": "Scan QR",
+    "aim": "Point at the parent's QR",
+    "checking": "Checking…",
+    "hint": "Hold steady about a hand's length away. The code refreshes every two minutes.",
+    "permissionTitle": "Camera needed",
+    "permission": "Camera access is needed to scan the pickup QR.",
+    "allow": "Allow camera",
+    "torchOn": "Turn on torch",
+    "torchOff": "Turn off torch"
+  }
 }

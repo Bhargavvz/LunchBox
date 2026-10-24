@@ -13,20 +13,24 @@ appId: in.lunchbox.partner.development
 - tapOn:
     id: "otp-input"
 - inputText: "123456"
+# The code auto-submits on the sixth digit; the button tap only matters if it did not.
 - tapOn:
     id: "verify-code"
+    optional: true
 - assertVisible: "Today's route"
 - tapOn:
     id: "start-shift"
 - tapOn:
     id: "start-route"
-- tapOn: "1\\. Pickup"
+- tapOn:
+    id: "stop-1"
 - tapOn:
     id: "otp"
 - inputText: ${PICKUP_OTP}
 - tapOn:
     id: "confirm-pickup"
-- tapOn: "2\\. School drop"
+- tapOn:
+    id: "stop-2"
 - tapOn:
     id: "handover"
 - tapOn:
