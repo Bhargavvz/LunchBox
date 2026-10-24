@@ -126,6 +126,12 @@ importers:
 
   apps/parent:
     dependencies:
+      '@expo-google-fonts/figtree':
+        specifier: 0.4.1
+        version: 0.4.1
+      '@expo-google-fonts/fraunces':
+        specifier: 0.4.1
+        version: 0.4.1
       '@hookform/resolvers':
         specifier: 3.9.0
         version: 3.9.0(react-hook-form@7.53.1(react@19.1.0))
@@ -159,6 +165,12 @@ importers:
       expo-dev-client:
         specifier: ~6.0.13
         version: 6.0.21(expo@54.0.37)
+      expo-font:
+        specifier: ~14.0.12
+        version: 14.0.12(expo@54.0.37)(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
+      expo-haptics:
+        specifier: ~15.0.8
+        version: 15.0.8(expo@54.0.37)
       expo-linking:
         specifier: ~8.0.8
         version: 8.0.12(expo@54.0.37)(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
@@ -180,6 +192,9 @@ importers:
       i18next:
         specifier: 23.16.4
         version: 23.16.4
+      lucide-react-native:
+        specifier: 1.53.0
+        version: 1.53.0(@types/react@19.1.10)(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -247,6 +262,12 @@ importers:
 
   apps/partner:
     dependencies:
+      '@expo-google-fonts/figtree':
+        specifier: 0.4.1
+        version: 0.4.1
+      '@expo-google-fonts/fraunces':
+        specifier: 0.4.1
+        version: 0.4.1
       '@lunchbox/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
@@ -289,6 +310,12 @@ importers:
       expo-file-system:
         specifier: ~19.0.17
         version: 19.0.24(expo@54.0.37)(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))
+      expo-font:
+        specifier: ~14.0.12
+        version: 14.0.12(expo@54.0.37)(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
+      expo-haptics:
+        specifier: ~15.0.8
+        version: 15.0.8(expo@54.0.37)
       expo-image-manipulator:
         specifier: ~14.0.7
         version: 14.0.8(expo@54.0.37)
@@ -316,6 +343,9 @@ importers:
       i18next:
         specifier: 23.16.4
         version: 23.16.4
+      lucide-react-native:
+        specifier: 1.53.0
+        version: 1.53.0(@types/react@19.1.10)(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -334,6 +364,9 @@ importers:
       react-native-screens:
         specifier: ~4.16.0
         version: 4.16.0(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
+      react-native-svg:
+        specifier: 15.12.1
+        version: 15.12.1(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
       zod:
         specifier: 3.23.8
         version: 3.23.8
@@ -444,15 +477,27 @@ importers:
       eslint:
         specifier: 9.13.0
         version: 9.13.0(jiti@1.21.7)
+      expo-haptics:
+        specifier: ~15.0.8
+        version: 15.0.8(expo@54.0.37)
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@20.17.1)
+      lucide-react-native:
+        specifier: 1.53.0
+        version: 1.53.0(@types/react@19.1.10)(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
       react-native:
         specifier: 0.81.4
         version: 0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0)
+      react-native-safe-area-context:
+        specifier: ~5.6.0
+        version: 5.6.2(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
+      react-native-svg:
+        specifier: 15.12.1
+        version: 15.12.1(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
       react-test-renderer:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
@@ -1027,6 +1072,12 @@ packages:
   '@eslint/plugin-kit@0.2.8':
     resolution: {integrity: sha512-ZAoA40rNMPwSm+AeHpCq8STiNAwzWLJuP8Xv4CHIc9wv/PSuExjMrmjfYNj682vW0OOiZ1HKxzvjQr9XZIisQA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@expo-google-fonts/figtree@0.4.1':
+    resolution: {integrity: sha512-6IQQddGeR3yZBSwiIjy2kd1gA+5s2esF8JAFw6M1qqU4RUlj4Zxkw9J+gixAtZFgd+QIS875EPHqeYlpaRcCRw==}
+
+  '@expo-google-fonts/fraunces@0.4.1':
+    resolution: {integrity: sha512-gYc9P92ObyWvz1rWPOeWSvVKyBFIuA8hgOdhvo4DSiPBaWLbFA6v8uLIEIBwW+0oWTlXbBzjeBReHQI2H7UNjQ==}
 
   '@expo/cli@54.0.27':
     resolution: {integrity: sha512-BxKOr6e8wmUwhGSyEVKY+CHWgS3Cre9ibgx1QWcdCenKTVKAz62qGmYL51q0lCcKg6vQY+4Usw9RK5Il4ZFaIA==}
@@ -3868,6 +3919,7 @@ packages:
   eslint@9.13.0:
     resolution: {integrity: sha512-EYZK6SX6zjFHST/HRytOdA/zE72Cq/bfw45LSyuwrdvcclb/gqV8RRQxywOBEWO2+WDpva6UZa4CcDeJKzUCFA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -3984,6 +4036,11 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-haptics@15.0.8:
+    resolution: {integrity: sha512-lftutojy8Qs8zaDzzjwM3gKHFZ8bOOEZDCkmh2Ddpe95Ra6kt2izeOfOfKuP/QEh0MZ1j9TfqippyHdRd1ZM9g==}
+    peerDependencies:
+      expo: '*'
 
   expo-image-loader@6.0.0:
     resolution: {integrity: sha512-nKs/xnOGw6ACb4g26xceBD57FKLFkSwEUTDXEDF3Gtcu3MqF3ZIYd3YM+sSb1/z9AKV1dYT7rMSGVNgsveXLIQ==}
@@ -5047,6 +5104,17 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  lucide-react-native@1.53.0:
+    resolution: {integrity: sha512-BoLp8COcyk4d+jjy2iXY7oWG8oXHIL3HsUMl1Cdm30LyIxUGiWSXHlcUGbH8tk3wrz2g9P2TjY2GEdfQXkFGvQ==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-native: '*'
+      react-native-svg: ^12.0.0 || ^13.0.0 || ^14.0.0 || ^15.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   lucide-react@0.453.0:
     resolution: {integrity: sha512-kL+RGZCcJi9BvJtzg2kshO192Ddy9hv3ij+cPrVPWSRzgCWCVazoQJxOjAwgK53NomL07HB7GPHW120FimjNhQ==}
@@ -7550,6 +7618,10 @@ snapshots:
     dependencies:
       '@eslint/core': 0.13.0
       levn: 0.4.1
+
+  '@expo-google-fonts/figtree@0.4.1': {}
+
+  '@expo-google-fonts/fraunces@0.4.1': {}
 
   '@expo/cli@54.0.27(expo-router@6.0.24)(expo@54.0.37)(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(typescript@5.6.3)':
     dependencies:
@@ -11240,6 +11312,10 @@ snapshots:
       react: 19.1.0
       react-native: 0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0)
 
+  expo-haptics@15.0.8(expo@54.0.37):
+    dependencies:
+      expo: 54.0.37(@babel/core@7.25.8)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)(typescript@5.6.3)
+
   expo-image-loader@6.0.0(expo@54.0.37):
     dependencies:
       expo: 54.0.37(@babel/core@7.25.8)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)(typescript@5.6.3)
@@ -12587,6 +12663,14 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  lucide-react-native@1.53.0(@types/react@19.1.10)(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0)
+      react-native-svg: 15.12.1(react-native@0.81.4(@babel/core@7.25.8)(@types/react@19.1.10)(react@19.1.0))(react@19.1.0)
+    optionalDependencies:
+      '@types/react': 19.1.10
 
   lucide-react@0.453.0(react@19.1.0):
     dependencies:
