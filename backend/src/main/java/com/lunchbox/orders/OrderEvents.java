@@ -24,4 +24,8 @@ public final class OrderEvents {
             Instant deliveryDeadline,
             Instant occurredAt) {
     }
+
+    /** Routing key {@code rating.submitted}: a parent rated a delivered order. */
+    public record OrderRated(UUID orderId, UUID partnerId, int stars, Instant occurredAt) {
+    }
 }

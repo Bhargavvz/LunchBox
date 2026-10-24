@@ -9,12 +9,14 @@ import com.lunchbox.common.web.PageResponse;
 import com.lunchbox.orders.OrderAdminService;
 import com.lunchbox.orders.OrderGenerationService;
 import com.lunchbox.orders.OrderQueryService;
+import com.lunchbox.orders.OrderRatingService;
 import com.lunchbox.orders.OrderStatus;
 import com.lunchbox.orders.web.OrderDtos.AdminOrderDetailResponse;
 import com.lunchbox.orders.web.OrderDtos.AdminOrderResponse;
 import com.lunchbox.orders.web.OrderDtos.CreateManualOrderRequest;
 import com.lunchbox.orders.web.OrderDtos.OrderDetailResponse;
 import com.lunchbox.orders.web.OrderDtos.OrderResponse;
+import com.lunchbox.orders.web.OrderDtos.RateOrderRequest;
 import com.lunchbox.orders.web.OrderDtos.ReasonRequest;
 import com.lunchbox.orders.web.OrderDtos.SchoolOrderResponse;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,14 +49,16 @@ public class OrderController {
     private final OrderQueryService queries;
     private final OrderAdminService admin;
     private final OrderGenerationService generation;
+    private final OrderRatingService ratings;
     private final IdempotencyService idempotency;
     private final Clock clock;
 
     public OrderController(OrderQueryService queries, OrderAdminService admin, OrderGenerationService generation,
-                           IdempotencyService idempotency, Clock clock) {
+                           OrderRatingService ratings, IdempotencyService idempotency, Clock clock) {
         this.queries = queries;
         this.admin = admin;
         this.generation = generation;
+        this.ratings = ratings;
         this.idempotency = idempotency;
         this.clock = clock;
     }
@@ -82,6 +86,13 @@ public class OrderController {
     @PreAuthorize(Roles.PARENT)
     public OrderDetailResponse detail(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID orderId) {
         return queries.detailForParent(user.requireUserId(), orderId);
+    }
+
+    @PostMapping("/api/v1/orders/{orderId}/rating")
+    @PreAuthorize(Roles.PARENT)
+    public OrderDetailResponse rate(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID orderId,
+                                    @Valid @RequestBody RateOrderRequest request) {
+        return ratings.rate(user.requireUserId(), orderId, request);
     }
 
     // ---- Admin ----

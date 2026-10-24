@@ -18,12 +18,15 @@ public final class Messaging {
     public static final String PARTNER_ISSUE_REPORTED = "partner.issue_reported";
     public static final String BROADCAST_REQUESTED = "broadcast.requested";
     public static final String PAYOUT_REQUESTED = "payout.requested";
+    // Deliberately outside "order.#" so the notifications consumer never receives it.
+    public static final String RATING_SUBMITTED = "rating.submitted";
 
     // Consumer queues
     public static final String Q_NOTIFICATIONS_ORDER_EVENTS = "notifications.order-events";
     public static final String Q_NOTIFICATIONS_OPS_EVENTS = "notifications.ops-events";
     public static final String Q_EARNINGS_EVENTS = "payouts.earnings-events";
     public static final String Q_TRACKING_ORDER_EVENTS = "tracking.order-events";
+    public static final String Q_DISPATCH_RATINGS = "dispatch.ratings";
     public static final String JOB_BROADCAST = "jobs.broadcast";
     public static final String JOB_PAYOUT = "jobs.payout";
 

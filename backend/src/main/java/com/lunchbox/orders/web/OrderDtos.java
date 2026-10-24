@@ -2,6 +2,8 @@ package com.lunchbox.orders.web;
 
 import com.lunchbox.common.geo.GeoPoint;
 import com.lunchbox.orders.OrderStatus;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -35,7 +37,13 @@ public final class OrderDtos {
             Instant deliveredAt,
             String cancelReason,
             String failureReason,
-            Instant schoolReceivedAt) {
+            Instant schoolReceivedAt,
+            Integer ratingStars,
+            String ratingComment,
+            boolean canRate) {
+    }
+
+    public record RateOrderRequest(@NotNull @Min(1) @Max(5) Integer stars, @Size(max = 500) String comment) {
     }
 
     public record OrderDetailResponse(OrderResponse order, List<StatusEventResponse> timeline) {

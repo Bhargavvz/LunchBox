@@ -46,6 +46,7 @@ public class RabbitConfig {
         d.add(BindingBuilder.bind(earnings).to(events).with(SHIFT_ENDED));
         d.add(BindingBuilder.bind(earnings).to(events).with(SHIFT_NO_SHOW));
         queue(d, events, dlx, Q_TRACKING_ORDER_EVENTS, ORDER_STATUS_CHANGED);
+        queue(d, events, dlx, Q_DISPATCH_RATINGS, RATING_SUBMITTED);
         queue(d, events, dlx, JOB_BROADCAST, BROADCAST_REQUESTED);
         queue(d, events, dlx, JOB_PAYOUT, PAYOUT_REQUESTED);
         return new Declarables(d);

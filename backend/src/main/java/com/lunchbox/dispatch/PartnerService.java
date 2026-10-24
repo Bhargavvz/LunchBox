@@ -170,7 +170,7 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
         if (stars < 1 || stars > 5) {
             throw Errors.badRequest("invalid_rating", "Rating must be between 1 and 5.");
         }
-        partners.findById(partnerId).ifPresent(p -> p.addRating(stars));
+        partners.findForUpdate(partnerId).ifPresent(p -> p.addRating(stars));
     }
 
     private static void apply(DeliveryPartner p, PartnerProfileRequest r) {

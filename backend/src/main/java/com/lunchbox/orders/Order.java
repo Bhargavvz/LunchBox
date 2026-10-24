@@ -83,6 +83,15 @@ public class Order extends BaseEntity {
     @Column(name = "school_received_by")
     private UUID schoolReceivedBy;
 
+    @Column(name = "rating_stars")
+    private Integer ratingStars;
+
+    @Column(name = "rating_comment")
+    private String ratingComment;
+
+    @Column(name = "rated_at")
+    private Instant ratedAt;
+
     @Version
     private long version;
 
@@ -125,5 +134,11 @@ public class Order extends BaseEntity {
     void confirmSchoolReceipt(UUID userId, Instant at) {
         this.schoolReceivedBy = userId;
         this.schoolReceivedAt = at;
+    }
+
+    void rate(int stars, String comment, Instant at) {
+        this.ratingStars = stars;
+        this.ratingComment = comment;
+        this.ratedAt = at;
     }
 }

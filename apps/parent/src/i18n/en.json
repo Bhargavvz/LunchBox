@@ -162,5 +162,13 @@
     "FRIDAY": "Fri",
     "SATURDAY": "Sat",
     "SUNDAY": "Sun"
+  },
+  "rating": {
+    "title": "How was today's delivery?",
+    "yours": "Your rating",
+    "comment": "Anything to add? (optional)",
+    "submit": "Submit rating",
+    "starsLabel_one": "{{count}} star",
+    "starsLabel_other": "{{count}} stars"
   }
 }

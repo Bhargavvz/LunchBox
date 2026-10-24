@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,6 +25,11 @@ interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecificationEx
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("select o from DeliveryOrder o where o.id = :id")
     Optional<Order> findForUpdate(@Param("id") UUID id);
+
+    /** Free-text rating comments are personal data; stars stay as anonymous service-quality history. */
+    @Modifying
+    @Query("update DeliveryOrder o set o.ratingComment = null where o.parentId = :parentId and o.ratingComment is not null")
+    int clearRatingComments(@Param("parentId") UUID parentId);
 
     List<Order> findByScheduledDateAndStatusIn(LocalDate date, Collection<OrderStatus> statuses);
 

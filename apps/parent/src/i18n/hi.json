@@ -162,5 +162,13 @@
     "FRIDAY": "शुक्र",
     "SATURDAY": "शनि",
     "SUNDAY": "रवि"
+  },
+  "rating": {
+    "title": "आज की डिलीवरी कैसी रही?",
+    "yours": "आपकी रेटिंग",
+    "comment": "कुछ और कहना है? (वैकल्पिक)",
+    "submit": "रेटिंग भेजें",
+    "starsLabel_one": "{{count}} स्टार",
+    "starsLabel_other": "{{count}} स्टार"
   }
 }

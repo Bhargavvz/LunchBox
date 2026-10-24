@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -195,7 +196,10 @@ public class OrderQueryService implements OrderQueries, PersonalDataContributor 
         return toParentResponses(orders.findByParentId(parentId));
     }
 
-    /** Vetoes erasure while a lunchbox is physically with a partner. Order rows are retained (no direct PII). */
+    /**
+     * Vetoes erasure while a lunchbox is physically with a partner. Order rows are retained (no direct PII); free-text
+     * rating comments are cleared.
+     */
     @Override
     @Transactional
     public void erase(UUID userId) {
@@ -204,6 +208,7 @@ public class OrderQueryService implements OrderQueries, PersonalDataContributor 
             throw Errors.conflict("delivery_in_progress",
                     "A delivery is in progress. You can delete your account once it has been completed.");
         }
+        orders.clearRatingComments(parentId);
     }
 
     // ---- helpers ----
@@ -239,13 +244,15 @@ public class OrderQueryService implements OrderQueries, PersonalDataContributor 
     private List<OrderResponse> toParentResponses(List<Order> list) {
         Map<UUID, ChildInfo> childMap = children.findAll(list.stream().map(Order::getChildId).collect(Collectors.toSet()));
         Map<UUID, SchoolInfo> schoolMap = schools.findAll(list.stream().map(Order::getSchoolId).collect(Collectors.toSet()));
+        Instant now = clock.instant();
         return list.stream().map(o -> {
             ChildInfo c = childMap.get(o.getChildId());
             SchoolInfo s = schoolMap.get(o.getSchoolId());
             return new OrderResponse(o.getId(), o.getChildId(), c == null ? null : c.displayName(), o.getSchoolId(),
                     s == null ? null : s.name(), o.getScheduledDate(), o.getPickupWindowStart(), o.getPickupWindowEnd(),
                     o.getDeliveryDeadline(), o.getStatus(), o.getPartnerId() != null, o.getPickedUpAt(),
-                    o.getDeliveredAt(), o.getCancelReason(), o.getFailureReason(), o.getSchoolReceivedAt());
+                    o.getDeliveredAt(), o.getCancelReason(), o.getFailureReason(), o.getSchoolReceivedAt(),
+                    o.getRatingStars(), o.getRatingComment(), OrderRatingService.canRate(o, now));
         }).toList();
     }
 

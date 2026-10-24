@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Image, Linking } from 'react-native';
 import { LiveMap } from '../../src/components/LiveMap';
 import { PickupCode } from '../../src/components/PickupCode';
+import { RateDelivery } from '../../src/components/RateDelivery';
 import { useOrderTracking } from '../../src/hooks/useOrderTracking';
 import { useStatusLabels } from '../../src/hooks/useStatusLabels';
 import { api } from '../../src/lib/api';
@@ -87,7 +88,10 @@ export default function OrderTrackingScreen() {
       </Card>
 
       {order.status === 'DELIVERED' ? (
-        <Button title={t('track.handoverPhoto')} variant="ghost" loading={photo.isPending} onPress={() => photo.mutate()} />
+        <>
+          <RateDelivery orderId={orderId} rated={order.ratingStars ?? null} canRate={order.canRate} />
+          <Button title={t('track.handoverPhoto')} variant="ghost" loading={photo.isPending} onPress={() => photo.mutate()} />
+        </>
       ) : null}
     </Screen>
   );

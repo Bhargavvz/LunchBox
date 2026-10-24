@@ -123,6 +123,8 @@ export function createLunchBoxApi(options: ClientOptions) {
         unwrap(c.GET('/api/v1/orders/{orderId}/handover-photo', { params: { path: { orderId } } })),
       callPartner: (orderId: string) =>
         unwrap(c.POST('/api/v1/orders/{orderId}/call-partner', { params: { path: { orderId } } })),
+      rate: (orderId: string, body: S['RateOrderRequest']) =>
+        unwrap(c.POST('/api/v1/orders/{orderId}/rating', { params: { path: { orderId } }, body })),
     },
 
     notifications: {

@@ -15,3 +15,4 @@
 | [0011](0011-static-admin.md) | Static-export admin on S3 + CloudFront |
 | [0012](0012-money-ledger.md) | Paise integers and an append-only ledger |
 | [0013](0013-library-additions.md) | Libraries added beyond the fixed stack |
+| [0014](0014-delivery-ratings.md) | Parent ratings of deliveries |

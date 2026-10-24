@@ -1,10 +1,14 @@
 package com.lunchbox.dispatch;
 
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
@@ -18,6 +22,12 @@ interface DeliveryPartnerRepository extends JpaRepository<DeliveryPartner, UUID>
     Optional<DeliveryPartner> findByUserId(UUID userId);
 
     List<DeliveryPartner> findByIdIn(Collection<UUID> ids);
+
+    /** Row lock so concurrent rating updates to the running average serialise. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
+    @Query("select p from DeliveryPartner p where p.id = :id")
+    Optional<DeliveryPartner> findForUpdate(@Param("id") UUID id);
 
     @Query("""
             select p from DeliveryPartner p where p.deletedAt is null
