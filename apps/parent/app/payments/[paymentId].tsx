@@ -46,7 +46,7 @@ export default function InvoiceScreen() {
           </Row>
           <View style={{ gap: 4 }}>
             <Text variant="overline" muted>{t('payments.amountPaid')}</Text>
-            <Text variant="display" style={{ fontVariant: ['tabular-nums'] }}>{rupees(i.amountPaise, { decimals: true })}</Text>
+            <Text variant="figure">{rupees(i.amountPaise, { decimals: true })}</Text>
             <Text variant="caption" muted>{istDateTime(i.issuedAt)}</Text>
           </View>
           <Divider />

@@ -33,7 +33,7 @@ function authError(e: unknown, t: (k: string) => string): string {
  * Phone OTP sign-in via Firebase Auth. Shared shape with the partner app; Firebase applies its own abuse
  * protection (Play Integrity / reCAPTCHA) and rate limits to SMS sends.
  */
-export function PhoneSignIn({ tagline, notice }: { tagline: string; notice?: ReactNode }) {
+export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; notice?: ReactNode; eyebrow?: string }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -98,7 +98,14 @@ export function PhoneSignIn({ tagline, notice }: { tagline: string; notice?: Rea
           backgroundColor: 'rgba(255,255,255,0.06)' }} />
         <View style={{ position: 'absolute', width: 180, height: 180, borderRadius: 90, left: -70, bottom: -80,
           backgroundColor: 'rgba(0,0,0,0.07)' }} />
-        <Wordmark size={24} tone="onPrimary" />
+        <Row gap={2.5}>
+          <Wordmark size={24} tone="onPrimary" />
+          {eyebrow ? (
+            <View style={{ borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', paddingHorizontal: 10, paddingVertical: 3 }}>
+              <Text variant="overline" tone="onPrimary">{eyebrow}</Text>
+            </View>
+          ) : null}
+        </Row>
         <Row justify="space-between" align="flex-end" gap={4}>
           <Text variant="title" tone="onPrimary" style={{ flex: 1 }}>{tagline}</Text>
           <TiffinArt size={78} mood="onPrimary" steam />

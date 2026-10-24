@@ -75,7 +75,7 @@ export default function OrderTrackingScreen() {
           <View accessible accessibilityRole="text"
                 accessibilityLabel={toHome ? t('track.eta', { eta: etaText(etaSeconds) }) : t('track.etaSchool', { eta: etaText(etaSeconds) })}>
             <Text variant="caption" muted style={{ marginTop: 6 }}>{toHome ? t('track.arrivingHome') : t('track.arrivingSchool')}</Text>
-            <Text variant="display" style={{ fontVariant: ['tabular-nums'] }}>{etaText(etaSeconds)}</Text>
+            <Text variant="figure">{etaText(etaSeconds)}</Text>
           </View>
         ) : (
           <Text variant="title" style={{ marginTop: 4 }}>{order.childName}</Text>

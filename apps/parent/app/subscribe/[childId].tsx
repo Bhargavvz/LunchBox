@@ -201,7 +201,7 @@ export default function SubscribeScreen() {
                   {bestValue === p.id ? <Badge label={t('subscribe.bestValue')} tone="accent" /> : null}
                 </Row>
                 <Row gap={1} align="flex-end">
-                  <Text variant="numeral" style={{ fontVariant: ['tabular-nums'] }}>{rupees(p.pricePaise)}</Text>
+                  <Text variant="numeral">{rupees(p.pricePaise)}</Text>
                   <Text variant="caption" muted style={{ paddingBottom: 4 }}>
                     / {t(p.billingPeriod === 'MONTHLY' ? 'subscribe.month' : 'subscribe.quarter')}
                   </Text>

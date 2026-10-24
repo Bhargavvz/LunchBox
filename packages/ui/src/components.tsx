@@ -40,7 +40,8 @@ export type TextVariant =
   | 'label'
   | 'caption'
   | 'overline'
-  | 'numeral';
+  | 'numeral'
+  | 'figure';
 
 export type TextTone = 'default' | 'muted' | 'faint' | 'primary' | 'danger' | 'info' | 'accent' | 'onPrimary' | 'inverse';
 
@@ -64,7 +65,10 @@ function variantStyle(t: Theme, variant: TextVariant): TextStyle {
     case 'overline':
       return { fontFamily: f.bold, fontSize: 11, lineHeight: 14, letterSpacing: 1.1, textTransform: 'uppercase' };
     case 'numeral':
-      return { fontFamily: f.display, fontSize: t.font.xl, lineHeight: 28, fontVariant: ['tabular-nums'] };
+      return { fontFamily: f.semibold, fontSize: t.font.xl, lineHeight: 28, letterSpacing: -0.3 };
+    case 'figure':
+      // The one hero number per view (an ETA, a total): large sans with proportional figures.
+      return { fontFamily: f.semibold, fontSize: 44, lineHeight: 52, letterSpacing: -1 };
     default:
       return { fontFamily: f.regular, fontSize: t.font.md, lineHeight: 24 };
   }
@@ -1107,10 +1111,13 @@ export function Stat({ label, value, hint, tone = 'default', size = 'md' }: {
   tone?: TextTone;
   size?: 'md' | 'lg';
 }) {
+  const t = useTheme();
   return (
     <View style={{ gap: 2 }} accessible accessibilityLabel={`${label}: ${value}${hint ? `, ${hint}` : ''}`}>
       <Text variant="overline" tone={tone === 'onPrimary' ? 'onPrimary' : 'muted'}>{label}</Text>
-      <Text variant={size === 'lg' ? 'display' : 'numeral'} tone={tone}>{value}</Text>
+      {/* Stat values stay in the interface sans (semibold): the display serif is for titles, not figures. */}
+      <Text variant="heading" tone={tone} style={{ fontFamily: t.fonts.semibold, fontSize: size === 'lg' ? 40 : 24,
+        lineHeight: size === 'lg' ? 48 : 30, letterSpacing: size === 'lg' ? -0.8 : -0.3 }}>{value}</Text>
       {hint ? <Text variant="caption" tone={tone === 'onPrimary' ? 'onPrimary' : 'muted'}>{hint}</Text> : null}
     </View>
   );
