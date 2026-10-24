@@ -1,86 +1,185 @@
 /**
- * Design tokens shared by the parent and partner apps. Colour pairs meet WCAG AA (4.5:1) for body text on their
- * intended backgrounds.
+ * LunchBox design tokens — "Tiffin".
+ *
+ * The palette comes from the things the product is about: curry-leaf green (the brand), turmeric (attention, never
+ * body text), chilli (problems), block-print indigo (information), on warm paper instead of clinical grey. Text pairs
+ * meet WCAG AA (4.5:1) on their intended backgrounds; turmeric is only ever a fill under ink-coloured text.
  */
 export const palette = {
-  green700: '#0F6B45',
-  green600: '#14875A',
-  green100: '#DDF3E8',
-  saffron500: '#F5A623',
-  saffron100: '#FFF3DC',
-  red600: '#C62828',
-  red100: '#FDE7E7',
-  blue600: '#1E5BB8',
-  blue100: '#E3EDFB',
-  grey900: '#1A1D21',
-  grey700: '#454B54',
-  grey500: '#6B7280',
-  grey300: '#C9CED6',
-  grey100: '#F2F4F7',
+  leaf900: '#0F3326',
+  leaf800: '#164634',
+  leaf700: '#1E5A43',
+  leaf500: '#3B8A68',
+  leaf300: '#8EC2A7',
+  leaf100: '#E2EEE6',
+  leaf50: '#F1F7F3',
+
+  turmeric700: '#7A4A0B',
+  turmeric600: '#B9761C',
+  turmeric500: '#E3A03A',
+  turmeric100: '#FBEBD0',
+
+  chilli700: '#8A2B19',
+  chilli600: '#B23A24',
+  chilli100: '#F7E1DA',
+
+  indigo700: '#22385F',
+  indigo600: '#2E4A7D',
+  indigo100: '#E2E8F3',
+
+  ink900: '#1C1A17',
+  ink700: '#46413A',
+  ink500: '#6E675D',
+  ink300: '#B8B0A3',
+
+  paper: '#F6F2EA',
+  paperDeep: '#EDE6D9',
+  card: '#FFFDF8',
+  line: '#E5DDCF',
+  lineStrong: '#D3C8B6',
+
   white: '#FFFFFF',
   black: '#000000',
 } as const;
 
-export interface Theme {
-  colors: {
-    background: string;
-    surface: string;
-    text: string;
-    textMuted: string;
-    border: string;
-    primary: string;
-    onPrimary: string;
-    primarySoft: string;
-    accent: string;
-    accentSoft: string;
-    danger: string;
-    dangerSoft: string;
-    info: string;
-    infoSoft: string;
-  };
-  spacing: (n: number) => number;
-  radius: { sm: number; md: number; lg: number; pill: number };
-  font: { xs: number; sm: number; md: number; lg: number; xl: number; xxl: number };
+export interface ThemeColors {
+  /** Page background (warm paper). */
+  background: string;
+  /** Recessed areas: inputs, segmented tracks, skeletons. */
+  sunken: string;
+  /** Cards and sheets. */
+  surface: string;
+  text: string;
+  textMuted: string;
+  textFaint: string;
+  border: string;
+  borderStrong: string;
+  primary: string;
+  primaryPressed: string;
+  onPrimary: string;
+  primarySoft: string;
+  onPrimarySoft: string;
+  accent: string;
+  onAccent: string;
+  accentSoft: string;
+  onAccentSoft: string;
+  danger: string;
+  onDanger: string;
+  dangerSoft: string;
+  onDangerSoft: string;
+  info: string;
+  infoSoft: string;
+  onInfoSoft: string;
+  scrim: string;
+  shadow: string;
 }
 
+export interface Theme {
+  dark: boolean;
+  colors: ThemeColors;
+  spacing: (n: number) => number;
+  radius: { xs: number; sm: number; md: number; lg: number; xl: number; pill: number };
+  font: { xs: number; sm: number; md: number; lg: number; xl: number; xxl: number; display: number };
+  fonts: typeof fonts;
+  motion: { fast: number; base: number; slow: number };
+}
+
+/**
+ * Families are loaded by each app with expo-font (see `fontAssets` in the app root layout). One family per weight:
+ * Android ignores `fontWeight` for custom fonts, so components never set it alongside these.
+ */
+export const fonts = {
+  display: 'Fraunces_600SemiBold',
+  displayBold: 'Fraunces_700Bold',
+  regular: 'Figtree_400Regular',
+  medium: 'Figtree_500Medium',
+  semibold: 'Figtree_600SemiBold',
+  bold: 'Figtree_700Bold',
+} as const;
+
+const shared = {
+  spacing: (n: number) => n * 4,
+  radius: { xs: 6, sm: 10, md: 14, lg: 20, xl: 28, pill: 999 },
+  font: { xs: 12, sm: 14, md: 16, lg: 18, xl: 22, xxl: 28, display: 36 },
+  fonts,
+  motion: { fast: 140, base: 220, slow: 360 },
+};
+
 export const lightTheme: Theme = {
+  ...shared,
+  dark: false,
   colors: {
-    background: palette.grey100,
-    surface: palette.white,
-    text: palette.grey900,
-    textMuted: palette.grey700,
-    border: palette.grey300,
-    primary: palette.green600,
+    background: palette.paper,
+    sunken: palette.paperDeep,
+    surface: palette.card,
+    text: palette.ink900,
+    textMuted: palette.ink500,
+    textFaint: palette.ink300,
+    border: palette.line,
+    borderStrong: palette.lineStrong,
+    primary: palette.leaf700,
+    primaryPressed: palette.leaf800,
     onPrimary: palette.white,
-    primarySoft: palette.green100,
-    accent: palette.saffron500,
-    accentSoft: palette.saffron100,
-    danger: palette.red600,
-    dangerSoft: palette.red100,
-    info: palette.blue600,
-    infoSoft: palette.blue100,
+    primarySoft: palette.leaf100,
+    onPrimarySoft: palette.leaf800,
+    accent: palette.turmeric500,
+    onAccent: palette.ink900,
+    accentSoft: palette.turmeric100,
+    onAccentSoft: palette.turmeric700,
+    danger: palette.chilli600,
+    onDanger: palette.white,
+    dangerSoft: palette.chilli100,
+    onDangerSoft: palette.chilli700,
+    info: palette.indigo600,
+    infoSoft: palette.indigo100,
+    onInfoSoft: palette.indigo700,
+    scrim: 'rgba(28, 26, 23, 0.45)',
+    shadow: '#3A2A12',
   },
-  spacing: (n) => n * 4,
-  radius: { sm: 6, md: 10, lg: 16, pill: 999 },
-  font: { xs: 12, sm: 14, md: 16, lg: 18, xl: 22, xxl: 28 },
 };
 
 export const darkTheme: Theme = {
-  ...lightTheme,
+  ...shared,
+  dark: true,
   colors: {
-    background: '#0E1114',
-    surface: '#171B20',
-    text: '#F2F4F7',
-    textMuted: '#B4BAC3',
-    border: '#2C333B',
-    primary: '#3CC48A',
-    onPrimary: '#06241A',
-    primarySoft: '#123526',
-    accent: palette.saffron500,
-    accentSoft: '#3A2B0E',
-    danger: '#FF6B6B',
-    dangerSoft: '#3A1414',
-    info: '#7FB0FF',
-    infoSoft: '#132743',
+    background: '#141311',
+    sunken: '#0E0D0C',
+    surface: '#1E1C19',
+    text: '#F3EEE5',
+    textMuted: '#A99F91',
+    textFaint: '#6B6358',
+    border: '#2F2B26',
+    borderStrong: '#423D35',
+    primary: '#79C7A2',
+    primaryPressed: '#5FB58C',
+    onPrimary: '#0B2419',
+    primarySoft: '#173328',
+    onPrimarySoft: '#A9DDC3',
+    accent: '#EDB257',
+    onAccent: '#1C1A17',
+    accentSoft: '#3A2C14',
+    onAccentSoft: '#F3CD8E',
+    danger: '#F08A72',
+    onDanger: '#2A0E07',
+    dangerSoft: '#3B1D16',
+    onDangerSoft: '#F7B7A6',
+    info: '#9DB5E3',
+    infoSoft: '#1C2638',
+    onInfoSoft: '#C3D2F0',
+    scrim: 'rgba(0, 0, 0, 0.6)',
+    shadow: '#000000',
   },
 };
+
+/** Warm, low-contrast shadows; on dark surfaces depth comes from the border instead. */
+export function elevation(theme: Theme, level: 1 | 2 | 3) {
+  if (theme.dark) return {};
+  const y = { 1: 1, 2: 4, 3: 10 }[level];
+  return {
+    shadowColor: theme.colors.shadow,
+    shadowOpacity: { 1: 0.06, 2: 0.08, 3: 0.12 }[level],
+    shadowRadius: { 1: 2, 2: 10, 3: 24 }[level],
+    shadowOffset: { width: 0, height: y },
+    elevation: { 1: 1, 2: 3, 3: 8 }[level],
+  };
+}

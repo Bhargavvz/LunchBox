@@ -10,8 +10,12 @@
     "test": "jest"
   },
   "peerDependencies": {
+    "expo-haptics": "*",
+    "lucide-react-native": "*",
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-svg": "*"
   },
   "devDependencies": {
     "@lunchbox/config": "workspace:*",
@@ -20,14 +24,26 @@
     "@types/jest": "29.5.13",
     "@types/react": "19.1.10",
     "eslint": "9.13.0",
+    "expo-haptics": "~15.0.8",
     "jest": "29.7.0",
+    "lucide-react-native": "1.53.0",
     "react": "19.1.0",
     "react-native": "0.81.4",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-svg": "15.12.1",
     "react-test-renderer": "19.1.0",
     "typescript": "5.6.3"
   },
   "jest": {
     "preset": "react-native",
-    "roots": ["<rootDir>/src"]
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "setupFiles": [
+      "<rootDir>/jest.setup.ts"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|lucide-react-native|react-native-svg|expo-haptics|expo-modules-core)/)"
+    ]
   }
 }

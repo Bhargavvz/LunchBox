@@ -4,9 +4,11 @@ import { darkTheme, lightTheme, type Theme } from './tokens';
 
 const ThemeContext = createContext<Theme>(lightTheme);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const scheme = useColorScheme();
-  return <ThemeContext.Provider value={scheme === 'dark' ? darkTheme : lightTheme}>{children}</ThemeContext.Provider>;
+/** Follows the device appearance unless `scheme` pins it (tests, previews). */
+export function ThemeProvider({ children, scheme }: { children: ReactNode; scheme?: 'light' | 'dark' }) {
+  const device = useColorScheme();
+  const resolved = scheme ?? device;
+  return <ThemeContext.Provider value={resolved === 'dark' ? darkTheme : lightTheme}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): Theme {
