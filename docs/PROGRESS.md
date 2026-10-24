@@ -1,6 +1,6 @@
 # Progress
 
-_Last updated: 2026-10-16_
+_Last updated: 2026-10-25_
 
 ## Status: code written for all phases (0–7), **not yet compiled, run or tested**
 
@@ -17,6 +17,25 @@ everything below as "implemented, unverified" until the verification checklist p
 | 5 Admin panel | Dashboard + live map, management screens, polygon editor, reports from replica, settings, audit viewer | ✅ | ❌ |
 | 6 Earnings & Payouts | Append-only ledger, RazorpayX payouts + webhooks, partner earnings screens | ✅ | ❌ |
 | 7 Hardening | Security mapping, k6 scripts, Grafana/Prometheus/CloudWatch, Terraform dev/staging/prod, runbooks, EAS config, store checklist | ✅ | ❌ |
+
+## 2026-10-25 — gap-closing pass (also unverified: nothing was compiled or run, at the owner's request)
+
+| Item | What was added |
+|---|---|
+| Partner ratings | `POST /api/v1/orders/{orderId}/rating` (V9 migration, `OrderRatingService`, `rating.submitted` event → `RatingEventsConsumer` in dispatch, partner row lock); `RateDelivery` card in the parent order screen (en + hi); comments in DPDP export, cleared on erasure. ADR-0014 |
+| Push deep links | Parent: tap opens `/orders/{id}` (or the inbox for broadcasts) and marks the notification read; foreground pushes refresh the inbox/orders. Partner: tap opens today's route and refetches it |
+| Module boundary tests | `ArchitectureTest` (ArchUnit): no cross-module repository/entity use, controllers never touch repositories/entities, `common` depends on no feature |
+| Google Route Optimization API | `GoogleRouteOptimizer` + `FailoverRouteOptimizer` (→ OR-Tools), selected by `ROUTING_PROVIDER` in `RoutingConfig`; default stays OR-Tools. ADR-0006 addendum |
+| Service tests | `AssignmentServiceTest`, `LeaveServiceTest`, `PickupWindowsTest`, `SubscriptionWebhookHandlerTest`, `RazorpayWebhookServiceTest`, `PayoutServiceTest`, `OrderRatingServiceTest`, `GoogleRouteOptimizerTest`; parent `RateDelivery` and `push` Jest tests |
+| Bug fix | A late `payout.processed` webhook no longer flips a FAILED/REVERSED payout to PROCESSED (and no longer sends a "payout sent" push for money that bounced) |
+
+Things to look at first when you run the suite:
+- `ArchitectureTest` relies on nested enums (`DeliveryPartner.VehicleType`, `RouteStop.Type`) not counting as
+  dependencies on their `@Entity` outer class; a static scan of imports and fully-qualified names found no other
+  cross-module entity/repository use.
+- The OpenAPI snapshot changes (new endpoint, `OrderResponse.ratingStars/ratingComment/canRate`); regenerate
+  `docs/api/openapi.json` and the TS client together.
+- Measure coverage on the domain packages before adding `jacocoTestCoverageVerification` to CI.
 
 ## Verification checklist (run in this order)
 
@@ -49,17 +68,14 @@ everything below as "implemented, unverified" until the verification checklist p
 
 ## Known gaps and follow-ups
 
-- **Coverage**: unit tests exist for the state machine, QR tokens, OTP verification, routing optimisers, crypto/geo
-  utilities, throttle and format helpers, plus the end-to-end `DeliveryFlowIT`. The ≥ 80 % domain-coverage gate
-  (`jacocoTestCoverageVerification`) is configured but not enforced in CI yet; add service tests for assignment,
-  subscriptions webhooks, payouts and leave/cut-off rules, then enable it.
+- **Coverage**: unit tests now also cover assignment, subscription/payment webhooks, payouts, leave/cut-off rules and
+  ratings. The ≥ 80 % domain-coverage gate (`jacocoTestCoverageVerification`) is configured but not enforced in CI
+  until the numbers have been measured.
 - **Contract tests**: `OpenApiSnapshotIT` guards drift; request/response validation against the spec is not yet
   added.
-- **Partner ratings**: `PartnerService.recordRating` exists but there is no parent endpoint/UI to rate a delivery.
-- **Push deep links**: tapping a push opens the app but does not navigate to the order yet.
-- **Module boundary tests** (ArchUnit) are not written.
 - **Child photo** (optional in the brief) is not implemented — partners never see children's photos by design.
-- **Google Route Optimization API** provider is designed (`RouteOptimizer`) but not implemented.
+- **Google Route Optimization API** is implemented but untested against the live API (needs a GCP project with the
+  API enabled and a service account); it is off by default.
 - **Invoices** are simple receipts (no GST breakdown) — confirm tax treatment with finance.
 - **Aadhaar** verification is manual review (IDfy Aadhaar needs a holder-driven OTP flow).
 
@@ -73,3 +89,4 @@ everything below as "implemented, unverified" until the verification checklist p
 5. Cut-off: orders for day D are generated after the cut-off on D-1 (default 21:00 IST); leave changes for D are
    closed after that. Confirm the default cut-off time.
 6. Partner pay rates in `V8__seed_settings.sql` are placeholders to be set by ops.
+7. Ratings can be given up to 7 days after delivery, once per order — confirm the window (ADR-0014).
