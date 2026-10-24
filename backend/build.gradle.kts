@@ -82,6 +82,7 @@ dependencies {
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.testcontainers:rabbitmq")
     testImplementation("com.redis:testcontainers-redis:2.2.2")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -9,6 +9,7 @@ Each addition has a one-line justification, as required by CLAUDE.md §14.6.
 | `reactor-netty` | backend | TCP client required by Spring's STOMP broker relay |
 | `software.amazon.awssdk:s3` | backend | Pre-signed URLs and HEAD checks for S3 objects |
 | `com.redis:testcontainers-redis` | backend tests | Redis container with Spring Boot `@ServiceConnection` support |
+| `com.tngtech.archunit:archunit-junit5` | backend tests | Enforce module boundaries and layering (CLAUDE.md §5) as unit tests |
 | `openapi-typescript`, `openapi-fetch` | api-client | Generate types from the OpenAPI spec and a typed fetch client |
 | `i18next`, `react-i18next`, `expo-localization` | mobile | English + Hindi strings and device-locale detection |
 | `react-native-razorpay` | parent app | Official Razorpay native checkout (subscriptions) |
