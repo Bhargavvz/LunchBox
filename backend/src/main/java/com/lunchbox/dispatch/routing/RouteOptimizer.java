@@ -10,8 +10,9 @@ import java.util.UUID;
 /**
  * Plans one partner's day as a pickup-and-delivery problem with time windows: every lunchbox is collected inside its
  * home pickup window and dropped at its school before the school's delivery window closes. Implementations:
- * {@link OrToolsRouteOptimizer} (primary) and {@link SchoolClusterRouteOptimizer} (deterministic fallback).
- * A Google Route Optimization API provider can be added behind this interface without touching callers.
+ * {@link OrToolsRouteOptimizer} (default primary), {@link GoogleRouteOptimizer} (opt-in primary, wrapped in
+ * {@link FailoverRouteOptimizer}) and {@link SchoolClusterRouteOptimizer} (deterministic fallback). The primary is
+ * chosen in {@link RoutingConfig}.
  */
 public interface RouteOptimizer {
 

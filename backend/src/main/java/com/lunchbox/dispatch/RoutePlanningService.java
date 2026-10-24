@@ -3,13 +3,13 @@ package com.lunchbox.dispatch;
 import com.lunchbox.common.config.LunchBoxProperties;
 import com.lunchbox.common.geo.Geo;
 import com.lunchbox.common.geo.GeoPoint;
-import com.lunchbox.dispatch.routing.OrToolsRouteOptimizer;
 import com.lunchbox.dispatch.routing.RouteOptimizer;
 import com.lunchbox.dispatch.routing.RouteOptimizer.DropTarget;
 import com.lunchbox.dispatch.routing.RouteOptimizer.PickupTask;
 import com.lunchbox.dispatch.routing.RouteOptimizer.PlannedStop;
 import com.lunchbox.dispatch.routing.RouteOptimizer.RoutePlan;
 import com.lunchbox.dispatch.routing.RouteOptimizer.RoutingProblem;
+import com.lunchbox.dispatch.routing.RoutingConfig;
 import com.lunchbox.dispatch.routing.SchoolClusterRouteOptimizer;
 import com.lunchbox.common.time.TimeZones;
 import com.lunchbox.orders.OrderQueries;
@@ -20,6 +20,7 @@ import com.lunchbox.schools.SchoolDirectory.SchoolInfo;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,7 +51,7 @@ public class RoutePlanningService {
     private final PartnerDirectory partners;
     private final OrderQueries orders;
     private final SchoolDirectory schools;
-    private final OrToolsRouteOptimizer orTools;
+    private final RouteOptimizer primary;
     private final SchoolClusterRouteOptimizer fallback;
     private final LunchBoxProperties properties;
     private final MeterRegistry meters;
@@ -58,7 +59,7 @@ public class RoutePlanningService {
 
     public RoutePlanningService(RouteRepository routes, RouteStopRepository stops, AssignmentRepository assignments,
                                 PartnerShiftRepository shifts, PartnerDirectory partners, OrderQueries orders,
-                                SchoolDirectory schools, OrToolsRouteOptimizer orTools,
+                                SchoolDirectory schools, @Qualifier(RoutingConfig.PRIMARY) RouteOptimizer primary,
                                 SchoolClusterRouteOptimizer fallback, LunchBoxProperties properties, MeterRegistry meters,
                                 java.time.Clock clock) {
         this.clock = clock;
@@ -69,7 +70,7 @@ public class RoutePlanningService {
         this.partners = partners;
         this.orders = orders;
         this.schools = schools;
-        this.orTools = orTools;
+        this.primary = primary;
         this.fallback = fallback;
         this.properties = properties;
         this.meters = meters;
@@ -164,7 +165,7 @@ public class RoutePlanningService {
     private RoutePlan optimise(RoutingProblem problem) {
         Timer.Sample sample = Timer.start(meters);
         try {
-            RoutePlan plan = orTools.optimize(problem);
+            RoutePlan plan = primary.optimize(problem);
             if (!plan.lateOrUnservedOrderIds().isEmpty()) {
                 // Keep every lunchbox on the route: append unserved ones using the deterministic heuristic order.
                 RoutePlan alt = fallback.optimize(problem);
@@ -175,7 +176,7 @@ public class RoutePlanningService {
             }
             return plan;
         } catch (RuntimeException | UnsatisfiedLinkError e) {
-            log.warn("OR-Tools unavailable or failed ({}); using fallback optimiser", e.toString());
+            log.warn("{} unavailable or failed ({}); using fallback optimiser", primary.name(), e.toString());
             meters.counter("lunchbox.dispatch.optimizer_fallback").increment();
             return fallback.optimize(problem);
         } finally {

@@ -251,6 +251,15 @@ lunchbox:
       api-key: ${IDFY_API_KEY:}
     fcm:
       mode: ${FCM_MODE:fake}
+  routing:
+    # or-tools (default, in-process) | google (Route Optimization API, falls back to OR-Tools on any error)
+    provider: ${ROUTING_PROVIDER:or-tools}
+    google:
+      project-id: ${GOOGLE_ROUTES_PROJECT_ID:}
+      # Service-account JSON with roles/routeoptimization.editor; empty = Application Default Credentials.
+      credentials-json: ${GOOGLE_ROUTES_CREDENTIALS_JSON:}
+      base-url: https://routeoptimization.googleapis.com/v1
+      timeout: 15s
   tracking:
     flush-interval: 60s
     retention-days: 90

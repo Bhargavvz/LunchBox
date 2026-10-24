@@ -21,7 +21,8 @@ public record LunchBoxProperties(
         @NotNull @Valid Integrations integrations,
         @NotNull @Valid Tracking tracking,
         @NotNull @Valid Jobs jobs,
-        Bootstrap bootstrap) {
+        Bootstrap bootstrap,
+        @Valid Routing routing) {
 
     public enum Mode { FAKE, LIVE }
 
@@ -108,5 +109,15 @@ public record LunchBoxProperties(
     }
 
     public record Bootstrap(String superAdminEmail) {
+    }
+
+    /** Absent or {@code or-tools}: in-process solver. {@code google}: Route Optimization API with OR-Tools failover. */
+    public record Routing(Provider provider, Google google) {
+
+        public enum Provider { OR_TOOLS, GOOGLE }
+
+        /** {@code credentialsJson} empty → Application Default Credentials. */
+        public record Google(String projectId, String credentialsJson, String baseUrl, Duration timeout) {
+        }
     }
 }
