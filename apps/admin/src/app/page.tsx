@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { BrandMark } from '@/components/Brand';
 import { useAuth } from '@/lib/auth';
 
 export default function Home() {
@@ -14,5 +15,12 @@ export default function Home() {
       router.replace('/login/');
     }
   }, [state, router]);
-  return <p className="p-8 text-muted-foreground">Loading…</p>;
+  return (
+    <main className="grid min-h-screen place-items-center bg-background" role="status" aria-label="Loading">
+      <div className="flex flex-col items-center gap-4 animate-fade-in">
+        <BrandMark className="h-12 w-12 animate-pulse" />
+        <p className="text-sm text-muted-foreground">Opening the console…</p>
+      </div>
+    </main>
+  );
 }

@@ -2,10 +2,29 @@
 
 import type { GeoPoint } from '@lunchbox/api-client';
 import { APIProvider, Map, Marker, useMap } from '@vis.gl/react-google-maps';
+import { MapPinned } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
 
 const KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 export const DEFAULT_CENTER = { lat: 12.9716, lng: 77.5946 };
+const LEAF = '#1E5A43';
+
+/** Quiet, paper-toned basemap so partner pins and fences are the loudest thing on it (same intent as the mobile mapStyle). */
+const MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#f4efe6' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#6b6359' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#fbf8f2' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.school', stylers: [{ visibility: 'on' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#dfe8d6' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#fbf6ec' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#f1dfb8' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#e3c88f' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfdde3' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#d8cfc0' }] },
+];
 
 export function MapFrame({ children, height = 420, center = DEFAULT_CENTER, zoom = 12, label }: {
   children?: ReactNode;
@@ -16,15 +35,17 @@ export function MapFrame({ children, height = 420, center = DEFAULT_CENTER, zoom
 }) {
   if (!KEY) {
     return (
-      <div role="note" className="flex items-center justify-center rounded-lg border bg-muted text-sm text-muted-foreground" style={{ height }}>
-        Set NEXT_PUBLIC_GOOGLE_MAPS_KEY to show the map.
+      <div role="note" className="paper-grain flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/60 px-6 text-center text-sm text-muted-foreground" style={{ height }}>
+        <MapPinned className="h-6 w-6 opacity-70" aria-hidden />
+        <span>Set <code className="rounded bg-card px-1 py-0.5 text-[12px]">NEXT_PUBLIC_GOOGLE_MAPS_KEY</code> to show the map.</span>
       </div>
     );
   }
   return (
     <APIProvider apiKey={KEY}>
-      <div role="region" aria-label={label} className="overflow-hidden rounded-lg border" style={{ height }}>
-        <Map defaultCenter={center} defaultZoom={zoom} gestureHandling="greedy" disableDefaultUI={false}>
+      <div role="region" aria-label={label} className="overflow-hidden rounded-xl border" style={{ height }}>
+        <Map defaultCenter={center} defaultZoom={zoom} gestureHandling="greedy" disableDefaultUI
+             zoomControl fullscreenControl styles={MAP_STYLES} clickableIcons={false}>
           {children}
         </Map>
       </div>
@@ -36,7 +57,8 @@ export function PartnerMarkers({ partners }: { partners: { partnerId: string; la
   return (
     <>
       {partners.map((p) => (
-        <Marker key={p.partnerId} position={{ lat: p.lat, lng: p.lng }} title={p.label} />
+        <Marker key={p.partnerId} position={{ lat: p.lat, lng: p.lng }} title={p.label}
+                icon={{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: LEAF, fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 }} />
       ))}
     </>
   );
@@ -55,8 +77,9 @@ export function PolygonEditor({ value, onChange, readOnly }: { value: GeoPoint[]
       map,
       paths: value.map((v) => ({ lat: v.lat, lng: v.lng })),
       editable: !readOnly,
-      strokeColor: '#14875A',
-      fillColor: '#14875A',
+      strokeColor: LEAF,
+      strokeWeight: 2,
+      fillColor: LEAF,
       fillOpacity: 0.15,
     });
     polygon.current = poly;

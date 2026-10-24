@@ -31,6 +31,6 @@ test.describe('login', () => {
     await expect(page).toHaveURL(/\/dashboard\/$/);
     await expect(page.getByText('Pickups today')).toBeVisible();
     await expect(page.getByText('95%')).toBeVisible();
-    await expect(page.getByText('1 open issues')).toBeVisible();
+    await expect(page.getByText('1 open issue')).toBeVisible();
   });
 });

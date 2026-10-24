@@ -164,7 +164,7 @@ export default function SchoolsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Schools" actions={writable ? <Button onClick={() => setEditing('new')}>Add school</Button> : null} />
+      <PageHeader eyebrow="People" title="Schools" actions={writable ? <Button onClick={() => setEditing('new')}>Add school</Button> : null} />
       <div className="mb-4"><Field label="Search" htmlFor="q"><Input id="q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /></Field></div>
       {schools.error ? <Alert>{errorText(schools.error)}</Alert> : null}
       <DataTable caption="Schools" columns={columns} data={schools.data?.items ?? []} page={page}

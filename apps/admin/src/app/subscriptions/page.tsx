@@ -60,13 +60,13 @@ export default function SubscriptionsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Plans & subscriptions" />
+      <PageHeader eyebrow="Money" title="Plans & subscriptions" />
       {plans.error ?? subs.error ?? cancel.error ? <Alert>{errorText(plans.error ?? subs.error ?? cancel.error)}</Alert> : null}
       <div className="grid gap-4 md:grid-cols-3">
         {plans.data?.map((p) => (
           <Card key={p.id}>
             <div className="flex justify-between"><CardTitle>{p.name}</CardTitle><StatusBadge status={p.active ? 'ACTIVE' : 'CANCELLED'} /></div>
-            <p className="text-2xl font-bold">{rupees(p.pricePaise)}</p>
+            <p className="tabular mt-2 text-[28px] font-semibold leading-none tracking-tight">{rupees(p.pricePaise)}</p>
             <p className="text-sm text-muted-foreground">{p.billingPeriod} · up to {p.maxDaysPerWeek} days/week · {p.code}</p>
             {can('SUPER_ADMIN') ? <Button size="sm" variant="outline" className="mt-2" onClick={() => togglePlan.mutate(p)}>{p.active ? 'Deactivate' : 'Activate'}</Button> : null}
           </Card>
@@ -79,13 +79,13 @@ export default function SubscriptionsPage() {
           {['', 'PENDING_PAYMENT', 'ACTIVE', 'HALTED', 'CANCELLED', 'EXPIRED'].map((s) => <option key={s} value={s}>{s || 'All'}</option>)}
         </Select>
       </div>
-      <div className="mt-3 overflow-x-auto rounded-lg border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/60 text-left"><tr><th className="p-2">Child</th><th>Plan</th><th>Status</th><th>Days</th><th>Start</th><th>Paid until</th><th /></tr></thead>
+      <div className="mt-3 lb-table-wrap">
+        <table className="lb-table">
+          <thead><tr><th>Child</th><th>Plan</th><th>Status</th><th>Days</th><th>Start</th><th>Paid until</th><th /></tr></thead>
           <tbody>
             {subs.data?.items.map((s) => (
-              <tr key={s.id} className="border-t">
-                <td className="p-2">{s.childName}</td><td>{s.planName}</td><td><StatusBadge status={s.status} /></td>
+              <tr key={s.id}>
+                <td>{s.childName}</td><td>{s.planName}</td><td><StatusBadge status={s.status} /></td>
                 <td>{s.daysOfWeek.map((d) => d.slice(0, 3)).join(', ')}</td><td>{istDate(s.startDate)}</td>
                 <td>{istDate(s.currentPeriodEnd)}</td>
                 <td>{can('SUPER_ADMIN', 'OPS_ADMIN') && ['ACTIVE', 'HALTED', 'PENDING_PAYMENT'].includes(s.status)

@@ -76,7 +76,7 @@ export default function PartnersPage() {
   ], []);
   return (
     <AppShell>
-      <PageHeader title="Delivery partners" actions={can('SUPER_ADMIN', 'OPS_ADMIN') ? <CreatePartner /> : null} />
+      <PageHeader eyebrow="Operations" title="Delivery partners" actions={can('SUPER_ADMIN', 'OPS_ADMIN') ? <CreatePartner /> : null} />
       <div className="mb-4 flex flex-wrap gap-3">
         <Field label="Search" htmlFor="q"><Input id="q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Name or vehicle" /></Field>
         <Field label="KYC" htmlFor="kyc">

@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { DataTable } from '@/components/DataTable';
-import { StatusBadge } from '@/components/StatusBadge';
+import { StatusBadge, statusLabel } from '@/components/StatusBadge';
 import { Alert, Button, Dialog, DialogContent, Field, Input, PageHeader, Select } from '@/components/ui/primitives';
 import { api, errorText } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -41,19 +41,34 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={`${order.childName ?? 'Order'} · ${order.scheduledDate}`} description={order.schoolName ?? undefined}>
         {err ? <Alert>{errorText(err)}</Alert> : null}
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <span className="text-muted-foreground">Status</span><StatusBadge status={order.status} />
-          <span className="text-muted-foreground">Pickup window</span><span>{istTime(order.pickupWindowStart)}–{istTime(order.pickupWindowEnd)}</span>
-          <span className="text-muted-foreground">Deadline</span><span>{istTime(order.deliveryDeadline)}</span>
-          <span className="text-muted-foreground">Partner</span><span>{order.partnerId ?? 'Unassigned'}</span>
-          {order.failureReason ? (<><span className="text-muted-foreground">Failure</span><span>{order.failureReason}</span></>) : null}
-        </div>
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border text-sm">
+          {[
+            ['Status', <StatusBadge key="s" status={order.status} />],
+            ['Pickup window', <span key="w" className="tabular">{istTime(order.pickupWindowStart)}–{istTime(order.pickupWindowEnd)}</span>],
+            ['Deadline', <span key="d" className="tabular">{istTime(order.deliveryDeadline)}</span>],
+            ['Partner', <span key="p" className={order.partnerId ? 'font-mono text-xs' : 'text-muted-foreground'}>{order.partnerId ?? 'Unassigned'}</span>],
+          ].map(([k, v]) => (
+            <div key={String(k)} className="bg-card px-3 py-2.5">
+              <dt className="text-xs text-muted-foreground">{k}</dt>
+              <dd className="mt-1">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        {order.failureReason ? <Alert title="Failure reason">{order.failureReason}</Alert> : null}
         <section>
-          <h3 className="mb-2 text-sm font-semibold">Timeline</h3>
-          <ol className="space-y-1 text-sm">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Timeline</h3>
+          <ol className="relative ml-1.5 space-y-3 border-l pl-5 text-sm">
             {detail.data?.timeline.map((e, i) => (
-              <li key={i}><StatusBadge status={e.status} /> <span className="text-muted-foreground">{istDateTime(e.occurredAt)}</span> {e.reason ?? ''}</li>
+              <li key={i} className="relative">
+                <span aria-hidden className="absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full border-2 border-card bg-primary ring-1 ring-border" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge status={e.status} />
+                  <span className="tabular text-xs text-muted-foreground">{istDateTime(e.occurredAt)}</span>
+                </div>
+                {e.reason ? <p className="mt-1 text-muted-foreground">{e.reason}</p> : null}
+              </li>
             ))}
+            {detail.isLoading ? <li className="text-muted-foreground">Loading…</li> : null}
           </ol>
         </section>
         {can('SUPER_ADMIN', 'OPS_ADMIN') ? (
@@ -111,9 +126,11 @@ export default function OrdersPage() {
     { header: 'Class', accessorKey: 'className' },
     { header: 'School', accessorKey: 'schoolName' },
     { header: 'Status', cell: ({ row }) => <StatusBadge status={row.original.status} /> },
-    { header: 'Pickup', cell: ({ row }) => `${istTime(row.original.pickupWindowStart)}–${istTime(row.original.pickupWindowEnd)}` },
-    { header: 'Delivered', cell: ({ row }) => istTime(row.original.deliveredAt) },
-    { header: 'Partner', cell: ({ row }) => (row.original.partnerId ? row.original.partnerId.slice(0, 8) : '—') },
+    { header: 'Pickup', cell: ({ row }) => <span className="tabular">{istTime(row.original.pickupWindowStart)}–{istTime(row.original.pickupWindowEnd)}</span> },
+    { header: 'Delivered', cell: ({ row }) => <span className="tabular">{istTime(row.original.deliveredAt)}</span> },
+    { header: 'Partner', cell: ({ row }) => (row.original.partnerId
+      ? <span className="font-mono text-xs">{row.original.partnerId.slice(0, 8)}</span>
+      : <span className="text-[13px] font-medium text-destructive">Unassigned</span>) },
   ], []);
 
   async function exportCsv() {
@@ -123,7 +140,7 @@ export default function OrdersPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Orders" description="Search, assign, reassign and cancel deliveries"
+      <PageHeader eyebrow="Operations" title="Orders" description="Search, assign, reassign and cancel deliveries"
         actions={<>
           <Button variant="outline" onClick={() => void exportCsv()}>Export CSV</Button>
           {can('SUPER_ADMIN', 'OPS_ADMIN') ? <>
@@ -134,11 +151,11 @@ export default function OrdersPage() {
       {orders.error ? <Alert>{errorText(orders.error)}</Alert> : null}
       {generate.data ? <Alert tone="success">Generated {generate.data.created} orders ({generate.data.skipped} skipped).</Alert> : null}
       {autoAssign.data ? <Alert tone="success">Assigned {autoAssign.data.assigned} of {autoAssign.data.considered}; {autoAssign.data.unassigned} still unassigned.</Alert> : null}
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4 shadow-warm">
         <Field label="Date" htmlFor="date"><Input id="date" type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(0); }} /></Field>
         <Field label="Status" htmlFor="status">
           <Select id="status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
-            {STATUSES.map((s) => <option key={s} value={s}>{s || 'All'}</option>)}
+            {STATUSES.map((s) => <option key={s} value={s}>{s ? statusLabel(s) : 'All statuses'}</option>)}
           </Select>
         </Field>
       </div>

@@ -48,11 +48,11 @@ function KycSection({ partnerId }: { partnerId: string }) {
     <Card className="space-y-4">
       <CardTitle>KYC documents</CardTitle>
       {err ? <Alert>{errorText(err)}</Alert> : null}
-      <table className="w-full text-sm">
-        <thead><tr className="text-left text-muted-foreground"><th>Type</th><th>Number</th><th>Status</th><th>File</th><th /></tr></thead>
+      <table className="lb-table">
+        <thead><tr><th>Type</th><th>Number</th><th>Status</th><th>File</th><th /></tr></thead>
         <tbody>
           {docs.data?.map((d) => (
-            <tr key={d.id} className="border-t">
+            <tr key={d.id}>
               <td>{d.docType}</td>
               <td>{d.documentNumberMasked ?? '—'}</td>
               <td><StatusBadge status={d.status} /></td>

@@ -44,7 +44,7 @@ export default function ServiceAreasPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Service areas" description="Addresses outside every active area cannot be added by parents." />
+      <PageHeader eyebrow="People" title="Service areas" description="Addresses outside every active area cannot be added by parents." />
       {areas.error ?? save.error ?? remove.error ? <Alert>{errorText(areas.error ?? save.error ?? remove.error)}</Alert> : null}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="space-y-2">

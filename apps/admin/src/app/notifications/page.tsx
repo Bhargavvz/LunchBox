@@ -22,7 +22,7 @@ export default function BroadcastPage() {
   });
   return (
     <AppShell roles={['SUPER_ADMIN', 'OPS_ADMIN']}>
-      <PageHeader title="Broadcast notifications" description="Sent as push notifications and stored in each user's notification centre." />
+      <PageHeader eyebrow="Insights" title="Broadcast notifications" description="Sent as push notifications and stored in each user's notification centre." />
       <Card className="max-w-2xl">
         <form className="space-y-3" onSubmit={(e: FormEvent) => { e.preventDefault(); send.mutate(); }}>
           {send.error ? <Alert>{errorText(send.error)}</Alert> : null}

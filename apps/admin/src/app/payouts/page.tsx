@@ -18,7 +18,7 @@ export default function PayoutsPage() {
   const run = useMutation({ mutationFn: () => api.admin.runPayouts(periodEnd), onSuccess: () => qc.invalidateQueries({ queryKey: ['payouts'] }) });
   return (
     <AppShell>
-      <PageHeader title="Partner payouts" description="Weekly payouts run automatically every Monday 10:00 IST via RazorpayX." />
+      <PageHeader eyebrow="Money" title="Partner payouts" description="Weekly payouts run automatically every Monday 10:00 IST via RazorpayX." />
       {payouts.error ?? run.error ? <Alert>{errorText(payouts.error ?? run.error)}</Alert> : null}
       {run.data ? <Alert tone="success">Created {run.data.created} payouts totalling {rupees(run.data.totalPaise)}.</Alert> : null}
       <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -34,13 +34,13 @@ export default function PayoutsPage() {
           </>
         ) : null}
       </div>
-      <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/60 text-left"><tr><th className="p-2">Partner</th><th>Period</th><th>Amount</th><th>Status</th><th>UTR</th><th>Processed</th><th>Failure</th></tr></thead>
+      <div className="lb-table-wrap">
+        <table className="lb-table">
+          <thead><tr><th>Partner</th><th>Period</th><th>Amount</th><th>Status</th><th>UTR</th><th>Processed</th><th>Failure</th></tr></thead>
           <tbody>
             {payouts.data?.items.map((p) => (
-              <tr key={p.id} className="border-t">
-                <td className="p-2 font-mono text-xs">{p.partnerId.slice(0, 8)}</td>
+              <tr key={p.id}>
+                <td className="font-mono text-xs">{p.partnerId.slice(0, 8)}</td>
                 <td>{istDate(p.periodStart)} – {istDate(p.periodEnd)}</td>
                 <td className="font-semibold">{rupees(p.amountPaise)}</td>
                 <td><StatusBadge status={p.status} /></td>

@@ -24,7 +24,7 @@ export default function StaffPage() {
   });
   return (
     <AppShell roles={['SUPER_ADMIN']}>
-      <PageHeader title="Staff" description="Create the Firebase user (email + password) in the Firebase console, then grant a role here. Staff must enrol an authenticator app on first sign-in." />
+      <PageHeader eyebrow="Admin" title="Staff" description="Create the Firebase user (email + password) in the Firebase console, then grant a role here. Staff must enrol an authenticator app on first sign-in." />
       <Card className="mb-6 max-w-3xl">
         <form className="grid gap-3 md:grid-cols-4" onSubmit={(e: FormEvent) => { e.preventDefault(); create.mutate(); }}>
           {create.error ? <div className="md:col-span-4"><Alert>{errorText(create.error)}</Alert></div> : null}
@@ -46,17 +46,17 @@ export default function StaffPage() {
           <div className="md:col-span-4"><Button type="submit" disabled={create.isPending}>Grant access</Button></div>
         </form>
       </Card>
-      <table className="w-full rounded-lg border bg-card text-sm">
-        <thead className="bg-muted/60 text-left"><tr><th className="p-2">Email</th><th>Name</th><th>Role</th><th>Status</th><th>Last login</th></tr></thead>
+      <div className="lb-table-wrap"><table className="lb-table">
+        <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>Last login</th></tr></thead>
         <tbody>
           {staff.data?.items.map((s) => (
-            <tr key={s.userId} className="border-t">
-              <td className="p-2">{s.email}</td><td>{s.displayName}</td><td>{s.role}</td>
+            <tr key={s.userId}>
+              <td>{s.email}</td><td>{s.displayName}</td><td>{s.role}</td>
               <td><StatusBadge status={s.status} /></td><td>{istDateTime(s.lastLoginAt)}</td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </AppShell>
   );
 }

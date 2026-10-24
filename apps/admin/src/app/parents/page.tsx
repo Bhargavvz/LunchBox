@@ -50,7 +50,7 @@ export default function ParentsPage() {
   const err = parents.error ?? children.error ?? status.error;
   return (
     <AppShell>
-      <PageHeader title="Parents & children" description="Personal data: access is audited." />
+      <PageHeader eyebrow="People" title="Parents & children" description="Personal data: access is audited." />
       <div role="tablist" className="mb-4 flex gap-2">
         {(['parents', 'children'] as const).map((t) => (
           <Button key={t} role="tab" aria-selected={tab === t} variant={tab === t ? 'secondary' : 'ghost'} onClick={() => { setTab(t); setPage(0); }}>

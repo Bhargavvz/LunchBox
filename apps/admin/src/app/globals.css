@@ -2,54 +2,161 @@
 @tailwind components;
 @tailwind utilities;
 
-/* shadcn/ui tokens. Contrast pairs checked for WCAG 2.1 AA. */
+/*
+ * Tiffin tokens, shared with the mobile apps (packages/ui/src/tokens.ts) and expressed as HSL channels for Tailwind.
+ * Warm paper surfaces, curry-leaf green primary, turmeric accent (fills only, never text on paper), chilli danger and
+ * indigo info. Text pairs meet WCAG 2.1 AA in both modes.
+ */
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 14% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 14% 11%;
-    --primary: 155 74% 30%;
+    --background: 40 40% 94%;
+    --foreground: 36 10% 10%;
+    --card: 43 100% 99%;
+    --card-foreground: 36 10% 10%;
+    --popover: 43 100% 99%;
+    --popover-foreground: 36 10% 10%;
+    --primary: 157 50% 24%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 152 50% 92%;
-    --secondary-foreground: 155 74% 22%;
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 9% 38%;
-    --accent: 38 91% 55%;
-    --accent-foreground: 220 14% 11%;
-    --destructive: 0 66% 47%;
+    --secondary: 140 26% 91%;
+    --secondary-foreground: 158 52% 18%;
+    --muted: 39 36% 89%;
+    --muted-foreground: 35 8% 40%;
+    --accent: 36 75% 56%;
+    --accent-foreground: 36 10% 10%;
+    --accent-soft: 38 84% 90%;
+    --accent-soft-foreground: 34 83% 26%;
+    --destructive: 9 66% 42%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 86%;
-    --input: 220 13% 80%;
-    --ring: 155 74% 30%;
-    --radius: 0.6rem;
+    --destructive-soft: 14 64% 91%;
+    --destructive-soft-foreground: 10 69% 32%;
+    --info: 219 46% 34%;
+    --info-soft: 219 41% 92%;
+    --info-soft-foreground: 218 47% 25%;
+    --border: 38 30% 85%;
+    --input: 37 25% 77%;
+    --ring: 157 50% 24%;
+    --sidebar: 157 50% 14%;
+    --sidebar-foreground: 40 40% 94%;
+    --sidebar-muted: 150 18% 70%;
+    --sidebar-active: 157 40% 22%;
+    --radius: 0.75rem;
+
+    /* Order-pipeline chart slots, validated (dataviz validate_palette) against the card surface in each mode. */
+    --chart-waiting: #d9962b;
+    --chart-moving: #4a6fc2;
+    --chart-done: #2f8f64;
+    --chart-problem: #d24b33;
+    --chart-grid: hsl(38 30% 88%);
+    --shadow-color: 32 52% 15%;
   }
+
   .dark {
-    --background: 220 18% 8%;
-    --foreground: 210 20% 96%;
-    --card: 220 16% 11%;
-    --card-foreground: 210 20% 96%;
-    --primary: 155 55% 50%;
-    --primary-foreground: 160 60% 8%;
-    --secondary: 155 40% 16%;
-    --secondary-foreground: 155 55% 80%;
-    --muted: 220 14% 16%;
-    --muted-foreground: 220 9% 70%;
-    --accent: 38 91% 55%;
-    --accent-foreground: 220 14% 11%;
-    --destructive: 0 70% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 22%;
-    --input: 220 13% 26%;
-    --ring: 155 55% 50%;
+    --background: 40 8% 7%;
+    --foreground: 39 37% 93%;
+    --card: 36 9% 11%;
+    --card-foreground: 39 37% 93%;
+    --popover: 36 9% 13%;
+    --popover-foreground: 39 37% 93%;
+    --primary: 152 41% 63%;
+    --primary-foreground: 154 53% 9%;
+    --secondary: 156 38% 15%;
+    --secondary-foreground: 150 43% 76%;
+    --muted: 33 11% 15%;
+    --muted-foreground: 35 12% 62%;
+    --accent: 36 81% 64%;
+    --accent-foreground: 36 10% 10%;
+    --accent-soft: 38 49% 15%;
+    --accent-soft-foreground: 37 81% 75%;
+    --destructive: 11 81% 69%;
+    --destructive-foreground: 12 71% 10%;
+    --destructive-soft: 11 46% 16%;
+    --destructive-soft-foreground: 13 84% 81%;
+    --info: 219 56% 75%;
+    --info-soft: 219 33% 16%;
+    --info-soft-foreground: 220 60% 85%;
+    --border: 33 11% 17%;
+    --input: 37 11% 23%;
+    --ring: 152 41% 63%;
+    --sidebar: 40 8% 5%;
+    --sidebar-foreground: 39 37% 93%;
+    --sidebar-muted: 35 12% 58%;
+    --sidebar-active: 156 38% 15%;
+
+    --chart-waiting: #b8862c;
+    --chart-moving: #6f8fd6;
+    --chart-done: #3fa676;
+    --chart-problem: #e2654b;
+    --chart-grid: hsl(33 11% 19%);
+    --shadow-color: 0 0% 0%;
   }
+
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background font-sans text-foreground antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
   }
   :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2;
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  ::selection {
+    background: hsl(var(--accent) / 0.35);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Plain tables on smaller pages: same anatomy as DataTable (quiet uppercase header, hairline rows, hover wash). */
+  .lb-table {
+    @apply w-full border-separate border-spacing-0 text-sm;
+  }
+  .lb-table th {
+    @apply whitespace-nowrap border-b bg-card px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground;
+  }
+  .lb-table td {
+    @apply border-b border-border/70 px-4 py-3 align-middle;
+  }
+  .lb-table tbody tr {
+    @apply transition-colors hover:bg-muted/45;
+  }
+  .lb-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .lb-table-wrap {
+    @apply overflow-x-auto rounded-xl border bg-card shadow-warm;
+  }
+}
+
+@layer utilities {
+  .shadow-warm {
+    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 4px 14px -6px hsl(var(--shadow-color) / 0.12);
+  }
+  .shadow-warm-lg {
+    box-shadow: 0 2px 4px hsl(var(--shadow-color) / 0.06), 0 18px 40px -16px hsl(var(--shadow-color) / 0.28);
+  }
+  /* Faint grain behind the login hero; pure CSS so it costs no request. */
+  .paper-grain {
+    background-image: radial-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

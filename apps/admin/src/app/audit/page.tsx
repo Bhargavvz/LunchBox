@@ -19,21 +19,21 @@ export default function AuditPage() {
   });
   return (
     <AppShell>
-      <PageHeader title="Audit log" description="Append-only record of every significant change: who, what, when, before and after." />
+      <PageHeader eyebrow="Admin" title="Audit log" description="Append-only record of every significant change: who, what, when, before and after." />
       <div className="mb-4 flex flex-wrap gap-3">
         <Field label="Entity type" htmlFor="au-type"><Input id="au-type" value={entityType} onChange={(e) => { setEntityType(e.target.value); setPage(0); }} placeholder="Order, School, Partner…" /></Field>
         <Field label="Entity id" htmlFor="au-id"><Input id="au-id" value={entityId} onChange={(e) => { setEntityId(e.target.value); setPage(0); }} /></Field>
         <Field label="Action" htmlFor="au-action"><Input id="au-action" value={action} onChange={(e) => { setAction(e.target.value); setPage(0); }} placeholder="order.cancelled" /></Field>
       </div>
       {logs.error ? <Alert>{errorText(logs.error)}</Alert> : null}
-      <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/60 text-left"><tr><th className="p-2">When</th><th>Actor</th><th>Action</th><th>Entity</th><th>IP</th><th /></tr></thead>
+      <div className="lb-table-wrap">
+        <table className="lb-table">
+          <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>IP</th><th /></tr></thead>
           <tbody>
             {logs.data?.items.map((l) => (
               <Fragment key={l.id}>
-                <tr className="border-t">
-                  <td className="p-2">{istDateTime(l.occurredAt)}</td>
+                <tr>
+                  <td>{istDateTime(l.occurredAt)}</td>
                   <td>{l.actorRole} {l.actorUserId?.slice(0, 8) ?? ''}</td>
                   <td className="font-mono text-xs">{l.action}</td>
                   <td>{l.entityType} <span className="font-mono text-xs">{l.entityId?.slice(0, 13)}</span></td>
@@ -42,7 +42,7 @@ export default function AuditPage() {
                 </tr>
                 {open === l.id ? (
                   <tr key={`${l.id}-d`} className="bg-muted/30">
-                    <td colSpan={6} className="p-2">
+                    <td colSpan={6}>
                       <div className="grid gap-2 md:grid-cols-2">
                         <pre className="overflow-auto rounded bg-card p-2 text-xs">{JSON.stringify(l.before, null, 2)}</pre>
                         <pre className="overflow-auto rounded bg-card p-2 text-xs">{JSON.stringify(l.after, null, 2)}</pre>

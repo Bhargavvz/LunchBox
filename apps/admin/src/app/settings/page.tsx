@@ -38,7 +38,7 @@ export default function SettingsPage() {
   const editable = can('SUPER_ADMIN');
   return (
     <AppShell>
-      <PageHeader title="Settings" description="Cut-off times, geofence radii and partner pay rates. Changes apply within 30 seconds." />
+      <PageHeader eyebrow="Admin" title="Settings" description="Cut-off times, geofence radii and partner pay rates. Changes apply within 30 seconds." />
       {settings.error ? <Alert>{errorText(settings.error)}</Alert> : null}
       {error ? <Alert>{error}</Alert> : null}
       <div className="space-y-3">
