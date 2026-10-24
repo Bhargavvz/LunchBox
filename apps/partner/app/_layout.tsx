@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { realtime } from '../src/lib/api';
 import { bindConnectivity, useActionQueue } from '../src/lib/offlineQueue';
-import { registerForPush } from '../src/lib/push';
+import { bindNotificationTaps, registerForPush } from '../src/lib/push';
 import { queryClient } from '../src/lib/queryClient';
 import { bindAuthState, useSession } from '../src/lib/session';
 
@@ -33,8 +33,12 @@ function Gate() {
     realtime.connect();
     void registerForPush();
     void useActionQueue.getState().flush();
-    return () => void realtime.disconnect();
-  }, [status]);
+    const unbindTaps = bindNotificationTaps((href) => router.push(href as never));
+    return () => {
+      unbindTaps();
+      void realtime.disconnect();
+    };
+  }, [status, router]);
 
   return null;
 }

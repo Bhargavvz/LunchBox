@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { realtime } from '../src/lib/api';
-import { onTokenRefresh, registerForPush } from '../src/lib/push';
+import { bindNotificationTaps, onTokenRefresh, registerForPush } from '../src/lib/push';
 import { queryClient } from '../src/lib/queryClient';
 import { bindAuthState, useSession } from '../src/lib/session';
 
@@ -32,11 +32,13 @@ function AuthGate() {
     void registerForPush();
     realtime.connect();
     const unsubscribe = onTokenRefresh();
+    const unbindTaps = bindNotificationTaps((href) => router.push(href as never));
     return () => {
       unsubscribe();
+      unbindTaps();
       void realtime.disconnect();
     };
-  }, [status]);
+  }, [status, router]);
 
   return null;
 }
