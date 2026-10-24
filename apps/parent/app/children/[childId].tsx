@@ -1,8 +1,9 @@
-import { Button, Loading, Screen } from '@lunchbox/ui';
+import { Button, Loading } from '@lunchbox/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Trash2 } from 'lucide-react-native';
 import { Alert } from 'react-native';
 import { ChildForm } from '../../src/components/ChildForm';
 import { api } from '../../src/lib/api';
@@ -16,7 +17,7 @@ export default function EditChildScreen() {
   const [error, setError] = useState<string | null>(null);
   const child = useQuery({ queryKey: ['child', childId], queryFn: () => api.children.get(childId) });
 
-  if (child.isLoading || !child.data) return <Loading />;
+  if (child.isLoading || !child.data) return <Loading label={t('common.loading')} />;
 
   const remove = () =>
     Alert.alert(t('children.remove'), t('children.removeConfirm'), [
@@ -38,21 +39,20 @@ export default function EditChildScreen() {
     ]);
 
   return (
-    <Screen>
-      <ChildForm
-        initial={child.data}
-        error={error}
-        onSubmit={async (values) => {
-          try {
-            await api.children.update(childId, values);
-            await qc.invalidateQueries({ queryKey: ['children'] });
-            router.back();
-          } catch (e) {
-            setError(errorMessage(e));
-          }
-        }}
-      />
-      <Button title={t('children.remove')} variant="danger" onPress={remove} />
-    </Screen>
+    <ChildForm
+      initial={child.data}
+      error={error}
+      onSubmit={async (values) => {
+        try {
+          await api.children.update(childId, values);
+          await qc.invalidateQueries({ queryKey: ['children'] });
+          await qc.invalidateQueries({ queryKey: ['child', childId] });
+          router.back();
+        } catch (e) {
+          setError(errorMessage(e));
+        }
+      }}
+      footerExtra={<Button title={t('children.remove')} variant="dangerSoft" icon={Trash2} onPress={remove} />}
+    />
   );
 }

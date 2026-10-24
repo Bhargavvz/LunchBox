@@ -1,7 +1,9 @@
-import { Banner, Button, Card, Row, Screen, Text } from '@lunchbox/ui';
+import { Badge, Banner, Button, Icon, ListGroup, PageTitle, Row, Screen, Text, ToggleRow, useTheme } from '@lunchbox/ui';
+import { ShieldCheck } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Switch } from 'react-native';
+import { View } from 'react-native';
+import { StepHeader } from '../../src/components/StepHeader';
 import { api } from '../../src/lib/api';
 import { config } from '../../src/lib/config';
 import { errorMessage } from '../../src/lib/queryClient';
@@ -10,6 +12,7 @@ import { useSession } from '../../src/lib/session';
 /** DPDP Act 2023 s.9: verifiable parental consent before any child data is collected. */
 export default function ConsentScreen() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const refresh = useSession((s) => s.refresh);
   const [childData, setChildData] = useState(false);
   const [tracking, setTracking] = useState(true);
@@ -37,24 +40,37 @@ export default function ConsentScreen() {
     }
   }
 
-  const item = (label: string, value: boolean, onChange: (v: boolean) => void, testID: string) => (
-    <Card>
-      <Row>
-        <Switch value={value} onValueChange={onChange} accessibilityLabel={label} testID={testID} />
-        <Text style={{ flex: 1 }}>{label}</Text>
-      </Row>
-    </Card>
-  );
-
   return (
-    <Screen>
-      <Text variant="title">{t('consent.title')}</Text>
-      <Text muted>{t('consent.intro')}</Text>
+    <Screen safeTop footer={<Button title={t('consent.give')} size="lg" onPress={submit} loading={busy} testID="consent-submit" />}>
+      <StepHeader step={2} of={2} />
+      <PageTitle title={t('consent.title')} />
+      <Row gap={3} align="flex-start" style={{ backgroundColor: theme.colors.infoSoft, borderRadius: theme.radius.lg, padding: 16 }}>
+        <Icon as={ShieldCheck} size={22} color="onInfoSoft" />
+        <Text variant="body" style={{ flex: 1, color: theme.colors.onInfoSoft }}>{t('consent.intro')}</Text>
+      </Row>
       {error ? <Banner tone="danger">{error}</Banner> : null}
-      {item(t('consent.childData'), childData, setChildData, 'consent-child')}
-      {item(t('consent.liveTracking'), tracking, setTracking, 'consent-tracking')}
-      {item(t('consent.marketing'), marketing, setMarketing, 'consent-marketing')}
-      <Button title={t('consent.give')} onPress={submit} loading={busy} testID="consent-submit" />
+
+      <View style={{ gap: 8 }}>
+        <Row justify="space-between">
+          <Text variant="overline" muted>{t('consent.requiredLabel')}</Text>
+          <Badge label={t('consent.requiredBadge')} tone="accent" />
+        </Row>
+        <ListGroup>
+          <ToggleRow title={t('consent.childDataTitle')} description={t('consent.childData')} value={childData}
+                     onChange={(v) => { setChildData(v); if (v) setError(null); }} testID="consent-child" />
+        </ListGroup>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Text variant="overline" muted>{t('consent.optionalLabel')}</Text>
+        <ListGroup>
+          <ToggleRow title={t('consent.trackingTitle')} description={t('consent.liveTracking')} value={tracking}
+                     onChange={setTracking} testID="consent-tracking" />
+          <ToggleRow title={t('consent.marketingTitle')} description={t('consent.marketing')} value={marketing}
+                     onChange={setMarketing} testID="consent-marketing" />
+        </ListGroup>
+      </View>
+      <Text variant="caption" tone="faint">{t('consent.changeLater')}</Text>
     </Screen>
   );
 }

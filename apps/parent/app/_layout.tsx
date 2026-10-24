@@ -1,6 +1,9 @@
 import '../src/i18n';
-import { Loading, ThemeProvider } from '@lunchbox/ui';
+import { Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold, Figtree_700Bold } from '@expo-google-fonts/figtree';
+import { Fraunces_600SemiBold, Fraunces_700Bold } from '@expo-google-fonts/fraunces';
+import { Loading, ThemeProvider, ToastProvider, useTheme } from '@lunchbox/ui';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -43,33 +46,59 @@ function AuthGate() {
   return null;
 }
 
-export default function RootLayout() {
+function Navigator() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const status = useSession((s) => s.status);
+  if (status === 'loading') return <Loading safeTop label={t('common.loading')} />;
+  return (
+    <Stack
+      screenOptions={{
+        headerBackTitle: t('common.back'),
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: { fontFamily: theme.fonts.semibold, fontSize: 17 },
+        contentStyle: { backgroundColor: theme.colors.background },
+        animation: 'slide_from_right',
+      }}
+    >
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="children/new" options={{ title: t('children.add'), presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="children/[childId]" options={{ title: t('children.edit') }} />
+      <Stack.Screen name="addresses/index" options={{ title: t('address.title') }} />
+      <Stack.Screen name="addresses/new" options={{ title: t('address.add') }} />
+      <Stack.Screen name="subscribe/[childId]" options={{ title: t('subscribe.title') }} />
+      <Stack.Screen name="orders/[orderId]" options={{ title: t('track.title') }} />
+      <Stack.Screen name="orders/history" options={{ title: t('account.orders') }} />
+      <Stack.Screen name="payments/index" options={{ title: t('payments.title') }} />
+      <Stack.Screen name="payments/[paymentId]" options={{ title: t('payments.invoice') }} />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Fraunces_600SemiBold,
+    Fraunces_700Bold,
+    Figtree_400Regular,
+    Figtree_500Medium,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
+  });
+  // Fonts ship inside the binary, so this resolves within a frame or two; a load failure falls back to system type.
+  if (!fontsLoaded && !fontError) return null;
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="auto" />
-          <AuthGate />
-          {status === 'loading' ? (
-            <Loading />
-          ) : (
-            <Stack screenOptions={{ headerBackTitle: t('common.cancel') }}>
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="children/new" options={{ title: t('children.add') }} />
-              <Stack.Screen name="children/[childId]" options={{ title: t('children.title') }} />
-              <Stack.Screen name="addresses/index" options={{ title: t('address.title') }} />
-              <Stack.Screen name="addresses/new" options={{ title: t('address.add') }} />
-              <Stack.Screen name="subscribe/[childId]" options={{ title: t('subscribe.title') }} />
-              <Stack.Screen name="orders/[orderId]" options={{ title: t('track.title') }} />
-              <Stack.Screen name="orders/history" options={{ title: t('account.orders') }} />
-              <Stack.Screen name="payments/index" options={{ title: t('payments.title') }} />
-              <Stack.Screen name="payments/[paymentId]" options={{ title: t('payments.invoice') }} />
-            </Stack>
-          )}
+          <ToastProvider>
+            <StatusBar style="auto" />
+            <AuthGate />
+            <Navigator />
+          </ToastProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </SafeAreaProvider>

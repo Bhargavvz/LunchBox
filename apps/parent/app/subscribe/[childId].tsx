@@ -1,10 +1,27 @@
-import { addDays, istDate, rupees, todayIst } from '@lunchbox/api-client';
-import { Banner, Button, Card, Loading, Row, Screen, Text, useTheme } from '@lunchbox/ui';
+import { addDays, istDate, rupees, todayIst, type PlanResponse } from '@lunchbox/api-client';
+import {
+  Avatar,
+  Badge,
+  Banner,
+  Button,
+  Card,
+  Icon,
+  Loading,
+  PressableScale,
+  Row,
+  Screen,
+  SectionHeader,
+  Text,
+  TiffinArt,
+  haptic,
+  useTheme,
+} from '@lunchbox/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Check, CircleCheck, Lock, MapPin, Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
 import { api } from '../../src/lib/api';
 import { config } from '../../src/lib/config';
@@ -12,37 +29,32 @@ import { errorMessage } from '../../src/lib/queryClient';
 
 const WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const;
 type Weekday = (typeof WEEKDAYS)[number];
+const WEEKS: Record<PlanResponse['billingPeriod'], number> = { MONTHLY: 52 / 12, QUARTERLY: 13 };
 
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+/** Approximate price of one lunch for the chosen number of pickup days, for comparing plans honestly. */
+function perLunchPaise(plan: PlanResponse, daysPerWeek: number): number {
+  const days = Math.max(1, Math.min(daysPerWeek, plan.maxDaysPerWeek));
+  return Math.round(plan.pricePaise / (days * WEEKS[plan.billingPeriod]));
+}
+
+function Radio({ on }: { on: boolean }) {
   const theme = useTheme();
   return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: selected }}
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={{
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: selected ? theme.colors.primary : theme.colors.border,
-        backgroundColor: selected ? theme.colors.primarySoft : theme.colors.surface,
-      }}
-    >
-      <Text variant="label" style={{ color: selected ? theme.colors.primary : theme.colors.text }}>
-        {label}
-      </Text>
-    </Pressable>
+    <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: on ? 0 : 1.5, borderColor: theme.colors.borderStrong,
+      backgroundColor: on ? theme.colors.primary : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+      {on ? <Check size={14} color={theme.colors.onPrimary} strokeWidth={3} /> : null}
+    </View>
   );
 }
 
 export default function SubscribeScreen() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const qc = useQueryClient();
   const theme = useTheme();
+  const locale = i18n.language === 'hi' ? 'hi-IN' : 'en-IN';
+  const child = useQuery({ queryKey: ['child', childId], queryFn: () => api.children.get(childId) });
   const plans = useQuery({ queryKey: ['plans'], queryFn: api.plans.list });
   const addresses = useQuery({ queryKey: ['addresses'], queryFn: api.addresses.list });
   const [planId, setPlanId] = useState<string | null>(null);
@@ -54,9 +66,23 @@ export default function SubscribeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  if (plans.isLoading || addresses.isLoading) return <Loading />;
-  const plan = plans.data?.find((p) => p.id === planId) ?? null;
-  const effectiveAddress = addressId ?? addresses.data?.find((a) => a.isDefault)?.id ?? null;
+  if (plans.isLoading || addresses.isLoading) return <Loading label={t('common.loading')} />;
+  const activePlans = (plans.data ?? []).filter((p) => p.active);
+  const plan = activePlans.find((p) => p.id === planId) ?? null;
+  const effectiveAddress = addressId ?? addresses.data?.find((a) => a.isDefault)?.id ?? addresses.data?.[0]?.id ?? null;
+  const bestValue = activePlans.length > 1
+    ? activePlans.reduce((best, p) => (perLunchPaise(p, days.length) < perLunchPaise(best, days.length) ? p : best)).id
+    : null;
+  const tooManyDays = !!plan && days.length > plan.maxDaysPerWeek;
+  const childName = child.data?.firstName ?? '';
+  const dayTile = (d: string) => {
+    const date = new Date(`${d}T12:00:00+05:30`);
+    return {
+      weekday: new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'Asia/Kolkata' }).format(date),
+      day: new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone: 'Asia/Kolkata' }).format(date),
+      month: new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'Asia/Kolkata' }).format(date),
+    };
+  };
 
   async function pay() {
     if (!plan || !effectiveAddress) return;
@@ -90,6 +116,7 @@ export default function SubscribeScreen() {
       }
       await api.subscriptions.verify(checkout.subscriptionId, { razorpayPaymentId: paymentId, razorpaySignature: signature });
       await qc.invalidateQueries({ queryKey: ['subscriptions'] });
+      haptic.success();
       setDone(true);
     } catch (e) {
       setError(errorMessage(e));
@@ -100,58 +127,153 @@ export default function SubscribeScreen() {
 
   if (done) {
     return (
-      <Screen>
-        <Banner tone="success">{t('subscribe.success', { date: istDate(startDate) })}</Banner>
-        <Button title={t('common.done')} onPress={() => router.replace('/(tabs)')} />
+      <Screen footer={<Button title={t('common.done')} size="lg" onPress={() => router.replace('/(tabs)')} />}>
+        <View style={{ alignItems: 'center', gap: 16, paddingTop: 48 }}>
+          <View>
+            <TiffinArt size={120} steam />
+            <View style={{ position: 'absolute', right: -6, bottom: 4, borderRadius: 20, backgroundColor: theme.colors.background, padding: 3 }}>
+              <CircleCheck size={34} color={theme.colors.surface} fill={theme.colors.primary} />
+            </View>
+          </View>
+          <Text variant="display" center>{t('subscribe.allSet')}</Text>
+          <Text muted center style={{ maxWidth: 300 }}>{t('subscribe.success', { date: istDate(startDate) })}</Text>
+        </View>
+        {plan ? (
+          <Card tone="sunken" gap={3}>
+            <Row justify="space-between"><Text muted>{t('subscribe.summary.plan')}</Text><Text variant="bodyStrong">{plan.name}</Text></Row>
+            <Row justify="space-between"><Text muted>{t('subscribe.days')}</Text>
+              <Text variant="bodyStrong">{WEEKDAYS.filter((d) => days.includes(d)).map((d) => t(`days.${d}`)).join(', ')}</Text></Row>
+            <Row justify="space-between"><Text muted>{t('subscribe.startDate')}</Text><Text variant="bodyStrong">{istDate(startDate)}</Text></Row>
+          </Card>
+        ) : null}
       </Screen>
     );
   }
 
   return (
-    <Screen>
-      {error ? <Banner tone="danger">{error}</Banner> : null}
-      <Text variant="heading">{t('subscribe.title')}</Text>
-      {plans.data?.map((p) => (
-        <Card key={p.id} onPress={() => setPlanId(p.id)} accessibilityLabel={p.name}
-              style={{ borderColor: planId === p.id ? theme.colors.primary : theme.colors.border, borderWidth: planId === p.id ? 2 : 1 }}>
-          <Text variant="heading">{p.name}</Text>
-          <Text>{t('subscribe.perPeriod', { price: rupees(p.pricePaise), period: p.billingPeriod === 'MONTHLY' ? 'month' : 'quarter' })}</Text>
-          <Text variant="caption" muted>{t('subscribe.maxDays', { count: p.maxDaysPerWeek })}</Text>
-          {p.description ? <Text muted>{p.description}</Text> : null}
-        </Card>
-      ))}
-
-      <Text variant="heading">{t('subscribe.days')}</Text>
-      <Row style={{ flexWrap: 'wrap' }}>
-        {WEEKDAYS.map((d) => (
-          <Chip key={d} label={t(`days.${d}`)} selected={days.includes(d)}
-                onPress={() => setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]))} />
-        ))}
-      </Row>
-      {plan && days.length > plan.maxDaysPerWeek ? (
-        <Banner tone="warning">{t('subscribe.maxDays', { count: plan.maxDaysPerWeek })}</Banner>
+    <Screen
+      footer={
+        <>
+          {plan ? (
+            <Row justify="space-between">
+              <Text variant="caption" muted numberOfLines={1} style={{ flex: 1 }}>
+                {t('subscribe.footerSummary', { plan: plan.name, count: days.length, date: istDate(startDate) })}
+              </Text>
+              <Row gap={1}>
+                <Lock size={12} color={theme.colors.textFaint} />
+                <Text variant="caption" tone="faint">Razorpay</Text>
+              </Row>
+            </Row>
+          ) : null}
+          <Button
+            title={plan ? t('subscribe.pay', { amount: rupees(plan.pricePaise) }) : t('subscribe.choosePlanFirst')}
+            size="lg"
+            onPress={pay}
+            loading={busy}
+            disabled={!plan || !effectiveAddress || days.length === 0 || tooManyDays}
+            testID="subscribe-pay"
+          />
+        </>
+      }
+    >
+      {childName ? (
+        <Row gap={3}>
+          <Avatar name={[child.data?.firstName, child.data?.lastName].filter(Boolean).join(' ')} size={48} />
+          <View style={{ flex: 1 }}>
+            <Text variant="overline" muted>{t('subscribe.for')}</Text>
+            <Text variant="heading">{childName} · {child.data?.schoolName}</Text>
+          </View>
+        </Row>
       ) : null}
+      {error ? <Banner tone="danger" title={t('common.problem')}>{error}</Banner> : null}
 
-      <Text variant="heading">{t('subscribe.address')}</Text>
-      {addresses.data?.map((a) => (
-        <Chip key={a.id} label={`${a.label} · ${a.line1}`} selected={effectiveAddress === a.id} onPress={() => setAddressId(a.id)} />
-      ))}
-      <Button title={t('address.add')} variant="ghost" onPress={() => router.push('/addresses/new')} />
+      <SectionHeader title={t('subscribe.planStep')} />
+      {activePlans.map((p) => {
+        const on = planId === p.id;
+        return (
+          <Card key={p.id} tone="raised" selected={on} onPress={() => { haptic.tap(); setPlanId(p.id); }}
+                accessibilityLabel={`${p.name}, ${rupees(p.pricePaise)}`}>
+            <Row gap={3} align="flex-start">
+              <Radio on={on} />
+              <View style={{ flex: 1, gap: 4 }}>
+                <Row justify="space-between" align="flex-start">
+                  <Text variant="heading" style={{ flex: 1 }}>{p.name}</Text>
+                  {bestValue === p.id ? <Badge label={t('subscribe.bestValue')} tone="accent" /> : null}
+                </Row>
+                <Row gap={1} align="flex-end">
+                  <Text variant="numeral" style={{ fontVariant: ['tabular-nums'] }}>{rupees(p.pricePaise)}</Text>
+                  <Text variant="caption" muted style={{ paddingBottom: 4 }}>
+                    / {t(p.billingPeriod === 'MONTHLY' ? 'subscribe.month' : 'subscribe.quarter')}
+                  </Text>
+                </Row>
+                <Text variant="caption" muted>
+                  {t('subscribe.perLunch', { price: rupees(perLunchPaise(p, days.length)) })} · {t('subscribe.maxDays', { count: p.maxDaysPerWeek })}
+                </Text>
+                {p.description ? <Text variant="caption" muted>{p.description}</Text> : null}
+              </View>
+            </Row>
+          </Card>
+        );
+      })}
 
-      <Text variant="heading">{t('subscribe.startDate')}</Text>
-      <Row style={{ flexWrap: 'wrap' }}>
-        {startOptions.map((d) => (
-          <Chip key={d} label={istDate(d)} selected={startDate === d} onPress={() => setStartDate(d)} />
-        ))}
+      <SectionHeader title={t('subscribe.days')}
+                     action={<Text variant="caption" muted>{t('subscribe.daysCount', { count: days.length })}</Text>} />
+      <Row gap={2}>
+        {WEEKDAYS.map((d) => {
+          const on = days.includes(d);
+          return (
+            <PressableScale key={d} style={{ flex: 1 }} scaleTo={0.92} accessibilityRole="checkbox"
+                            accessibilityState={{ checked: on }} accessibilityLabel={t(`days.${d}`)}
+                            onPress={() => { haptic.tap(); setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d])); }}>
+              <View style={{ paddingVertical: 14, alignItems: 'center', borderRadius: theme.radius.md, borderWidth: on ? 0 : 1,
+                borderColor: theme.colors.border, backgroundColor: on ? theme.colors.primary : theme.colors.surface }}>
+                <Text variant="label" style={{ color: on ? theme.colors.onPrimary : theme.colors.textMuted }}>{t(`days.${d}`)}</Text>
+              </View>
+            </PressableScale>
+          );
+        })}
       </Row>
+      {tooManyDays ? <Banner tone="warning">{t('subscribe.tooManyDays', { count: plan!.maxDaysPerWeek })}</Banner> : null}
 
-      <Button
-        title={plan ? t('subscribe.pay', { amount: rupees(plan.pricePaise) }) : t('subscribe.title')}
-        onPress={pay}
-        loading={busy}
-        disabled={!plan || !effectiveAddress || days.length === 0 || days.length > plan.maxDaysPerWeek}
-        testID="subscribe-pay"
-      />
+      <SectionHeader title={t('subscribe.address')} />
+      {addresses.data?.map((a) => {
+        const on = effectiveAddress === a.id;
+        return (
+          <Card key={a.id} selected={on} onPress={() => { haptic.tap(); setAddressId(a.id); }} accessibilityLabel={`${a.label}, ${a.line1}`}>
+            <Row gap={3}>
+              <Radio on={on} />
+              <View style={{ flex: 1 }}>
+                <Text variant="bodyStrong">{a.label}</Text>
+                <Text variant="caption" muted numberOfLines={1}>{a.line1}{a.line2 ? `, ${a.line2}` : ''} · {a.pincode}</Text>
+              </View>
+              <Icon as={MapPin} size={18} color="textFaint" />
+            </Row>
+          </Card>
+        );
+      })}
+      <Button title={t('address.add')} variant="outline" icon={Plus} onPress={() => router.push('/addresses/new')} />
+
+      <SectionHeader title={t('subscribe.startDate')} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+        {startOptions.map((d) => {
+          const on = startDate === d;
+          const tile = dayTile(d);
+          return (
+            <PressableScale key={d} scaleTo={0.94} accessibilityRole="radio" accessibilityState={{ selected: on }}
+                            accessibilityLabel={istDate(d)} onPress={() => { haptic.tap(); setStartDate(d); }}>
+              <View style={{ width: 64, paddingVertical: 12, alignItems: 'center', gap: 2, borderRadius: theme.radius.md,
+                borderWidth: on ? 2 : 1, borderColor: on ? theme.colors.primary : theme.colors.border,
+                backgroundColor: on ? theme.colors.primarySoft : theme.colors.surface }}>
+                <Text variant="caption" muted>{tile.weekday}</Text>
+                <Text variant="numeral" style={{ fontSize: 24, lineHeight: 30, color: on ? theme.colors.onPrimarySoft : theme.colors.text }}>
+                  {tile.day}
+                </Text>
+                <Text variant="caption" muted>{tile.month}</Text>
+              </View>
+            </PressableScale>
+          );
+        })}
+      </ScrollView>
     </Screen>
   );
 }

@@ -12,8 +12,10 @@ appId: in.lunchbox.parent.development
 - tapOn:
     id: "otp-input"
 - inputText: "123456"
+# The code auto-submits on the sixth digit; the button tap only matters if it did not.
 - tapOn:
     id: "verify-code"
+    optional: true
 - tapOn:
     id: "first-name"
 - inputText: "Asha"
@@ -25,7 +27,8 @@ appId: in.lunchbox.parent.development
     id: "consent-child"
 - tapOn:
     id: "consent-submit"
-- assertVisible: "Today's lunchboxes"
+- assertVisible:
+    id: "today-screen"
 - tapOn: "Children"
 - tapOn:
     id: "add-child"
@@ -59,4 +62,5 @@ appId: in.lunchbox.parent.development
     id: "subscribe-pay"
 - assertVisible: "Your plan is active.*"
 - tapOn: "Done"
-- assertVisible: "Today's lunchboxes"
+- assertVisible:
+    id: "today-screen"

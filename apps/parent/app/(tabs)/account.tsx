@@ -1,10 +1,28 @@
 import { istDate, rupees } from '@lunchbox/api-client';
-import { Banner, Button, Card, Row, Screen, Text } from '@lunchbox/ui';
+import {
+  Avatar,
+  Badge,
+  Banner,
+  Button,
+  Card,
+  ListGroup,
+  ListItem,
+  PageTitle,
+  Screen,
+  SectionHeader,
+  SegmentedControl,
+  Text,
+  ToggleRow,
+  Wordmark,
+  useToast,
+} from '@lunchbox/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
+import { Download, History, LogOut, MapPin, ReceiptText, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, Share, Switch } from 'react-native';
+import { Alert, Share, View } from 'react-native';
 import { api } from '../../src/lib/api';
 import { config } from '../../src/lib/config';
 import { signOut } from '../../src/lib/firebase';
@@ -12,9 +30,20 @@ import { unregisterPush } from '../../src/lib/push';
 import { errorMessage } from '../../src/lib/queryClient';
 import { useSession } from '../../src/lib/session';
 
+const STATUS_TONE = { ACTIVE: 'primary', PENDING_PAYMENT: 'accent', PAUSED: 'neutral', HALTED: 'danger', CANCELLED: 'neutral',
+  EXPIRED: 'neutral' } as const;
+
+/** +919876543210 → +91 98765 43210 */
+function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return '';
+  const m = /^\+91(\d{5})(\d{5})$/.exec(phone);
+  return m ? `+91 ${m[1]} ${m[2]}` : phone;
+}
+
 export default function AccountScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const toast = useToast();
   const qc = useQueryClient();
   const me = useSession((s) => s.me);
   const refresh = useSession((s) => s.refresh);
@@ -23,6 +52,7 @@ export default function AccountScreen() {
 
   const tracking = me?.consents.find((c) => c.purpose === 'LIVE_TRACKING');
   const trackingOn = !!tracking && tracking.granted && !tracking.withdrawnAt;
+  const name = [me?.parent?.firstName, me?.parent?.lastName].filter(Boolean).join(' ') || me?.displayName || '';
 
   const setLanguage = useMutation({
     mutationFn: async (lang: 'en' | 'hi') => {
@@ -41,7 +71,10 @@ export default function AccountScreen() {
   });
   const cancelPlan = useMutation({
     mutationFn: (id: string) => api.subscriptions.cancel(id, 'Cancelled by parent in app'),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['subscriptions'] }),
+    onSuccess: () => {
+      toast(t('account.planCancelled'));
+      return qc.invalidateQueries({ queryKey: ['subscriptions'] });
+    },
     onError: (e) => setError(errorMessage(e)),
   });
 
@@ -49,6 +82,7 @@ export default function AccountScreen() {
     try {
       const data = await api.account.exportData();
       await Share.share({ title: 'LunchBox data export', message: JSON.stringify(data, null, 2) });
+      toast(t('account.exportDone'));
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -58,6 +92,13 @@ export default function AccountScreen() {
     await unregisterPush();
     qc.clear();
     await signOut();
+  }
+
+  function confirmCancel(id: string, label: string) {
+    Alert.alert(t('account.cancelPlan'), t('account.cancelConfirm', { plan: label }), [
+      { text: t('common.keep'), style: 'cancel' },
+      { text: t('account.cancelPlan'), style: 'destructive', onPress: () => cancelPlan.mutate(id) },
+    ]);
   }
 
   function deleteAccount() {
@@ -78,57 +119,88 @@ export default function AccountScreen() {
     ]);
   }
 
+  const plans = (subs.data ?? []).filter((s) => s.status !== 'CANCELLED' && s.status !== 'EXPIRED');
+
   return (
-    <Screen>
-      <Text variant="title">{t('account.title')}</Text>
-      {error ? <Banner tone="danger">{error}</Banner> : null}
-      <Card>
-        <Text variant="heading">{me?.displayName}</Text>
-        <Text muted>{me?.phone}</Text>
+    <Screen safeTop gap={5}>
+      <PageTitle title={t('account.title')} />
+      {error ? <Banner tone="danger" title={t('common.problem')}>{error}</Banner> : null}
+
+      <Card tone="brand">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <Avatar name={name || 'LunchBox'} size={60} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text variant="heading" tone="onPrimary" numberOfLines={1}>{name}</Text>
+            <Text variant="caption" tone="onPrimary" style={{ opacity: 0.8, fontVariant: ['tabular-nums'] }}>{formatPhone(me?.phone)}</Text>
+          </View>
+        </View>
       </Card>
 
-      <Card>
-        <Text variant="label">{t('account.language')}</Text>
-        <Row>
-          {(['en', 'hi'] as const).map((lang) => (
-            <Pressable key={lang} accessibilityRole="radio" accessibilityState={{ selected: i18n.language === lang }}
-                       onPress={() => setLanguage.mutate(lang)} style={{ padding: 8 }}>
-              <Text variant="label" muted={i18n.language !== lang}>{lang === 'en' ? 'English' : 'हिन्दी'}</Text>
-            </Pressable>
-          ))}
-        </Row>
-      </Card>
+      {plans.length > 0 ? (
+        <View style={{ gap: 8 }}>
+          <SectionHeader title={t('account.plans')} />
+          <ListGroup>
+            {plans.map((s) => (
+              <ListItem
+                key={s.id}
+                title={`${s.childName} · ${s.planName}`}
+                subtitle={[rupees(s.pricePaise), s.currentPeriodEnd ? t('account.renews', { date: istDate(s.currentPeriodEnd) }) : null]
+                  .filter(Boolean).join(' · ')}
+                trailing={
+                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                    <Badge label={t(`account.subStatus.${s.status}`)} tone={STATUS_TONE[s.status]} />
+                    {s.status === 'ACTIVE' || s.status === 'HALTED' ? (
+                      <Button title={t('account.cancelPlan')} variant="ghost" size="sm" inline
+                              loading={cancelPlan.isPending && cancelPlan.variables === s.id}
+                              onPress={() => confirmCancel(s.id, `${s.childName} · ${s.planName}`)} />
+                    ) : null}
+                  </View>
+                }
+              />
+            ))}
+          </ListGroup>
+        </View>
+      ) : null}
 
-      <Card>
-        <Text variant="label">{t('account.plans')}</Text>
-        {subs.data?.map((s) => (
-          <Row key={s.id} style={{ justifyContent: 'space-between' }}>
-            <Text style={{ flex: 1 }}>
-              {s.childName} · {s.planName} · {rupees(s.pricePaise)} · {s.status}
-              {s.currentPeriodEnd ? ` · ${istDate(s.currentPeriodEnd)}` : ''}
-            </Text>
-            {s.status === 'ACTIVE' || s.status === 'HALTED' ? (
-              <Button title={t('account.cancelPlan')} variant="ghost" onPress={() => cancelPlan.mutate(s.id)} />
-            ) : null}
-          </Row>
-        ))}
-      </Card>
+      <View style={{ gap: 8 }}>
+        <SectionHeader title={t('account.manage')} />
+        <ListGroup>
+          <ListItem icon={MapPin} title={t('account.addresses')} subtitle={t('account.addressesHint')} onPress={() => router.push('/addresses')} />
+          <ListItem icon={History} iconTone="info" title={t('account.orders')} onPress={() => router.push('/orders/history')} />
+          <ListItem icon={ReceiptText} iconTone="accent" title={t('account.payments')} onPress={() => router.push('/payments')} />
+        </ListGroup>
+      </View>
 
-      <Button title={t('account.addresses')} variant="secondary" onPress={() => router.push('/addresses')} />
-      <Button title={t('account.orders')} variant="secondary" onPress={() => router.push('/orders/history')} />
-      <Button title={t('account.payments')} variant="secondary" onPress={() => router.push('/payments')} />
+      <View style={{ gap: 8 }}>
+        <SectionHeader title={t('account.preferences')} />
+        <Card gap={3}>
+          <Text variant="label">{t('account.language')}</Text>
+          <SegmentedControl
+            options={[{ value: 'en', label: 'English' }, { value: 'hi', label: 'हिन्दी' }]}
+            value={i18n.language === 'hi' ? 'hi' : 'en'}
+            onChange={(v) => setLanguage.mutate(v as 'en' | 'hi')}
+          />
+        </Card>
+      </View>
 
-      <Card>
-        <Text variant="label">{t('account.privacy')}</Text>
-        <Row>
-          <Switch value={trackingOn} onValueChange={(v) => setTracking.mutate(v)} accessibilityLabel={t('consent.liveTracking')} />
-          <Text style={{ flex: 1 }}>{t('consent.liveTracking')}</Text>
-        </Row>
-        <Button title={t('account.export')} variant="ghost" onPress={exportData} />
-        <Button title={t('account.delete')} variant="danger" onPress={deleteAccount} />
-      </Card>
+      <View style={{ gap: 8 }}>
+        <SectionHeader title={t('account.privacy')} />
+        <ListGroup>
+          <ToggleRow title={t('account.liveLocation')} description={t('consent.liveTracking')} value={trackingOn}
+                     disabled={setTracking.isPending} onChange={(v) => setTracking.mutate(v)} />
+          <ListItem icon={Download} iconTone="neutral" title={t('account.export')} subtitle={t('account.exportHint')} onPress={exportData} />
+          <ListItem icon={Trash2} destructive title={t('account.delete')} onPress={deleteAccount} />
+        </ListGroup>
+      </View>
 
-      <Button title={t('account.signOut')} variant="ghost" onPress={doSignOut} testID="sign-out" />
+      <Button title={t('account.signOut')} variant="outline" icon={LogOut} onPress={doSignOut} testID="sign-out" />
+
+      <View style={{ alignItems: 'center', gap: 6, paddingTop: 8 }}>
+        <Wordmark size={18} />
+        <Text variant="caption" tone="faint">
+          {t('account.version', { version: Constants.expoConfig?.version ?? '' })}
+        </Text>
+      </View>
     </Screen>
   );
 }

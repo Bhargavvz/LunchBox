@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Banner, Button, Row, Screen, Text, TextField } from '@lunchbox/ui';
+import { Banner, Button, ListGroup, PageTitle, Screen, SegmentedControl, Text, TextField, ToggleRow } from '@lunchbox/ui';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Switch } from 'react-native';
+import { View } from 'react-native';
 import { z } from 'zod';
+import { StepHeader } from '../../src/components/StepHeader';
 import { api } from '../../src/lib/api';
 import { config } from '../../src/lib/config';
 import { errorMessage } from '../../src/lib/queryClient';
@@ -48,35 +49,43 @@ export default function RegisterScreen() {
   });
 
   return (
-    <Screen>
-      <Text variant="title">{t('register.title')}</Text>
-      {error ? <Banner tone="danger">{error}</Banner> : null}
+    <Screen
+      safeTop
+      keyboard
+      footer={<Button title={t('common.continue')} size="lg" onPress={onSubmit} loading={formState.isSubmitting} testID="register-submit" />}
+    >
+      <StepHeader step={1} of={2} />
+      <PageTitle title={t('register.title')} subtitle={t('register.subtitle')} />
+      {error ? <Banner tone="danger" title={t('common.problem')}>{error}</Banner> : null}
       <Controller control={control} name="firstName" render={({ field, fieldState }) => (
-        <TextField label={t('register.firstName')} value={field.value} onChangeText={field.onChange}
-                   error={fieldState.error ? t('register.firstName') : undefined} autoComplete="given-name" testID="first-name" />
+        <TextField label={t('register.firstName')} value={field.value} onChangeText={field.onChange} autoFocus
+                   error={fieldState.error ? t('register.firstNameError') : undefined} autoComplete="given-name"
+                   autoCapitalize="words" returnKeyType="next" testID="first-name" />
       )} />
       <Controller control={control} name="lastName" render={({ field }) => (
-        <TextField label={t('register.lastName')} value={field.value ?? ''} onChangeText={field.onChange} autoComplete="family-name" />
+        <TextField label={t('register.lastName')} value={field.value ?? ''} onChangeText={field.onChange}
+                   autoComplete="family-name" autoCapitalize="words" />
       )} />
-      <Text variant="label">{t('register.language')}</Text>
-      <Controller control={control} name="language" render={({ field }) => (
-        <Row>
-          {(['en', 'hi'] as const).map((lang) => (
-            <Pressable key={lang} accessibilityRole="radio" accessibilityState={{ selected: field.value === lang }}
-                       onPress={() => field.onChange(lang)} style={{ padding: 8 }}>
-              <Text variant="label" muted={field.value !== lang}>{lang === 'en' ? 'English' : 'हिन्दी'}</Text>
-            </Pressable>
-          ))}
-        </Row>
-      )} />
+      <View style={{ gap: 8 }}>
+        <Text variant="label">{t('register.language')}</Text>
+        <Controller control={control} name="language" render={({ field }) => (
+          <SegmentedControl
+            options={[{ value: 'en', label: 'English' }, { value: 'hi', label: 'हिन्दी' }]}
+            value={field.value}
+            onChange={(v) => {
+              field.onChange(v);
+              void i18n.changeLanguage(v);
+            }}
+          />
+        )} />
+      </View>
       <Controller control={control} name="terms" render={({ field }) => (
-        <Row>
-          <Switch value={field.value === true} onValueChange={field.onChange} accessibilityLabel={t('register.terms')} testID="terms" />
-          <Text style={{ flex: 1 }}>{t('register.terms')}</Text>
-        </Row>
+        <ListGroup>
+          <ToggleRow title={t('register.termsTitle')} description={t('register.terms')} value={field.value === true}
+                     onChange={field.onChange} testID="terms" />
+        </ListGroup>
       )} />
       {formState.errors.terms ? <Banner tone="danger">{t('register.termsRequired')}</Banner> : null}
-      <Button title={t('common.continue')} onPress={onSubmit} loading={formState.isSubmitting} testID="register-submit" />
     </Screen>
   );
 }
