@@ -37,6 +37,21 @@ Things to look at first when you run the suite:
   `docs/api/openapi.json` and the TS client together.
 - Measure coverage on the domain packages before adding `jacocoTestCoverageVerification` to CI.
 
+## 2026-10-25 — UI redesign on the Tiffin design system (unverified: nothing was compiled or run)
+
+| Surface | What changed |
+|---|---|
+| `packages/ui` | Tiffin tokens, light/dark theme, Fraunces + Figtree type scale, components (buttons, cards, list groups, segmented control, OTP input, stats), status pills/journey rail/timeline, tiffin illustrations and wordmark, toast, custom tab bar, haptics, warm map style. ADR-0015 |
+| Parent app | Every screen rewritten: Today with ticket-style pickup code, full-bleed live tracking sheet, children, calendar month grid, subscribe flow with honest per-lunch pricing, history, payments, invoice, account, sign-in and registration. All `testID`s kept |
+| Partner app | Field-ready redesign: shift card, numbered stop rail, OTP/QR pickup, framed handover camera, SOS issue screen, earnings chart (dataviz rules), sync status, persisted language |
+| Admin | Leaf sidebar with grouped nav and live open-issue badge, ⌘K command palette, IST clock, light/dark/system theme, dashboard with order-pipeline bar, split-screen sign-in, restyled reports, SOS-first issues, school receipts, shared table style |
+
+E2E selectors were preserved, with one exception: `login.spec.ts` now expects the grammatical `1 open issue`.
+Look at these first:
+- Font loading on a cold start (`useFonts` gates the splash).
+- The Recharts CSS-variable fills in Safari.
+- The inline theme script under the production CSP (`script-src 'unsafe-inline'` is already allowed).
+
 ## Verification checklist (run in this order)
 
 1. `cd backend && gradle wrapper` (the wrapper JAR is not committed), then `./gradlew compileJava compileTestJava`.

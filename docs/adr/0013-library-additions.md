@@ -21,3 +21,7 @@ Each addition has a one-line justification, as required by CLAUDE.md §14.6.
 | `@radix-ui/*`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` | admin | shadcn/ui primitives and their utilities |
 | `qrcode.react` | admin | Show the TOTP enrolment QR |
 | `firebase` (web SDK) | admin | Email + TOTP sign-in for staff |
+| `expo-font`, `@expo-google-fonts/fraunces`, `@expo-google-fonts/figtree` | mobile | Bundle the Tiffin typefaces offline (no runtime font download on a rider's 3G connection) — ADR-0015 |
+| `expo-haptics` | mobile | Tactile confirmation on pickup, handover and errors, which riders feel without looking at the screen |
+| `lucide-react-native` | mobile, `packages/ui` | The same icon set the admin already uses (`lucide-react`), so all three surfaces share one icon language |
+| `react-native-svg` | partner app | Peer of `lucide-react-native` and the shared illustrations (the parent app already had it) |
