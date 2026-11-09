@@ -48,7 +48,7 @@ export default function SchoolAdminPage() {
 
       <div className="lb-table-wrap">
         <table className="lb-table">
-          <caption className="sr-only">Today's lunchboxes</caption>
+          <caption className="sr-only">Today&apos;s lunchboxes</caption>
           <thead><tr><th>Child</th><th>Class</th><th>Status</th><th>Delivered</th><th>Receipt</th></tr></thead>
           <tbody>
             {orders.isLoading ? Array.from({ length: 4 }, (_, i) => (

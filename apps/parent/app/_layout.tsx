@@ -16,7 +16,7 @@ import { bindAuthState, useSession } from '../src/lib/session';
 
 function AuthGate() {
   const status = useSession((s) => s.status);
-  const segments = useSegments();
+  const segments: string[] = useSegments();
   const router = useRouter();
 
   useEffect(() => bindAuthState(), []);

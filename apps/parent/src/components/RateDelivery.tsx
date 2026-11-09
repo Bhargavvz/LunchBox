@@ -13,7 +13,7 @@ function Stars({ value, size, onPick }: { value: number; size: number; onPick?: 
   const { t } = useTranslation();
   const theme = useTheme();
   return (
-    <Row gap={onPick ? 2 : 1} accessibilityRole={onPick ? 'radiogroup' : undefined}>
+    <Row gap={onPick ? 2 : 1} accessibilityRole={onPick ? ('radiogroup' as const) : undefined}>
       {STARS.map((n) => {
         const on = n <= value;
         const glyph = (

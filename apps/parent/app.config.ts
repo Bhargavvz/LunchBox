@@ -7,6 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: isProd ? 'LunchBox' : `LunchBox (${env})`,
   slug: 'lunchbox-parent',
+  owner: 'bhargavvzz',
   scheme: 'lunchbox',
   version: '0.1.0',
   orientation: 'portrait',
@@ -47,6 +48,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     wsUrl: process.env.EXPO_PUBLIC_WS_URL ?? 'ws://10.0.2.2:8080/ws',
     useFakePayments: process.env.EXPO_PUBLIC_FAKE_PAYMENTS === 'true',
     policyVersion: '2026-10',
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    eas: { projectId: process.env.EAS_PROJECT_ID ?? '4b27923e-4fdf-434f-80e3-6b5965a13721' },
   },
 });

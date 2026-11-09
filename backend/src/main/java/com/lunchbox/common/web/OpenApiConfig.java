@@ -29,8 +29,9 @@ public class OpenApiConfig {
     }
 
     /**
-     * Response DTOs always serialise every property (nulls included), so mark them all required. This lets the
-     * generated TypeScript client use non-optional fields; nullable ones are typed as {@code T | null}.
+     * Response DTOs (every schema not named *Request or *Input, nested records included) always serialise every
+     * property (nulls included), so mark them all required. This lets the generated TypeScript client use
+     * non-optional fields; nullable ones are typed as {@code T | null}.
      */
     @Bean
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -42,7 +43,7 @@ public class OpenApiConfig {
             for (Map.Entry<String, Schema> entry : openApi.getComponents().getSchemas().entrySet()) {
                 String name = entry.getKey();
                 Schema schema = entry.getValue();
-                boolean isResponse = name.endsWith("Response") || name.endsWith("View") || name.startsWith("PageResponse");
+                boolean isResponse = !name.endsWith("Request") && !name.endsWith("Input");
                 if (isResponse && schema.getProperties() != null) {
                     schema.setRequired(new ArrayList<>(schema.getProperties().keySet()));
                 }

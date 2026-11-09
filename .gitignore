@@ -46,3 +46,6 @@ infra/terraform/**/*.tfvars
 # playwright
 apps/admin/test-results/
 apps/admin/playwright-report/
+
+# Local web preview exports of the mobile apps
+dist-web/

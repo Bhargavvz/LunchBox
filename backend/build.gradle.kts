@@ -24,7 +24,7 @@ repositories {
 val mapstructVersion = "1.6.3"
 val shedlockVersion = "5.16.0"
 val resilience4jVersion = "2.2.0"
-val testcontainersVersion = "1.20.3"
+val testcontainersVersion = "1.21.4"
 
 dependencyManagement {
     imports {

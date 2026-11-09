@@ -9,9 +9,9 @@ export function firebaseAuth(): Auth {
   const app =
     getApps()[0] ??
     initializeApp({
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? 'demo-key',
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'demo-key',
       authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? 'demo-lunchbox',
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'demo-lunchbox',
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     });
   authInstance = getAuth(app);

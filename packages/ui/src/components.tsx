@@ -18,6 +18,7 @@ import {
   type StyleProp,
   type TextInputProps,
   type TextStyle,
+  type ViewProps,
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -148,6 +149,7 @@ export function Row({
   align = 'center',
   justify,
   wrap,
+  ...a11y
 }: {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -155,10 +157,10 @@ export function Row({
   align?: ViewStyle['alignItems'];
   justify?: ViewStyle['justifyContent'];
   wrap?: boolean;
-}) {
+} & Pick<ViewProps, 'accessible' | 'accessibilityLabel' | 'accessibilityRole'>) {
   const t = useTheme();
   return (
-    <View style={[{ flexDirection: 'row', alignItems: align, justifyContent: justify, gap: t.spacing(gap),
+    <View {...a11y} style={[{ flexDirection: 'row', alignItems: align, justifyContent: justify, gap: t.spacing(gap),
       flexWrap: wrap ? 'wrap' : undefined }, style]}>
       {children}
     </View>
@@ -1064,7 +1066,7 @@ export function EmptyState({
 // Small pieces
 // ---------------------------------------------------------------------------------------------------------------
 
-const AVATAR_TONES: (keyof ThemeColors)[][] = [
+const AVATAR_TONES: [keyof ThemeColors, keyof ThemeColors][] = [
   ['primarySoft', 'onPrimarySoft'],
   ['accentSoft', 'onAccentSoft'],
   ['infoSoft', 'onInfoSoft'],

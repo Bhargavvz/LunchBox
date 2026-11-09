@@ -1,5 +1,13 @@
 import auth, { type FirebaseAuthTypes } from '@react-native-firebase/auth';
 
+// Local development only: send sign-in to the Firebase Auth emulator (host:port). Test phone numbers then get their
+// code from the emulator UI instead of an SMS. Release builds never set this variable.
+const emulatorHost = process.env.EXPO_PUBLIC_FIREBASE_AUTH_EMULATOR;
+if (emulatorHost) {
+  auth().useEmulator(`http://${emulatorHost}`);
+  auth().settings.appVerificationDisabledForTesting = true;
+}
+
 /** Current Firebase ID token (auto-refreshed by the SDK); `force` after registration picks up new role claims. */
 export async function idToken(force = false): Promise<string | null> {
   const user = auth().currentUser;

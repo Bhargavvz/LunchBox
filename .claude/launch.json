@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lunchbox/admin", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "parent-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lunchbox/parent", "exec", "expo", "start", "--web", "--port", "8091"],
+      "port": 8091
+    },
+    {
+      "name": "partner-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lunchbox/partner", "exec", "expo", "start", "--web", "--port", "8092"],
+      "port": 8092
+    },
+    {
+      "name": "parent-web-static",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/polep/AppData/Local/Temp/claude/6f1d8f23624315b2/876048c7-3c48-4e32-8323-d538d8aad389/scratchpad/serve.js", "apps/parent/dist-web", "8093"],
+      "port": 8093
+    },
+    {
+      "name": "partner-web-static",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/polep/AppData/Local/Temp/claude/6f1d8f23624315b2/876048c7-3c48-4e32-8323-d538d8aad389/scratchpad/serve.js", "apps/partner/dist-web", "8094"],
+      "port": 8094
+    }
+  ]
+}

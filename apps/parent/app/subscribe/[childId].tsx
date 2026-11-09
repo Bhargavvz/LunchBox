@@ -110,7 +110,7 @@ export default function SubscribeScreen() {
           description: checkout.planName,
           prefill: { name: checkout.prefillName ?? '', contact: checkout.prefillContact ?? '' },
           theme: { color: theme.colors.primary },
-        } as never);
+        });
         paymentId = result.razorpay_payment_id;
         signature = result.razorpay_signature;
       }

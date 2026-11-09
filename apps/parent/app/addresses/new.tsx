@@ -53,7 +53,7 @@ export default function NewAddressScreen() {
     Animated.spring(lift, { toValue: up ? 1 : 0, useNativeDriver: true, speed: 20, bounciness: up ? 0 : 10 }).start();
   };
 
-  async function useMyLocation() {
+  async function locateMe() {
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -135,7 +135,7 @@ export default function NewAddressScreen() {
           <Text variant="caption">{t('address.pin')}</Text>
         </View>
         <View style={{ position: 'absolute', right: 12, bottom: 12 }}>
-          <IconButton icon={LocateFixed} label={t('address.useLocation')} tone="plain" onPress={() => void useMyLocation()} />
+          <IconButton icon={LocateFixed} label={t('address.useLocation')} tone="plain" onPress={() => void locateMe()} />
         </View>
       </View>
       {locating ? <Text variant="caption" muted center>{t('address.locating')}</Text> : null}

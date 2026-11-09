@@ -5,7 +5,8 @@ lunchbox:
     pii-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     qr-signing-key: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
     require-admin-mfa: false
-    cors-allowed-origins: http://localhost:3000,http://localhost:8081
+    # Admin console, Expo dev server, and the browser previews of the parent and partner apps.
+    cors-allowed-origins: http://localhost:3000,http://localhost:8081,http://localhost:8091,http://localhost:8092,http://localhost:8093,http://localhost:8094
   storage:
     endpoint: http://localhost:4566
     path-style: true

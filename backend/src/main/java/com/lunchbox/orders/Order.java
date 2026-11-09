@@ -10,6 +10,8 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
 import java.time.Instant;
@@ -84,6 +86,7 @@ public class Order extends BaseEntity {
     private UUID schoolReceivedBy;
 
     @Column(name = "rating_stars")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     private Integer ratingStars;
 
     @Column(name = "rating_comment")

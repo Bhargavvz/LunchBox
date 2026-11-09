@@ -43,7 +43,10 @@
       "<rootDir>/jest.setup.ts"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|lucide-react-native|react-native-svg|expo-haptics|expo-modules-core)/)"
-    ]
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|lucide-react-native|react-native-svg|react-native-safe-area-context|expo-haptics|expo-modules-core)/)"
+    ],
+    "moduleNameMapper": {
+      "^lucide-react-native$": "<rootDir>/../../node_modules/lucide-react-native/dist/cjs/lucide-react-native.js"
+    }
   }
 }
