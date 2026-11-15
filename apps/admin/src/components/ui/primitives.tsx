@@ -121,7 +121,7 @@ export function CardHeader({ title, description, actions, icon: Glyph }: {
 
 const badgeTone = {
   default: 'bg-muted text-muted-foreground ring-foreground/5',
-  success: 'bg-secondary text-secondary-foreground ring-primary/10',
+  success: 'bg-success-soft text-success-soft-foreground ring-success/15',
   danger: 'bg-destructive-soft text-destructive-soft-foreground ring-destructive/15',
   warning: 'bg-accent-soft text-accent-soft-foreground ring-accent/20',
   info: 'bg-info-soft text-info-soft-foreground ring-info/10',
@@ -129,7 +129,7 @@ const badgeTone = {
 
 const dotTone = {
   default: 'bg-muted-foreground/60',
-  success: 'bg-primary',
+  success: 'bg-success',
   danger: 'bg-destructive',
   warning: 'bg-accent',
   info: 'bg-info',
@@ -154,7 +154,7 @@ export function Alert({ tone = 'danger', title, children }: { tone?: 'danger' | 
   const cls = {
     danger: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
     info: 'border-info/20 bg-info-soft text-info-soft-foreground',
-    success: 'border-primary/20 bg-secondary text-secondary-foreground',
+    success: 'border-success/20 bg-success-soft text-success-soft-foreground',
   }[tone];
   const Glyph = { danger: CircleAlert, info: Info, success: CircleCheck }[tone];
   return (
@@ -203,6 +203,7 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
 const AVATAR_TONES = [
   'bg-secondary text-secondary-foreground',
   'bg-accent-soft text-accent-soft-foreground',
+  'bg-success-soft text-success-soft-foreground',
   'bg-info-soft text-info-soft-foreground',
   'bg-destructive-soft text-destructive-soft-foreground',
 ];
@@ -244,7 +245,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: st
   return (
     <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        {eyebrow ? <p className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">{eyebrow}</p> : null}
+        {eyebrow ? <p className="mb-1 text-[13px] font-semibold text-muted-foreground">{eyebrow}</p> : null}
         <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight">{title}</h1>
         {description ? <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p> : null}
       </div>

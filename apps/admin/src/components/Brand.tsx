@@ -1,4 +1,4 @@
-/** The stacked tiffin mark: three tiers and a carry handle, drawn to sit on the sidebar's leaf green. */
+/** The stacked tiffin mark: three tiers and a carry handle, drawn to sit on the sidebar's ink navy. */
 export function BrandMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>

@@ -121,7 +121,7 @@ function SidebarNav({ items, pathname, openIssues, onNavigate }: {
     <div className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
       {groups.map((g) => (
         <div key={g.name}>
-          <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-sidebar-muted/80">{g.name}</p>
+          <p className="mb-1.5 px-3 text-[12.5px] font-semibold text-sidebar-muted/80">{g.name}</p>
           <ul className="space-y-0.5">
             {g.items.map((n) => {
               const active = pathname.startsWith(n.href);
@@ -236,7 +236,7 @@ function UserMenu({ name, email, role, onSignOut }: { name: string; email: strin
             </div>
           </div>
           <div className="border-t px-2.5 pb-2 pt-3">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Appearance</p>
+            <p className="mb-2 text-[12.5px] font-semibold text-muted-foreground">Appearance</p>
             <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
               {THEMES.map((t) => (
                 <button
@@ -380,7 +380,7 @@ export function AppShell({ children, roles = STAFF }: { children: ReactNode; rol
 
       <DialogPrimitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-[hsl(36_10%_10%/0.45)] animate-fade-in md:hidden" />
+          <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-[hsl(var(--shadow-color)/0.5)] animate-fade-in md:hidden" />
           <DialogPrimitive.Content aria-describedby={undefined} className="fixed inset-y-0 left-0 z-50 w-[min(18rem,86vw)] shadow-warm-lg animate-fade-in md:hidden">
             <DialogPrimitive.Title className="sr-only">Navigation</DialogPrimitive.Title>
             <nav aria-label="Main" className="h-full">

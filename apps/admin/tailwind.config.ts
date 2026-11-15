@@ -29,6 +29,7 @@ export default {
           'soft-foreground': hsl('accent-soft-foreground'),
         },
         info: { DEFAULT: hsl('info'), soft: hsl('info-soft'), 'soft-foreground': hsl('info-soft-foreground') },
+        success: { DEFAULT: hsl('success'), soft: hsl('success-soft'), 'soft-foreground': hsl('success-soft-foreground') },
         card: { DEFAULT: hsl('card'), foreground: hsl('card-foreground') },
         popover: { DEFAULT: hsl('popover'), foreground: hsl('popover-foreground') },
         sidebar: {
@@ -40,7 +41,7 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['var(--font-display)', 'ui-serif', 'Georgia', 'serif'],
+        display: ['var(--font-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         xl: 'calc(var(--radius) + 4px)',

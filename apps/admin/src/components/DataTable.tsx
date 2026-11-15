@@ -40,7 +40,7 @@ export function DataTable<T>({
               <tr key={hg.id}>
                 {hg.headers.map((h) => (
                   <th key={h.id} scope="col"
-                      className="whitespace-nowrap border-b px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      className="whitespace-nowrap border-b px-4 py-2.5 text-[13px] font-semibold text-muted-foreground">
                     {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
                 ))}

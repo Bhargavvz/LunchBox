@@ -1,6 +1,6 @@
 'use client';
 
-import { istDateTime, istTime, todayIst, type AdminOrder } from '@lunchbox/api-client';
+import { istDateTime, istTime, istTimeRange, todayIst, type AdminOrder } from '@lunchbox/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
@@ -44,7 +44,7 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border text-sm">
           {[
             ['Status', <StatusBadge key="s" status={order.status} />],
-            ['Pickup window', <span key="w" className="tabular">{istTime(order.pickupWindowStart)}–{istTime(order.pickupWindowEnd)}</span>],
+            ['Pickup window', <span key="w" className="tabular">{istTimeRange(order.pickupWindowStart, order.pickupWindowEnd).text}</span>],
             ['Deadline', <span key="d" className="tabular">{istTime(order.deliveryDeadline)}</span>],
             ['Partner', <span key="p" className={order.partnerId ? 'font-mono text-xs' : 'text-muted-foreground'}>{order.partnerId ?? 'Unassigned'}</span>],
           ].map(([k, v]) => (
@@ -56,7 +56,7 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
         </dl>
         {order.failureReason ? <Alert title="Failure reason">{order.failureReason}</Alert> : null}
         <section>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Timeline</h3>
+          <h3 className="mb-3 text-[13px] font-semibold text-muted-foreground">Timeline</h3>
           <ol className="relative ml-1.5 space-y-3 border-l pl-5 text-sm">
             {detail.data?.timeline.map((e, i) => (
               <li key={i} className="relative">
@@ -126,7 +126,7 @@ export default function OrdersPage() {
     { header: 'Class', accessorKey: 'className' },
     { header: 'School', accessorKey: 'schoolName' },
     { header: 'Status', cell: ({ row }) => <StatusBadge status={row.original.status} /> },
-    { header: 'Pickup', cell: ({ row }) => <span className="tabular">{istTime(row.original.pickupWindowStart)}–{istTime(row.original.pickupWindowEnd)}</span> },
+    { header: 'Pickup', cell: ({ row }) => <span className="tabular whitespace-nowrap">{istTimeRange(row.original.pickupWindowStart, row.original.pickupWindowEnd).text}</span> },
     { header: 'Delivered', cell: ({ row }) => <span className="tabular">{istTime(row.original.deliveredAt)}</span> },
     { header: 'Partner', cell: ({ row }) => (row.original.partnerId
       ? <span className="font-mono text-xs">{row.original.partnerId.slice(0, 8)}</span>

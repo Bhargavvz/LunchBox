@@ -7,23 +7,23 @@ import { useEffect, useRef, type ReactNode } from 'react';
 
 const KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 export const DEFAULT_CENTER = { lat: 12.9716, lng: 77.5946 };
-const LEAF = '#1E5A43';
+const INK = '#2340C9';
 
 /** Quiet, paper-toned basemap so partner pins and fences are the loudest thing on it (same intent as the mobile mapStyle). */
 const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#f4efe6' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#6b6359' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#fbf8f2' }] },
+  { elementType: 'geometry', stylers: [{ color: '#eef1f5' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#5a6478' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f1f3f6' }] },
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.school', stylers: [{ visibility: 'on' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#dfe8d6' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#dcebdd' }] },
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#fbf6ec' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#f1dfb8' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#e3c88f' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dce3f7' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#c4ceee' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfdde3' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#d8cfc0' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cbddeb' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#c3cad6' }] },
 ];
 
 export function MapFrame({ children, height = 420, center = DEFAULT_CENTER, zoom = 12, label }: {
@@ -58,7 +58,7 @@ export function PartnerMarkers({ partners }: { partners: { partnerId: string; la
     <>
       {partners.map((p) => (
         <Marker key={p.partnerId} position={{ lat: p.lat, lng: p.lng }} title={p.label}
-                icon={{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: LEAF, fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 }} />
+                icon={{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: INK, fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 }} />
       ))}
     </>
   );
@@ -77,9 +77,9 @@ export function PolygonEditor({ value, onChange, readOnly }: { value: GeoPoint[]
       map,
       paths: value.map((v) => ({ lat: v.lat, lng: v.lng })),
       editable: !readOnly,
-      strokeColor: LEAF,
+      strokeColor: INK,
       strokeWeight: 2,
-      fillColor: LEAF,
+      fillColor: INK,
       fillOpacity: 0.15,
     });
     polygon.current = poly;

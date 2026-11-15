@@ -112,7 +112,7 @@ export default function ReportsPage() {
 
   const Th = ({ k, children, align = 'right' }: { k: SortKey; children: ReactNode; align?: 'left' | 'right' }) => (
     <th scope="col" aria-sort={sort.key === k ? (sort.desc ? 'descending' : 'ascending') : 'none'}
-        className={cn('whitespace-nowrap border-b px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground', align === 'right' ? 'text-right' : 'text-left')}>
+        className={cn('whitespace-nowrap border-b px-4 py-2.5 text-[13px] font-semibold text-muted-foreground', align === 'right' ? 'text-right' : 'text-left')}>
       <button type="button" onClick={() => setSort((s) => ({ key: k, desc: s.key === k ? !s.desc : k !== 'partnerName' }))}
               className={cn('inline-flex items-center gap-1 hover:text-foreground', sort.key === k && 'text-foreground')}>
         {children}

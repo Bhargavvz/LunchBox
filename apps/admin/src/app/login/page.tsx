@@ -206,7 +206,7 @@ export default function LoginPage() {
                 <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void run(() => auth.finishEnrollment(enrollment.secret, code)); }}>
                   <div className="rounded-xl border bg-card p-5 shadow-warm">
                     <div className="mx-auto w-fit rounded-lg bg-white p-3 ring-1 ring-border">
-                      <QRCodeSVG value={enrollment.qrUrl} size={168} fgColor="#1c1a17" aria-label="Authenticator QR code" />
+                      <QRCodeSVG value={enrollment.qrUrl} size={168} fgColor="#141b2d" aria-label="Authenticator QR code" />
                     </div>
                     <p className="mt-4 text-center text-xs text-muted-foreground">Can&apos;t scan? Enter this key in the app:</p>
                     <p className="mt-1 select-all break-all text-center font-mono text-[13px] font-semibold tracking-wider">{enrollment.secret.secretKey}</p>

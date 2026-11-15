@@ -53,7 +53,7 @@ export function CommandPalette({ open, onOpenChange, commands }: {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[hsl(36_10%_10%/0.4)] backdrop-blur-[2px] animate-fade-in" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[hsl(var(--shadow-color)/0.45)] backdrop-blur-[2px] animate-fade-in" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="fixed left-1/2 top-[14vh] z-50 w-[min(600px,94vw)] -translate-x-1/2 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-warm-lg animate-pop-in"
@@ -94,7 +94,7 @@ export function CommandPalette({ open, onOpenChange, commands }: {
               lastGroup = c.group;
               return (
                 <li key={c.id} role="presentation">
-                  {header ? <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{header}</p> : null}
+                  {header ? <p className="px-3 pb-1 pt-3 text-[12.5px] font-semibold text-muted-foreground">{header}</p> : null}
                   <div
                     id={`cmd-${c.id}`}
                     role="option"
