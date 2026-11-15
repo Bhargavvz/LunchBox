@@ -703,6 +703,9 @@
           "prefillName" : {
             "type" : "string"
           },
+          "providerOrderId" : {
+            "type" : "string"
+          },
           "providerSubscriptionId" : {
             "type" : "string"
           },
@@ -717,7 +720,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "amountPaise", "planName", "prefillContact", "prefillName", "providerSubscriptionId", "razorpayKeyId", "shortUrl", "subscriptionId" ],
+        "required" : [ "amountPaise", "planName", "prefillContact", "prefillName", "providerOrderId", "providerSubscriptionId", "razorpayKeyId", "shortUrl", "subscriptionId" ],
         "type" : "object"
       },
       "ChildRequest" : {
@@ -765,6 +768,9 @@
           "allergiesNote" : {
             "type" : "string"
           },
+          "boxCode" : {
+            "type" : "string"
+          },
           "className" : {
             "type" : "string"
           },
@@ -796,7 +802,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "allergiesNote", "className", "createdAt", "firstName", "id", "lastName", "rollNumber", "schoolId", "schoolName", "section" ],
+        "required" : [ "allergiesNote", "boxCode", "className", "createdAt", "firstName", "id", "lastName", "rollNumber", "schoolId", "schoolName", "section" ],
         "type" : "object"
       },
       "ConsentInput" : {
@@ -1010,10 +1016,39 @@
         "required" : [ "generatedAt", "sections", "userId" ],
         "type" : "object"
       },
+      "DropBox" : {
+        "properties" : {
+          "boxCode" : {
+            "type" : "string"
+          },
+          "childFirstName" : {
+            "type" : "string"
+          },
+          "className" : {
+            "type" : "string"
+          },
+          "orderId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orderStatus" : {
+            "enum" : [ "SCHEDULED", "ASSIGNED", "REASSIGNED", "PARTNER_EN_ROUTE", "PICKED_UP", "IN_TRANSIT", "AT_SCHOOL", "DELIVERED", "CANCELLED", "PICKUP_FAILED", "DELIVERY_FAILED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "boxCode", "childFirstName", "className", "orderId", "orderStatus" ],
+        "type" : "object"
+      },
       "DropStopDetails" : {
         "properties" : {
           "address" : {
             "type" : "string"
+          },
+          "boxes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DropBox"
+            },
+            "type" : "array"
           },
           "deadline" : {
             "format" : "date-time",
@@ -1037,7 +1072,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "address", "deadline", "handoverInstructions", "orderIds", "schoolId", "schoolName" ],
+        "required" : [ "address", "boxes", "deadline", "handoverInstructions", "orderIds", "schoolId", "schoolName" ],
         "type" : "object"
       },
       "EarningsSummaryResponse" : {
@@ -1658,6 +1693,9 @@
       },
       "OrderResponse" : {
         "properties" : {
+          "boxCode" : {
+            "type" : "string"
+          },
           "canRate" : {
             "type" : "boolean"
           },
@@ -1728,7 +1766,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "canRate", "cancelReason", "childId", "childName", "deliveredAt", "deliveryDeadline", "failureReason", "id", "partnerAssigned", "pickedUpAt", "pickupWindowEnd", "pickupWindowStart", "ratingComment", "ratingStars", "scheduledDate", "schoolId", "schoolName", "schoolReceivedAt", "status" ],
+        "required" : [ "boxCode", "canRate", "cancelReason", "childId", "childName", "deliveredAt", "deliveryDeadline", "failureReason", "id", "partnerAssigned", "pickedUpAt", "pickupWindowEnd", "pickupWindowStart", "ratingComment", "ratingStars", "scheduledDate", "schoolId", "schoolName", "schoolReceivedAt", "status" ],
         "type" : "object"
       },
       "PageResponseAdminChildResponse" : {
@@ -2433,6 +2471,9 @@
           "address" : {
             "type" : "string"
           },
+          "boxCode" : {
+            "type" : "string"
+          },
           "childFirstName" : {
             "type" : "string"
           },
@@ -2468,7 +2509,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "address", "childFirstName", "className", "instructions", "landmark", "maskedPhone", "orderId", "orderStatus", "parentFirstName", "pickupWindowEnd", "pickupWindowStart" ],
+        "required" : [ "address", "boxCode", "childFirstName", "className", "instructions", "landmark", "maskedPhone", "orderId", "orderStatus", "parentFirstName", "pickupWindowEnd", "pickupWindowStart" ],
         "type" : "object"
       },
       "PingBatchRequest" : {
@@ -7443,6 +7484,41 @@
             "description" : "OK"
           }
         },
+        "tags" : [ "Subscriptions" ]
+      }
+    },
+    "/api/v1/subscriptions/{subscriptionId}/renew" : {
+      "post" : {
+        "operationId" : "renew",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "subscriptionId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CheckoutResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Prepaid plans: open a Razorpay order for the next period",
         "tags" : [ "Subscriptions" ]
       }
     },
