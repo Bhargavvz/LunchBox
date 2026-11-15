@@ -25,7 +25,8 @@ export default function auth() {
   if (instance) return instance;
   const app = getApps()[0] ?? initializeApp({ apiKey: 'demo-key', projectId: 'demo-lunchbox', authDomain: 'demo-lunchbox.firebaseapp.com' });
   const webAuth = getAuth(app);
-  const emulator = process.env.EXPO_PUBLIC_FIREBASE_AUTH_EMULATOR;
+  // The .env value targets the Android emulator (10.0.2.2 = the PC); in the browser that is localhost.
+  const emulator = process.env.EXPO_PUBLIC_FIREBASE_AUTH_EMULATOR?.replace('10.0.2.2', 'localhost');
   if (emulator) {
     connectAuthEmulator(webAuth, `http://${emulator}`, { disableWarnings: true });
     webAuth.settings.appVerificationDisabledForTesting = true;
