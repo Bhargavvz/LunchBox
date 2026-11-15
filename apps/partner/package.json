@@ -16,8 +16,8 @@
     "build:prod": "eas build --profile production"
   },
   "dependencies": {
-    "@expo-google-fonts/figtree": "0.4.1",
-    "@expo-google-fonts/fraunces": "0.4.1",
+    "@expo-google-fonts/baloo-2": "0.4.2",
+    "@expo-google-fonts/mukta": "0.4.1",
     "@expo/metro-runtime": "~6.1.2",
     "@lunchbox/api-client": "workspace:*",
     "@lunchbox/ui": "workspace:*",
@@ -42,13 +42,15 @@
     "expo-router": "~6.0.10",
     "expo-secure-store": "~15.0.7",
     "expo-status-bar": "~3.0.8",
+    "expo-system-ui": "~6.0.9",
     "expo-task-manager": "~14.0.7",
     "i18next": "23.16.4",
+    "intl-pluralrules": "2.0.1",
     "lucide-react-native": "1.53.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-i18next": "15.1.0",
-    "react-native": "0.81.4",
+    "react-native": "0.81.5",
     "react-native-maps": "1.20.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
@@ -71,7 +73,7 @@
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-firebase|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|lucide-react-native|react-native-svg|@expo-google-fonts/.*|@lunchbox/.*))"
+      "node_modules/(?!(jest-expo|(jest-)?react-native|@react-native(-community)?|@react-native-firebase|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|lucide-react-native|react-native-svg|@expo-google-fonts/.*|@lunchbox/.*))"
     ],
     "setupFiles": [
       "<rootDir>/jest.setup.ts"
