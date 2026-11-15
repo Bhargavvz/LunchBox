@@ -9,14 +9,25 @@
 // Test sign-ins it creates (no SMS is sent; read codes with `docker compose logs firebase`):
 //   parent  +91 98765 43210
 //   partner +91 98765 00001
+//
+// Real Firebase project (backend started with `dev-backend.ps1 -Auth firebase`):
+//   node scripts/seed-local-demo.mjs --firebase
+// Signs in as the admin in backend/config/local-test-admin.env, uses the parent who already signed up in the app with
+// PARENT_PHONE (default: the console test number +91 99123 95116) through a custom token minted with
+// GOOGLE_APPLICATION_CREDENTIALS, and creates the rider for RIDER_PHONE (default +91 99123 95117). The rider signs in
+// and starts the shift in the partner app.
+
+import nodeCrypto from 'node:crypto';
+import fs from 'node:fs';
 
 const API = process.env.API_URL ?? 'http://localhost:8080';
 const AUTH = `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST ?? 'localhost:9099'}`;
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? 'demo-lunchbox';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@lunchbox.test';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'LunchBox-local-123';
-const PARENT_PHONE = '+919876543210';
-const PARTNER_PHONE = '+919876500001';
+const REAL = process.argv.includes('--firebase');
+const PARENT_PHONE = REAL ? (process.env.PARENT_PHONE ?? '+919912395116') : '+919876543210';
+const PARTNER_PHONE = REAL ? (process.env.RIDER_PHONE ?? '+919912395117') : '+919876500001';
 
 if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(API)) {
   console.error(`Refusing to seed ${API}: this script is for a local stack only.`);
@@ -54,7 +65,64 @@ async function emulator(path, body) {
   return json;
 }
 
+// ---- Real Firebase (--firebase) ----
+
+function readEnvFile(path) {
+  if (!fs.existsSync(path)) return {};
+  return Object.fromEntries(
+    fs.readFileSync(path, 'utf8').split('\n').map((l) => l.trim()).filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]),
+  );
+}
+const webKey = () => readEnvFile('apps/admin/.env.local').NEXT_PUBLIC_FIREBASE_API_KEY;
+
+async function identity(path, body) {
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/${path}?key=${webKey()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`firebase ${path}: ${json.error?.message ?? res.status}`);
+  return json;
+}
+
+/** Service-account access token (the backend's key) for the Identity Toolkit admin API. */
+async function serviceAccount() {
+  const key = JSON.parse(fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf8'));
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const sign = (claims) => {
+    const unsigned = `${b64({ alg: 'RS256', typ: 'JWT' })}.${b64(claims)}`;
+    return `${unsigned}.${nodeCrypto.sign('RSA-SHA256', Buffer.from(unsigned), key.private_key).toString('base64url')}`;
+  };
+  const assertion = sign({ iss: key.client_email, scope: 'https://www.googleapis.com/auth/identitytoolkit https://www.googleapis.com/auth/cloud-platform', aud: key.token_uri, iat: now, exp: now + 600 });
+  const access = (await (await fetch(key.token_uri, { method: 'POST', body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }) })).json()).access_token;
+  return { key, sign, access, now };
+}
+
+/** ID token for an existing phone user, without an SMS: look the user up and sign in with a custom token. */
+async function realPhoneToken(phoneNumber) {
+  const sa = await serviceAccount();
+  const lookup = await (await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${sa.key.project_id}/accounts:lookup`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sa.access}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phoneNumber: [phoneNumber] }),
+  })).json();
+  const uid = lookup.users?.[0]?.localId;
+  if (!uid) throw new Error(`No Firebase user with ${phoneNumber} yet: sign in once in the app first.`);
+  const token = sa.sign({
+    iss: sa.key.client_email, sub: sa.key.client_email, uid, iat: sa.now, exp: sa.now + 3600,
+    aud: 'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit',
+  });
+  const { idToken, refreshToken } = await identity('accounts:signInWithCustomToken', { token, returnSecureToken: true });
+  return { idToken, refreshToken };
+}
+
 async function adminToken() {
+  if (REAL) {
+    const env = readEnvFile('backend/config/local-test-admin.env');
+    return (await identity('accounts:signInWithPassword', { email: env.ADMIN_EMAIL, password: env.ADMIN_PASSWORD, returnSecureToken: true })).idToken;
+  }
   return (await emulator('accounts:signInWithPassword', { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, returnSecureToken: true })).idToken;
 }
 
@@ -69,7 +137,8 @@ async function phoneToken(phoneNumber) {
 
 /** Re-issues an ID token so new role claims set by the backend are included. */
 async function refresh(refreshToken) {
-  const res = await fetch(`${AUTH}/securetoken.googleapis.com/v1/token?key=demo-key`, {
+  const host = REAL ? 'https://securetoken.googleapis.com' : `${AUTH}/securetoken.googleapis.com`;
+  const res = await fetch(`${host}/v1/token?key=${REAL ? webKey() : 'demo-key'}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `grant_type=refresh_token&refresh_token=${refreshToken}`,
@@ -83,6 +152,11 @@ const SCHOOL = { lat: 12.9719, lng: 77.6412 };
 async function main() {
   const admin = await adminToken();
   console.log('Signed in as the local admin.');
+  if (process.argv.includes('--assign')) {
+    const assigned = await call('POST', `/api/v1/admin/jobs/auto-assign?date=${today}`, admin, undefined, { allow: [409, 422] });
+    console.log(`Auto-assign: ${assigned.status} ${JSON.stringify(assigned.body)}`);
+    return;
+  }
 
   const areas = (await call('GET', '/api/v1/admin/service-areas', admin)).body;
   if (!areas.some((a) => a.name === 'Indiranagar')) {
@@ -115,7 +189,7 @@ async function main() {
   }
 
   // Parent
-  const parentAuth = await phoneToken(PARENT_PHONE);
+  const parentAuth = REAL ? await realPhoneToken(PARENT_PHONE) : await phoneToken(PARENT_PHONE);
   let parent = parentAuth.idToken;
   const me = (await call('GET', '/api/v1/auth/me', parent)).body;
   if (!me.registered) {
@@ -183,6 +257,12 @@ async function main() {
   }
   if (!shifts[0] || !['SCHEDULED', 'ACTIVE'].includes(shifts[0].status)) {
     await call('POST', `/api/v1/admin/partners/${partnerId}/shifts`, admin, { date: today, plannedStart: hhmm(now), plannedEnd: hhmm(end) });
+  }
+  if (REAL) {
+    console.log(`
+Done. Sign in to the partner app with ${PARTNER_PHONE}, start the shift, then run auto-assign:`);
+    console.log('  node scripts/seed-local-demo.mjs --firebase --assign');
+    return;
   }
   const rider = await phoneToken(PARTNER_PHONE);
   const riderMe = (await call('GET', '/api/v1/partner/me', rider.idToken)).body;
