@@ -4,6 +4,54 @@ _Last updated: 2026-11-15_
 
 ## Status: all phases written; backend (135 tests) and JS checks pass; both apps run natively on the Android emulator against the local stack. Not deployed.
 
+## 2026-11-15 (afternoon test) — both apps end to end on the real Firebase project
+
+Tested on the emulator against `lunchboxappv1` and the local backend: parent sign-in (test number), registration,
+consent; admin setup through `seed-local-demo.mjs --firebase` (signs in as the test admin in
+`backend/config/local-test-admin.env`, git-ignored); rider sign-in (second test number), shift start, auto-assign,
+route map, geofenced arrival, parent live tracking with ETA, OTP check. Bugs found and fixed:
+- **Start shift never asked for location permission** (raw "Not authorized to use location services"). It now asks,
+  shows a bilingual explanation and an *Open settings* button when refused for good.
+- **Two route planners at once** (auto-assign + shift start) hit the one-route-per-day constraint and the rider got
+  a 409. Planning now takes a per-partner, per-day Postgres advisory lock; regression test in `DeliveryFlowIT`
+  (fails without the lock).
+- **Route totals showed 0 km / 0 min** when OR-Tools could not serve the stops and the fallback filled them in;
+  merged plans now report the fallback's totals (`RoutePlanMergeTest`).
+- **Parent map markers were blank or clipped** on Android: markers froze before the map drew, and the 60 dp
+  animated scooter marker was cut to a quarter. Markers now freeze after `onMapReady`, the scooter is a 44 dp plain
+  marker moved by a JS ease-out glide.
+- **Expired pickup codes were still shown to parents** after the school's delivery deadline; the API now answers
+  `code_expired` and the app shows the message (`DeliveryFlowIT`).
+Not done live: pickup and handover after the deadline (the code correctly expires at 12:15); `DeliveryFlowIT` covers
+pickup → handover → delivered.
+
+## 2026-11-15 (after midnight) — sign-in fixed; partner route map; m7i-flex.large
+
+- **Sign-in cause found:** the Google Play Integrity API is disabled on `lunchboxappv1` (Google's API says so). The
+  fingerprints on all four Android apps are correct. Until it is enabled, development builds can set
+  `EXPO_PUBLIC_FIREBASE_TEST_NUMBERS_ONLY=true` so the console's test numbers sign in on an emulator (ignored in
+  release builds). Verified: the parent app signed in with the test number against the real project, registered,
+  gave consent and reached the home screen through the local backend.
+- **Partner route map:** the route screen now shows today's stops on a map (numbered pickups, school drop, own
+  position, dashed line through the remaining stops; tap a stop to open it) and **Navigate route** opens Google Maps
+  turn-by-turn through the next 10 stops in order. `navigateRoute` unit-tested.
+- **Server:** `m7i-flex.large` (8 GB) is the documented size; memory settings moved into `.env`.
+- **Not verified:** the partner map on the emulator (needs a second test number for a rider and a weekday route).
+
+## 2026-11-15 (late night) — photos in Firebase Storage; AWS free plan
+
+- **Firebase Storage (ADR-0021):** `FirebaseStorageService` signs V4 upload/download URLs for the existing bucket
+  `lunchboxappv1.firebasestorage.app` (asia-south2); rules stay closed. Prod uses it by default
+  (`STORAGE_PROVIDER=firebase`, `STORAGE_BUCKET`); LocalStack S3 stays for local work. Protobuf pinned to 4.29.3
+  (OR-Tools' 4.26 broke the Cloud Storage client).
+- **Server on the AWS free plan:** EC2 `t3.small` (2 GB) with an Elastic IP and daily EBS snapshots; compose memory
+  limits tuned for 2 GB + swap; the server needs no AWS keys. `aws-setup.md` rewritten.
+- **Phone sign-in on the rebuilt apps** fails with `app-not-authorized … play_integrity_token`. The signing
+  fingerprints match the console, so the Play Integrity API (or the reCAPTCHA fallback on the emulator) is the
+  suspect; steps in `real-firebase.md`.
+- **Verified:** signed upload, metadata check, signed download, delete and a refused unsigned read against the real
+  bucket; compose file renders. **Not verified:** the stack on a real 2 GB server; real OTP sign-in.
+
 ## 2026-11-15 (night) — one server instead of Terraform/ECS (ADR-0020)
 
 - **Removed:** `infra/terraform`, the Terraform CI job and the ECS/S3/CloudFront deploy.
@@ -59,7 +107,7 @@ everything below as "implemented, unverified" until the verification checklist p
 | 0 Foundations | Monorepo (pnpm + Turborepo), docker-compose, Spring Boot skeleton, Expo apps, Next.js admin, shared config, CI, README, architecture + ADRs | ✅ | ❌ |
 | 1 Data & Auth | Flyway V1–V8, Firebase token verification + claims, RBAC + ownership, users/parents/children/schools/addresses/service areas APIs, OpenAPI → TS client, audit log | ✅ | ❌ |
 | 2 Subscriptions & Orders | Razorpay subscriptions + webhooks, order generation job, holidays/leave days, state machine, outbox | ✅ | ❌ |
-| 3 Dispatch & Partner app | Partner onboarding + approval (KYC removed, ADR-0019), greedy assignment, OR-Tools routing, partner app, OTP/QR pickup, geofenced photo handover, S3 uploads, offline queue | ✅ | ❌ |
+| 3 Dispatch & Partner app | Partner onboarding + approval (KYC removed, ADR-0019), greedy assignment, OR-Tools routing, partner app, OTP/QR pickup, geofenced photo handover, photo uploads (Firebase Storage, ADR-0021), offline queue | ✅ | ❌ |
 | 4 Tracking & Notifications | STOMP relay, Redis GEO, parent live map with marker interpolation, geofencing, FCM + MSG91 fallback (masked calls removed, ADR-0019) | ✅ | ❌ |
 | 5 Admin panel | Dashboard + live map, management screens, polygon editor, reports from replica, settings, audit viewer | ✅ | ❌ |
 | 6 Earnings & Payouts | Append-only ledger, RazorpayX payouts + webhooks, partner earnings screens | ✅ | ❌ |
@@ -164,7 +212,7 @@ Look at these first:
 | Google Maps | Android, iOS and web API keys (restricted) |
 | Razorpay / RazorpayX | Test-mode keys, webhook secrets, RazorpayX account number |
 | MSG91 | Auth key and DLT-approved template ids for the five SMS templates |
-| AWS | Account, one Lightsail server, a domain, a private S3 photo bucket |
+| AWS | Free-plan account, one EC2 m7i-flex.large, a domain (photos in Firebase Storage) |
 | Devices | Android + iOS devices/emulators for dev builds, background-location and camera testing |
 
 ## Known gaps and follow-ups
