@@ -8,3 +8,4 @@ export * from './art';
 export * from './toast';
 export * from './tabbar';
 export * from './mapStyle';
+export * from './signature';

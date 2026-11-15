@@ -63,8 +63,8 @@ function toneColours(t: Theme, tone: StatusTone): [string, string] {
   const c = t.colors;
   return {
     waiting: [c.sunken, c.textMuted],
-    active: [c.infoSoft, c.onInfoSoft],
-    done: [c.primarySoft, c.onPrimarySoft],
+    active: [c.primarySoft, c.onPrimarySoft],
+    done: [c.successSoft, c.onSuccessSoft],
     problem: [c.dangerSoft, c.onDangerSoft],
     off: [c.sunken, c.textFaint],
   }[tone] as [string, string];
@@ -86,7 +86,7 @@ export function StatusPill({ status, labels = defaultStatusLabels }: { status: O
       ) : (
         <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: fg }} />
       )}
-      <RNText style={{ color: fg, fontSize: 12, fontFamily: t.fonts.bold, letterSpacing: 0.1 }}>{labels[status]}</RNText>
+      <RNText style={{ color: fg, fontSize: 13, lineHeight: 18, fontFamily: t.fonts.semibold, includeFontPadding: false }}>{labels[status]}</RNText>
     </View>
   );
 }
@@ -124,7 +124,7 @@ export function JourneyRail({
   useEffect(() => {
     Animated.timing(progress, { toValue: target, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   }, [target, progress]);
-  const fill = tone === 'problem' ? t.colors.danger : tone === 'off' ? t.colors.borderStrong : t.colors.primary;
+  const fill = tone === 'problem' ? t.colors.danger : tone === 'off' ? t.colors.borderStrong : tone === 'done' ? t.colors.success : t.colors.primary;
   const reached = (at: number) => target >= at && tone !== 'off';
   const node = (at: number) => (
     <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 3, borderColor: reached(at) ? fill : t.colors.border,

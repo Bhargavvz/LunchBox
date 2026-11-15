@@ -8,15 +8,15 @@ export type MapStyleRule = {
 };
 
 /**
- * A quiet, warm basemap that matches the paper palette: businesses and transit hidden, parks and schools tinted,
- * so the partner marker and the destination are the only saturated things on screen.
+ * A quiet, cool basemap that matches the notebook-paper palette: businesses and transit hidden, parks and schools tinted
+ * (schools in pale mango), so the partner marker and the destination are the only saturated things on screen.
  */
 export function mapStyle(theme: Theme): MapStyleRule[] {
   const p = theme.dark
-    ? { land: '#1E1C19', text: '#9C948A', halo: '#141311', road: '#2A2723', arterial: '#302C27', highway: '#3D3529',
-        highwayEdge: '#4A4031', water: '#16252A', park: '#1F2A21', school: '#2E2819' }
-    : { land: '#F3EEE4', text: '#6B635A', halo: '#F6F2EA', road: '#FFFDF8', arterial: '#FFFFFF', highway: '#F2DFB3',
-        highwayEdge: '#E2C98E', water: '#C9DCE0', park: '#DCE8D6', school: '#F1E3C4' };
+    ? { land: '#141B2B', text: '#8C96AE', halo: '#0D1220', road: '#20293D', arterial: '#263049', highway: '#2F3A57',
+        highwayEdge: '#3A4668', water: '#0E2233', park: '#15281F', school: '#2F2814' }
+    : { land: '#EEF1F5', text: '#5A6478', halo: '#F1F3F6', road: '#FFFFFF', arterial: '#FFFFFF', highway: '#DCE3F7',
+        highwayEdge: '#C4CEEE', water: '#CBDDEB', park: '#DCEBDD', school: '#FBEACB' };
   return [
     { elementType: 'geometry', stylers: [{ color: p.land }] },
     { elementType: 'labels.text.fill', stylers: [{ color: p.text }] },

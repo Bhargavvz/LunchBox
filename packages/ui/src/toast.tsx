@@ -57,7 +57,7 @@ function ToastView({ toast, onDone }: { toast: ToastMessage; onDone: () => void 
   }, [y, onDone, t.motion.base]);
   const glyph: LucideIcon = { success: CheckCircle2, info: Info, danger: CircleAlert }[toast.tone];
   // The toast is always a dark capsule, so its icon colours are fixed light tints that read on it.
-  const tint = { success: '#8EC2A7', info: '#9DB5E3', danger: '#F08A72' }[toast.tone];
+  const tint = { success: '#4FD1A0', info: '#8FA5FF', danger: '#FF7A86' }[toast.tone];
   return (
     <Animated.View
       pointerEvents="none"
@@ -80,14 +80,15 @@ function ToastView({ toast, onDone }: { toast: ToastMessage; onDone: () => void 
           paddingVertical: 12,
           paddingHorizontal: 16,
           borderRadius: t.radius.pill,
-          backgroundColor: t.dark ? '#2A2723' : '#24211D',
+          backgroundColor: t.colors.inkSurface,
           borderWidth: t.dark ? 1 : 0,
           borderColor: t.colors.borderStrong,
           ...elevation(t, 3),
         }}
       >
         <Icon as={glyph} size={18} color={tint} strokeWidth={2.2} />
-        <RNText style={{ color: '#F6F2EA', fontFamily: t.fonts.semibold, fontSize: 14.5, flexShrink: 1 }}>{toast.message}</RNText>
+        <RNText style={{ color: t.colors.onInkSurface, fontFamily: t.fonts.semibold, fontSize: 15.5, flexShrink: 1,
+          includeFontPadding: false }}>{toast.message}</RNText>
       </View>
     </Animated.View>
   );

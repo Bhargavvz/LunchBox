@@ -44,34 +44,37 @@ export type TextVariant =
   | 'numeral'
   | 'figure';
 
-export type TextTone = 'default' | 'muted' | 'faint' | 'primary' | 'danger' | 'info' | 'accent' | 'onPrimary' | 'inverse';
+export type TextTone = 'default' | 'muted' | 'faint' | 'primary' | 'success' | 'danger' | 'info' | 'accent' | 'onPrimary' | 'inverse';
 
 function variantStyle(t: Theme, variant: TextVariant): TextStyle {
   const f = t.fonts;
   switch (variant) {
+    // Baloo 2 and Mukta both carry tall Devanagari ascenders, so line heights sit near 1.3 (display) and 1.5 (text)
+    // to keep Hindi matras from clipping.
     case 'display':
-      return { fontFamily: f.display, fontSize: t.font.display, lineHeight: 42, letterSpacing: -0.6 };
+      return { fontFamily: f.displayBold, fontSize: t.font.display, lineHeight: 42, letterSpacing: -0.4 };
     case 'title':
-      return { fontFamily: f.display, fontSize: t.font.xxl, lineHeight: 34, letterSpacing: -0.4 };
+      return { fontFamily: f.display, fontSize: t.font.xxl, lineHeight: 36, letterSpacing: -0.2 };
     case 'heading':
-      return { fontFamily: f.bold, fontSize: t.font.lg, lineHeight: 24, letterSpacing: -0.1 };
+      return { fontFamily: f.display, fontSize: 20, lineHeight: 28 };
     case 'subheading':
-      return { fontFamily: f.semibold, fontSize: t.font.md, lineHeight: 22 };
+      return { fontFamily: f.semibold, fontSize: t.font.md + 1, lineHeight: 24 };
     case 'bodyStrong':
-      return { fontFamily: f.semibold, fontSize: t.font.md, lineHeight: 24 };
+      return { fontFamily: f.semibold, fontSize: t.font.md + 1, lineHeight: 25 };
     case 'label':
-      return { fontFamily: f.semibold, fontSize: t.font.sm, lineHeight: 20 };
+      return { fontFamily: f.semibold, fontSize: t.font.sm + 1, lineHeight: 22 };
     case 'caption':
-      return { fontFamily: f.medium, fontSize: 13, lineHeight: 18 };
+      return { fontFamily: f.medium, fontSize: 14, lineHeight: 20 };
     case 'overline':
-      return { fontFamily: f.bold, fontSize: 11, lineHeight: 14, letterSpacing: 1.1, textTransform: 'uppercase' };
+      // A quiet sentence-case label, not a tracked all-caps eyebrow.
+      return { fontFamily: f.semibold, fontSize: 13.5, lineHeight: 19 };
     case 'numeral':
-      return { fontFamily: f.semibold, fontSize: t.font.xl, lineHeight: 28, letterSpacing: -0.3 };
+      return { fontFamily: f.display, fontSize: 24, lineHeight: 30 };
     case 'figure':
-      // The one hero number per view (an ETA, a total): large sans with proportional figures.
-      return { fontFamily: f.semibold, fontSize: 44, lineHeight: 52, letterSpacing: -1 };
+      // The one hero number per view (an ETA, a total).
+      return { fontFamily: f.displayBold, fontSize: 48, lineHeight: 56, letterSpacing: -0.8 };
     default:
-      return { fontFamily: f.regular, fontSize: t.font.md, lineHeight: 24 };
+      return { fontFamily: f.regular, fontSize: t.font.md + 1, lineHeight: 25 };
   }
 }
 
@@ -82,6 +85,7 @@ function toneColor(t: Theme, tone: TextTone): string {
     muted: c.textMuted,
     faint: c.textFaint,
     primary: c.primary,
+    success: c.success,
     danger: c.danger,
     info: c.info,
     accent: c.onAccentSoft,
@@ -127,6 +131,7 @@ export function Text({
       accessibilityRole={accessibilityRole ?? (header ? 'header' : 'text')}
       maxFontSizeMultiplier={variant === 'display' ? 1.4 : 1.8}
       style={[
+        { includeFontPadding: false },
         variantStyle(t, variant),
         { color: toneColor(t, muted ? 'muted' : tone) },
         center ? { textAlign: 'center' } : null,
@@ -233,6 +238,11 @@ export function Screen({
   const page = (
     <View style={{ flex: 1, backgroundColor: t.colors.background }} testID={testID}>
       {body}
+      {/* Screens without a header scroll under a transparent status bar; this strip keeps the clock readable. */}
+      {safeTop ? (
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top,
+          backgroundColor: t.colors.background, opacity: 0.96 }} />
+      ) : null}
       {footer ? (
         <View
           style={{
@@ -282,7 +292,7 @@ export function PageTitle({ eyebrow, title, trailing, subtitle }: {
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <Row justify="space-between" style={{ marginTop: 8, marginBottom: -4 }}>
-      <Text variant="overline" tone="muted" accessibilityRole="header">{title}</Text>
+      <Text variant="label" tone="muted" accessibilityRole="header">{title}</Text>
       {action}
     </Row>
   );
@@ -343,7 +353,7 @@ export function PressableScale({
 // Surfaces
 // ---------------------------------------------------------------------------------------------------------------
 
-export type CardTone = 'plain' | 'raised' | 'sunken' | 'primary' | 'accent' | 'danger' | 'info' | 'brand';
+export type CardTone = 'plain' | 'raised' | 'sunken' | 'primary' | 'accent' | 'success' | 'danger' | 'info' | 'brand';
 
 function cardColours(t: Theme, tone: CardTone): { bg: string; border: string } {
   const c = t.colors;
@@ -354,6 +364,8 @@ function cardColours(t: Theme, tone: CardTone): { bg: string; border: string } {
       return { bg: c.primarySoft, border: 'transparent' };
     case 'accent':
       return { bg: c.accentSoft, border: 'transparent' };
+    case 'success':
+      return { bg: c.successSoft, border: 'transparent' };
     case 'danger':
       return { bg: c.dangerSoft, border: 'transparent' };
     case 'info':
@@ -361,7 +373,8 @@ function cardColours(t: Theme, tone: CardTone): { bg: string; border: string } {
     case 'brand':
       return { bg: c.primary, border: 'transparent' };
     default:
-      return { bg: c.surface, border: c.border };
+      // White on paper separates on its own in light mode; dark mode gets a hairline because its surfaces are close.
+      return { bg: c.surface, border: t.dark ? c.border : 'transparent' };
   }
 }
 
@@ -415,7 +428,7 @@ export function Card({
 // Buttons
 // ---------------------------------------------------------------------------------------------------------------
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'dangerSoft' | 'accent';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'dangerSoft' | 'accent' | 'success';
 
 function buttonColours(t: Theme, variant: ButtonVariant): { bg: string; fg: string; border: string } {
   const c = t.colors;
@@ -427,6 +440,7 @@ function buttonColours(t: Theme, variant: ButtonVariant): { bg: string; fg: stri
     danger: { bg: c.danger, fg: c.onDanger, border: c.danger },
     dangerSoft: { bg: c.dangerSoft, fg: c.onDangerSoft, border: c.dangerSoft },
     accent: { bg: c.accent, fg: c.onAccent, border: c.accent },
+    success: { bg: c.success, fg: t.dark ? c.background : c.onPrimary, border: c.success },
   }[variant];
 }
 
@@ -459,7 +473,12 @@ export function Button({
   testID?: string;
 }) {
   const t = useTheme();
-  const { bg, fg, border } = buttonColours(t, variant);
+  const colours = buttonColours(t, variant);
+  // Disabled filled buttons go flat and grey instead of fading, so their label stays readable.
+  const flat = !!disabled && !loading && !['outline', 'ghost'].includes(variant);
+  const bg = flat ? t.colors.sunken : colours.bg;
+  const fg = flat ? t.colors.textMuted : colours.fg;
+  const border = flat ? t.colors.sunken : colours.border;
   const inactive = disabled || loading;
   const height = { sm: 38, md: 50, lg: 58 }[size];
   const fontSize = { sm: t.font.sm, md: t.font.md, lg: t.font.lg }[size];
@@ -480,7 +499,7 @@ export function Button({
         backgroundColor: bg,
         borderWidth: variant === 'outline' ? 1 : 0,
         borderColor: border,
-        opacity: disabled && !loading ? 0.45 : 1,
+        opacity: disabled && !loading && !flat ? 0.5 : 1,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
@@ -494,7 +513,9 @@ export function Button({
       ) : (
         <>
           {icon ? <Icon as={icon} size={size === 'sm' ? 16 : 19} color={fg} strokeWidth={2} /> : null}
-          <RNText style={{ color: fg, fontSize, fontFamily: t.fonts.semibold }} maxFontSizeMultiplier={1.5}>
+          <RNText style={{ color: fg, fontSize: fontSize + 1, fontFamily: t.fonts.bold, includeFontPadding: false,
+                    flexShrink: 1 }}
+                  numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.5}>
             {title}
           </RNText>
           {trailingIcon ? <Icon as={trailingIcon} size={size === 'sm' ? 16 : 19} color={fg} strokeWidth={2} /> : null}
@@ -683,9 +704,10 @@ export function OtpInput({
             <View
               key={i}
               style={{
-                flex: 1,
-                maxWidth: 54,
-                aspectRatio: 0.82,
+                // Fixed size: Android's layout collapsed both aspect-ratio and flex boxes inside this pressable row.
+                // Six 48 pt boxes plus gaps fit a 320 pt-wide phone.
+                width: 48,
+                height: 58,
                 borderRadius: t.radius.sm,
                 borderWidth: active ? 2 : 1,
                 borderColor: error ? t.colors.danger : active ? t.colors.primary : filled ? t.colors.borderStrong : t.colors.border,
@@ -695,7 +717,7 @@ export function OtpInput({
               }}
             >
               {filled ? (
-                <RNText style={{ fontFamily: t.fonts.display, fontSize: 26, color: t.colors.text }}>{digits[i]}</RNText>
+                <RNText style={{ fontFamily: t.fonts.displayBold, fontSize: 28, color: t.colors.text, includeFontPadding: false }}>{digits[i]}</RNText>
               ) : active ? (
                 <Animated.View style={{ width: 2, height: 24, backgroundColor: t.colors.primary, opacity: caret }} />
               ) : null}
@@ -717,7 +739,9 @@ export function OtpInput({
         onBlur={() => setFocused(false)}
         caretHidden
         accessibilityLabel={label}
-        style={{ position: 'absolute', opacity: 0.011, width: '100%', height: '100%' }}
+        // Invisible but still focusable (opacity 0 would stop Android from focusing it); transparent text so the
+        // digits never show through the first box.
+        style={{ position: 'absolute', opacity: 0.011, width: '100%', height: '100%', color: 'transparent' }}
       />
     </Pressable>
   );
@@ -760,7 +784,8 @@ export function Chip({
       }}
     >
       {icon ? <Icon as={icon} size={15} color={selected ? t.colors.onPrimary : t.colors.textMuted} strokeWidth={2} /> : null}
-      <RNText style={{ fontFamily: t.fonts.semibold, fontSize: t.font.sm, color: selected ? t.colors.onPrimary : t.colors.text }}>
+      <RNText style={{ fontFamily: t.fonts.semibold, fontSize: t.font.sm + 1, color: selected ? t.colors.onPrimary : t.colors.text,
+        includeFontPadding: false }}>
         {label}
       </RNText>
     </PressableScale>
@@ -833,7 +858,7 @@ export function ListGroup({ children }: { children: ReactNode }) {
   const t = useTheme();
   const items = (Array.isArray(children) ? children : [children]).flat().filter(Boolean);
   return (
-    <View style={{ backgroundColor: t.colors.surface, borderRadius: t.radius.lg, borderWidth: StyleSheet.hairlineWidth,
+    <View style={{ backgroundColor: t.colors.surface, borderRadius: t.radius.lg, borderWidth: t.dark ? StyleSheet.hairlineWidth : 0,
       borderColor: t.colors.border, overflow: 'hidden', ...elevation(t, 1) }}>
       {items.map((child, i) => (
         <View key={i}>
@@ -857,7 +882,7 @@ export function ListItem({
   testID,
 }: {
   icon?: LucideIcon;
-  iconTone?: 'primary' | 'accent' | 'info' | 'danger' | 'neutral';
+  iconTone?: 'primary' | 'accent' | 'success' | 'info' | 'danger' | 'neutral';
   title: string;
   subtitle?: string;
   trailing?: ReactNode;
@@ -871,6 +896,7 @@ export function ListItem({
   const [bg, fg] = {
     primary: [c.primarySoft, c.onPrimarySoft],
     accent: [c.accentSoft, c.onAccentSoft],
+    success: [c.successSoft, c.onSuccessSoft],
     info: [c.infoSoft, c.onInfoSoft],
     danger: [c.dangerSoft, c.onDangerSoft],
     neutral: [c.sunken, c.textMuted],
@@ -959,7 +985,7 @@ export function Banner({
   const [bg, fg, glyph] = {
     info: [c.infoSoft, c.onInfoSoft, Info],
     danger: [c.dangerSoft, c.onDangerSoft, AlertCircle],
-    success: [c.primarySoft, c.onPrimarySoft, CheckCircle2],
+    success: [c.successSoft, c.onSuccessSoft, CheckCircle2],
     warning: [c.accentSoft, c.onAccentSoft, TriangleAlert],
   }[tone] as [string, string, LucideIcon];
   return (
@@ -1069,6 +1095,7 @@ export function EmptyState({
 const AVATAR_TONES: [keyof ThemeColors, keyof ThemeColors][] = [
   ['primarySoft', 'onPrimarySoft'],
   ['accentSoft', 'onAccentSoft'],
+  ['successSoft', 'onSuccessSoft'],
   ['infoSoft', 'onInfoSoft'],
   ['dangerSoft', 'onDangerSoft'],
 ];
@@ -1083,24 +1110,27 @@ export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
   return (
     <View accessible={false} style={{ width: size, height: size, borderRadius: size / 2.6, backgroundColor: t.colors[bg],
       alignItems: 'center', justifyContent: 'center' }}>
-      <RNText style={{ fontFamily: t.fonts.display, fontSize: size * 0.4, color: t.colors[fg] }}>{initials}</RNText>
+      <RNText style={{ fontFamily: t.fonts.displayBold, fontSize: size * 0.4, color: t.colors[fg], includeFontPadding: false }}>
+        {initials}
+      </RNText>
     </View>
   );
 }
 
-export function Badge({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'primary' | 'accent' | 'danger' | 'info' }) {
+export function Badge({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'primary' | 'accent' | 'success' | 'danger' | 'info' }) {
   const t = useTheme();
   const c = t.colors;
   const [bg, fg] = {
     neutral: [c.sunken, c.textMuted],
     primary: [c.primarySoft, c.onPrimarySoft],
     accent: [c.accentSoft, c.onAccentSoft],
+    success: [c.successSoft, c.onSuccessSoft],
     danger: [c.dangerSoft, c.onDangerSoft],
     info: [c.infoSoft, c.onInfoSoft],
   }[tone];
   return (
     <View style={{ alignSelf: 'flex-start', backgroundColor: bg, borderRadius: t.radius.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
-      <RNText style={{ color: fg, fontFamily: t.fonts.bold, fontSize: 11.5, letterSpacing: 0.2 }}>{label}</RNText>
+      <RNText style={{ color: fg, fontFamily: t.fonts.semibold, fontSize: 13, lineHeight: 18, includeFontPadding: false }}>{label}</RNText>
     </View>
   );
 }
@@ -1117,9 +1147,8 @@ export function Stat({ label, value, hint, tone = 'default', size = 'md' }: {
   return (
     <View style={{ gap: 2 }} accessible accessibilityLabel={`${label}: ${value}${hint ? `, ${hint}` : ''}`}>
       <Text variant="overline" tone={tone === 'onPrimary' ? 'onPrimary' : 'muted'}>{label}</Text>
-      {/* Stat values stay in the interface sans (semibold): the display serif is for titles, not figures. */}
-      <Text variant="heading" tone={tone} style={{ fontFamily: t.fonts.semibold, fontSize: size === 'lg' ? 40 : 24,
-        lineHeight: size === 'lg' ? 48 : 30, letterSpacing: size === 'lg' ? -0.8 : -0.3 }}>{value}</Text>
+      <Text variant="heading" tone={tone} style={{ fontFamily: t.fonts.displayBold, fontSize: size === 'lg' ? 40 : 26,
+        lineHeight: size === 'lg' ? 48 : 32, fontVariant: ['tabular-nums'] }}>{value}</Text>
       {hint ? <Text variant="caption" tone={tone === 'onPrimary' ? 'onPrimary' : 'muted'}>{hint}</Text> : null}
     </View>
   );
