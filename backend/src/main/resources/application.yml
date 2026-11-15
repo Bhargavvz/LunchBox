@@ -201,6 +201,9 @@ lunchbox:
     kyc-bucket: ${S3_KYC_BUCKET}
     kms-key-id: ${S3_KMS_KEY_ID:}
     presign-ttl: 5m
+    presign-endpoint: ${S3_PRESIGN_ENDPOINT:}
+    access-key: ${S3_ACCESS_KEY:}
+    secret-key: ${S3_SECRET_KEY:}
   stomp:
     relay-host: ${STOMP_RELAY_HOST:localhost}
     relay-port: ${STOMP_RELAY_PORT:61613}

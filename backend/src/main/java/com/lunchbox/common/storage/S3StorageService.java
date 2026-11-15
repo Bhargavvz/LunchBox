@@ -5,6 +5,9 @@ import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -38,16 +41,24 @@ public class S3StorageService implements StorageService {
         this.clock = clock;
         Region region = Region.of(config.region());
         S3Configuration s3Config = S3Configuration.builder().pathStyleAccessEnabled(config.pathStyle()).build();
-        var clientBuilder = S3Client.builder().region(region).serviceConfiguration(s3Config)
-                .credentialsProvider(DefaultCredentialsProvider.create());
-        var presignerBuilder = S3Presigner.builder().region(region).serviceConfiguration(s3Config)
-                .credentialsProvider(DefaultCredentialsProvider.create());
-        if (config.endpoint() != null && !config.endpoint().isBlank()) {
+        AwsCredentialsProvider credentials = hasText(config.accessKey()) && hasText(config.secretKey())
+                ? StaticCredentialsProvider.create(AwsBasicCredentials.create(config.accessKey(), config.secretKey()))
+                : DefaultCredentialsProvider.create();
+        var clientBuilder = S3Client.builder().region(region).serviceConfiguration(s3Config).credentialsProvider(credentials);
+        var presignerBuilder = S3Presigner.builder().region(region).serviceConfiguration(s3Config).credentialsProvider(credentials);
+        if (hasText(config.endpoint())) {
             clientBuilder.endpointOverride(URI.create(config.endpoint()));
-            presignerBuilder.endpointOverride(URI.create(config.endpoint()));
+        }
+        String presignHost = hasText(config.presignEndpoint()) ? config.presignEndpoint() : config.endpoint();
+        if (hasText(presignHost)) {
+            presignerBuilder.endpointOverride(URI.create(presignHost));
         }
         this.s3 = clientBuilder.build();
         this.presigner = presignerBuilder.build();
+    }
+
+    private static boolean hasText(String s) {
+        return s != null && !s.isBlank();
     }
 
     private String bucket(Bucket bucket) {

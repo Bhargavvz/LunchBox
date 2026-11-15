@@ -44,7 +44,14 @@ public record LunchBoxProperties(
             @NotBlank String handoverBucket,
             @NotBlank String kycBucket,
             String kmsKeyId,
-            @NotNull Duration presignTtl) {
+            @NotNull Duration presignTtl,
+            /* Host put into pre-signed URLs when devices reach S3 by another name (the Android emulator uses
+               10.0.2.2 for the PC). Defaults to {@code endpoint}. */
+            String presignEndpoint,
+            /* Static keys for S3-compatible local stores (LocalStack). Never set in AWS: the default provider chain
+               (task role) is used whenever these are blank. */
+            String accessKey,
+            String secretKey) {
     }
 
     public record Stomp(

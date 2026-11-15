@@ -9,6 +9,11 @@ lunchbox:
     cors-allowed-origins: http://localhost:3000,http://localhost:8081,http://localhost:8091,http://localhost:8092,http://localhost:8093,http://localhost:8094
   storage:
     endpoint: http://localhost:4566
+    # Set S3_PRESIGN_ENDPOINT=http://10.0.2.2:4566 when testing photo upload from the Android emulator.
+    presign-endpoint: ${S3_PRESIGN_ENDPOINT:http://localhost:4566}
+    # LocalStack accepts any keys; these never leave the local profile.
+    access-key: test
+    secret-key: test
     path-style: true
     handover-bucket: lunchbox-local-handover
     kyc-bucket: lunchbox-local-kyc
