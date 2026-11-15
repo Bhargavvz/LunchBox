@@ -149,7 +149,7 @@ Start with the first three, because the mobile apps need them. Use test or sandb
 | 4 | **Razorpay** | Test-mode key id + secret, and a webhook secret. Create the subscription plans in the dashboard. | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_MODE` |
 | 5 | **RazorpayX** | Test key, account number, webhook secret. | `RAZORPAYX_*` |
 | 6 | **MSG91** | Auth key and **DLT-approved** template ids for the five SMS templates. DLT approval takes days, so start early. | `MSG91_AUTH_KEY`, `MSG91_TPL_*` |
-| 9 | **AWS** | An account in ap-south-1, one Lightsail server, a domain and a private S3 photo bucket. | See Part 9 |
+| 9 | **AWS** | A free-plan account in ap-south-1, one EC2 m7i-flex.large and a domain. Photos go to Firebase Storage. | See Part 9 |
 | 10 | **Sentry** (optional) | A project per app. | `SENTRY_DSN` |
 | 11 | **Google Route Optimization API** (optional, off by default) | A GCP project with the API enabled + a service account. | `ROUTING_PROVIDER`, `GOOGLE_ROUTES_*` |
 
@@ -256,15 +256,15 @@ Reply to Claude with yes / no / your change for each. Claude will update the cod
 
 ## Part 9 — Deploy to the server (AWS)
 
-Follow `docs/runbooks/aws-setup.md` (one Lightsail server with Docker Compose, ADR-0020). In short:
+Follow `docs/runbooks/aws-setup.md` (one EC2 server with Docker Compose, ADR-0020; photos in Firebase Storage, ADR-0021). In short:
 
-1. [ ] Create the Lightsail 4 GB server with a static IP, point `api.` and `admin.` at it, create the private S3
-   photo bucket and an IAM key limited to it.
+1. [ ] Create the EC2 m7i-flex.large with an Elastic IP and a daily snapshot policy, point `api.` and `admin.` at it, and
+   add the 90-day lifecycle rule to the Firebase Storage bucket.
 2. [ ] Install Docker on the server and fill `/opt/lunchbox/.env` from `deploy/.env.example`. Generate two new
    32-byte keys for `LUNCHBOX_PII_KEY` and `LUNCHBOX_QR_SIGNING_KEY`. **Never reuse the local all-zero keys.**
 3. [ ] Add the GitHub `production` environment (variables and SSH secrets), push to `main`, run **Deploy**.
 4. [ ] Create the first super admin with `BOOTSTRAP_SUPER_ADMIN_EMAIL`, then empty it.
-5. [ ] Point the Razorpay webhook at the API. Install the backup cron and turn on Lightsail snapshots.
+5. [ ] Point the Razorpay webhook at the API. Install the backup cron.
 6. [ ] Build test apps against the server: `pnpm build:preview` in each app.
 7. [ ] Load test with k6 (`docs/runbooks/load-testing.md`) outside delivery hours, using Firebase test numbers.
 
@@ -274,13 +274,13 @@ Follow `docs/runbooks/aws-setup.md` (one Lightsail server with Docker Compose, A
 
 - [ ] Security review against `docs/security.md`:
   - admin MFA enforced in staging/prod
-  - S3 buckets private, with pre-signed URLs only
+  - Firebase Storage rules closed, signed URLs only
   - audit log populated for every admin write
 - [ ] Child-safety review:
   - partners never see the parent's full name, phone or the child's photo
   - handover needs the geofence + photo
 - [ ] DPDP: consent capture, data export and account deletion tested end to end. Publish the privacy policy and terms.
-- [ ] Backups: restore one nightly dump into a scratch database; Lightsail snapshots on.
+- [ ] Backups: restore one nightly dump into a scratch database; EBS snapshots on.
 - [ ] Switch providers to `live` one at a time. Run one real ₹1 plan payment.
 - [ ] Store submission: follow `docs/release/store-checklist.md`. This covers the Play Console data-safety form,
   justifying background location, screenshots (the new UI is ready for them), and the Apple review notes.

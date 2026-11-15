@@ -19,7 +19,7 @@ secrets or EAS secrets as noted, and tell Claude only that they are there.
 
 | # | What | Where it goes | Blocks |
 |---|---|---|---|
-| 1 | **AWS account** (ap-south-1) with a billing alert, a **Lightsail 4 GB** server with a static IP, a domain with `api.` and `admin.` A records, and a private S3 photo bucket | The server's `/opt/lunchbox/.env` (see `runbooks/aws-setup.md`) | Everything server-side |
+| 1 | **AWS account** (ap-south-1) with a billing alert, an **EC2 m7i-flex.large** (free plan) with an Elastic IP, and a domain with `api.` and `admin.` A records; photos use the existing Firebase Storage bucket | The server's `/opt/lunchbox/.env` (see `runbooks/aws-setup.md`) | Everything server-side |
 | 2 | **GitHub**: push this branch; add secrets `EXPO_TOKEN`, `NVD_API_KEY` | Repo → Settings → Secrets | CI and deploys |
 | 3 | **Firebase**: a `prod` (and `staging`) project; enable Phone sign-in; upgrade to **Identity Platform** and enable TOTP MFA; register both Android apps (and iOS later); download `google-services.json` per app; create a backend service-account key | EAS file secrets (`GOOGLE_SERVICES_JSON`), server `.env` (service account), GitHub vars `FIREBASE_*` | Any real sign-in |
 | 4 | **Google Maps Platform**: Android, iOS and web keys, each restricted (SHA-1 / bundle ID / admin domain) | `.env`/EAS secrets, GitHub var `GOOGLE_MAPS_WEB_KEY` | Live maps |
@@ -49,7 +49,7 @@ Reply yes / no / your change for each; Claude updates code, tests and ADRs.
 | CI/CD | Get `ci.yml` green; run `deploy.yml` | Health check `UP` over HTTPS |
 | Apps | `eas build --profile preview` for both apps against the server; internal testers install | Full flow on real phones |
 | Load test | k6 scripts in `load/` against the server, outside delivery hours | p95 latency and error-rate targets in `docs/runbooks/load-testing.md` |
-| Launch | Razorpay live keys, backups cron, Lightsail snapshots, first super admin | Smoke test, one real ₹1 plan payment, one restored backup |
+| Launch | Razorpay live keys, backups cron, EBS snapshot policy, photo lifecycle rule, first super admin | Smoke test, one real ₹1 plan payment, one restored backup |
 | Stores | `eas build --profile production`, `eas submit` to Play **internal testing** first ⏳ | Play review |
 
 ## 4. Not done in code yet

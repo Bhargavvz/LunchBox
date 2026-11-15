@@ -52,13 +52,13 @@ Child safety, transparency and on-time delivery are the top priorities.
 **Data**
 - PostgreSQL 16 + PostGIS (Docker on the production server; optional read replica URL for reports)
 - Redis (Docker): cache, Redis GEO for live locations, rate limiting, distributed locks
-- Amazon S3: handover photos (private bucket, pre-signed URLs, lifecycle rules, SSE-KMS)
+- Firebase Storage (bucket in asia-south2, rules closed): handover photos via V4 signed URLs, 90-day lifecycle rule (ADR-0021); LocalStack S3 locally
 
-**Firebase (only these)**: Firebase Auth (phone OTP for parents and partners, email+MFA for admins, roles via custom claims), Firebase Cloud Messaging.
+**Firebase (only these)**: Firebase Auth (phone OTP for parents and partners, email+MFA for admins, roles via custom claims), Firebase Cloud Messaging, Firebase Storage (handover photos, ADR-0021).
 
 **Third parties**: Razorpay (prepaid Orders; Subscriptions optional) + RazorpayX Payouts, MSG91 (SMS fallback). No call masking and no document KYC (ADR-0019): riders are approved by operations, and nobody in the apps sees another person's phone number. Every third party sits behind a Java interface with a sandbox/fake implementation for local dev and tests.
 
-**Infrastructure** (ADR-0020, to keep the budget low): one Lightsail/EC2 server in AWS Mumbai (ap-south-1) running `deploy/docker-compose.prod.yml` (backend, PostgreSQL + PostGIS, Redis, RabbitMQ, Caddy for automatic HTTPS and the admin site), nightly `pg_dump` backups, S3 for handover photos. No Terraform for now; configuration stays in environment variables so managed services (RDS, ElastiCache, Amazon MQ) can be swapped in later without code changes.
+**Infrastructure** (ADR-0020, to keep the budget low): one EC2 `m7i-flex.large` on the AWS free plan in Mumbai (ap-south-1) running `deploy/docker-compose.prod.yml` (backend, PostgreSQL + PostGIS, Redis, RabbitMQ, Caddy for automatic HTTPS and the admin site), nightly `pg_dump` backups and EBS snapshots; photos in Firebase Storage. No Terraform for now; configuration stays in environment variables so managed services (RDS, ElastiCache, Amazon MQ) can be swapped in later without code changes.
 
 **DevOps / quality**: GitHub Actions, Jib for backend images, JUnit 5 + Mockito + Testcontainers, Jest + React Native Testing Library, Playwright (admin), Maestro (mobile E2E), k6 (load), Sentry, OpenTelemetry, Prometheus + Grafana, CloudWatch alarms, Spring Boot Actuator.
 

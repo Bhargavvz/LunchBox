@@ -12,17 +12,17 @@ flowchart LR
     subgraph Google
         FA[Firebase Auth<br/>phone OTP / email+TOTP]
         FCM[Firebase Cloud Messaging]
+        S3[(Firebase Storage asia-south2<br/>handover photos, signed URLs, 90-day expiry)]
         GM[Google Maps]
     end
     subgraph AWS ap-south-1
-        subgraph Server[One Lightsail/EC2 server · Docker Compose]
+        subgraph Server[One EC2 m7i-flex.large · Docker Compose]
             CADDY[Caddy<br/>HTTPS · admin static site]
             API[LunchBox backend<br/>Spring Boot modular monolith]
             PG[(PostgreSQL 16 + PostGIS<br/>nightly pg_dump)]
             RDC[(Redis<br/>GEO · rate limits · locks)]
             MQ[(RabbitMQ<br/>events · STOMP relay)]
         end
-        S3[(S3 handover photos<br/>private, 90-day expiry)]
     end
     subgraph Third parties
         RZ[Razorpay Orders<br/>RazorpayX Payouts, optional]
@@ -35,7 +35,7 @@ flowchart LR
     API --> PG
     API --> RDC
     API <--> MQ
-    API -- presigned URLs --> S3
+    API -- signed URLs --> S3
     P & D -- direct PUT/GET --> S3
     API --> RZ & MSG
     RZ -- webhooks HMAC --> CADDY

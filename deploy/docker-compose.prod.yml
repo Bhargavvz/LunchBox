@@ -1,4 +1,6 @@
 # LunchBox on one server (ADR-0020): backend + Postgres/PostGIS + Redis + RabbitMQ behind Caddy (automatic HTTPS).
+# Memory settings come from .env (sized for an 8 GB m7i-flex.large in .env.example); the fallbacks fit a 2 GB machine.
+# Handover photos live in Firebase Storage (ADR-0021), so nothing here needs AWS keys.
 # Lives in /opt/lunchbox on the server next to .env, Caddyfile, rabbitmq/ and admin/ (the built admin website).
 # The deploy workflow copies this folder and runs: docker compose -f docker-compose.prod.yml up -d
 name: lunchbox
@@ -27,7 +29,7 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/lunchbox
       DB_USERNAME: lunchbox
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_POOL_SIZE: "15"
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       RABBIT_HOST: rabbitmq
@@ -40,8 +42,9 @@ services:
       STOMP_SYSTEM_PASSCODE: ${RABBIT_PASSWORD}
       CORS_ALLOWED_ORIGINS: https://${ADMIN_DOMAIN}
       STOMP_ALLOWED_ORIGINS: https://${ADMIN_DOMAIN}
-      # A 4 GB server shares memory with the databases.
-      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=40
+      # Heap sized for a 2 GB server shared with the databases.
+      JAVA_TOOL_OPTIONS: ${BACKEND_JAVA_OPTS:--Xms256m -Xmx640m -XX:MaxMetaspaceSize=192m -Xss512k}
+      STORAGE_PROVIDER: firebase
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -54,7 +57,7 @@ services:
       POSTGRES_DB: lunchbox
       POSTGRES_USER: lunchbox
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    command: ["postgres", "-c", "shared_buffers=256MB", "-c", "max_connections=60"]
+    command: ["postgres", "-c", "shared_buffers=${POSTGRES_SHARED_BUFFERS:-128MB}", "-c", "work_mem=4MB", "-c", "max_connections=40"]
     volumes: [pgdata:/var/lib/postgresql/data, ./backups:/backups]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lunchbox -d lunchbox"]
@@ -64,7 +67,7 @@ services:
   redis:
     image: redis:7.4-alpine
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes", "--maxmemory", "128mb",
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes", "--maxmemory", "${REDIS_MAXMEMORY:-64mb}",
               "--maxmemory-policy", "allkeys-lru"]
     volumes: [redisdata:/data]
     healthcheck:
@@ -80,6 +83,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: lunchbox
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "+MBas ageffcbf +MHas ageffcbf +S 1:1"
     volumes:
       - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
       - rabbitdata:/var/lib/rabbitmq

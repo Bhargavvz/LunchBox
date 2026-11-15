@@ -1,71 +1,69 @@
 # Going live on one server (owner's checklist)
 
-Everything server-side runs on **one Lightsail (or EC2) machine in Mumbai** with Docker: the backend, PostgreSQL +
-PostGIS, Redis, RabbitMQ and Caddy (HTTPS and the admin website). Handover photos go to one private S3 bucket.
-Why one server and what it gives up: [ADR-0020](../adr/0020-single-server-deployment.md).
+Everything server-side runs on **one EC2 machine in Mumbai** with Docker: the backend, PostgreSQL + PostGIS, Redis,
+RabbitMQ and Caddy (HTTPS and the admin website). Handover photos go to **Firebase Storage**
+(`lunchboxappv1.firebasestorage.app`, asia-south2), so the server needs no other AWS service.
+Why: [ADR-0020](../adr/0020-single-server-deployment.md) and [ADR-0021](../adr/0021-firebase-storage-for-handover-photos.md).
 
-**Monthly cost:** Lightsail 4 GB about $24 (~₹2,000) + S3 and data transfer (a few rupees at pilot volume) + domain.
-Steps marked **(you)** need your accounts or a card. Never paste keys or passwords into a chat: put them in the
-server's `.env` yourself.
+**Cost on the AWS free plan.** Accounts opened after 15 July 2025 get credits ($100, up to $200 with the onboarding
+tasks) that last **6 months**; the server's hours are paid from those credits. The chosen **`m7i-flex.large`**
+(2 vCPU, 8 GB, free-plan eligible) costs roughly $0.09 an hour, so with its 30 GB disk, IPv4 address and snapshots
+about **$70/month: $100 of credit lasts about 6 weeks, $200 about 3 months**. Check the exact rate on the launch
+screen. To make the credit last the full 6 months, use `t3.small` (2 GB, about $22/month) and delete the four memory
+lines in `.env`; the compose file falls back to 2 GB settings. Stop the instance when you are not testing: a stopped
+instance costs only its disk and IP. Steps marked **(you)** need your accounts. Never paste
+keys or passwords into a chat: put them in the server's `.env` yourself.
 
 ## 1. AWS account (you, ~20 min)
-1. Sign up at aws.amazon.com, add a card, verify your phone, pick the free **Basic support** plan.
+1. Sign up at aws.amazon.com and choose the **Free plan**. Do the onboarding tasks in *Explore AWS* for the extra
+   credit.
 2. Turn on **MFA** for the root user (top-right menu → Security credentials → Assign MFA device).
-3. Billing → Budgets → *Monthly cost budget* ₹4,000, alert at 80 % to your email.
+3. Billing → Budgets → *Zero spend budget* and a *Monthly cost budget* of $25, alerts to your email.
 4. Set the console region to **Asia Pacific (Mumbai) ap-south-1**.
 
-## 2. The server (you, ~10 min)
-1. **Lightsail** → Create instance → Mumbai → *Linux/Unix* → *OS Only* → **Ubuntu 24.04 LTS** → plan **4 GB RAM,
-   2 vCPU** ($24). Name it `lunchbox`. (2 GB works for a demo but is tight; Postgres, RabbitMQ and Java share it.)
-2. Networking tab: **Create static IP** and attach it. Under *IPv4 Firewall* allow **HTTP 80** and **HTTPS 443**
-   (SSH 22 is there already; restrict it to your IP if you can).
-3. Download the default SSH key from Account → SSH keys, or connect with the browser terminal.
+## 2. The server (you, ~15 min)
+1. EC2 → **Launch instance**: name `lunchbox`, **Ubuntu Server 24.04 LTS (x86)**, instance type **m7i-flex.large**
+   (marked *Free tier eligible*; or `t3.small`, see the cost note above). Create a key pair (`.pem`) and keep it safe.
+2. Network settings → security group: allow **SSH 22 from My IP**, **HTTP 80** and **HTTPS 443** from anywhere.
+3. Storage: **30 GiB gp3**.
+4. Only for `t3.small`: Advanced details → **Credit specification: Standard** (*Unlimited* can bill extra CPU).
+5. Launch, then EC2 → Elastic IPs → **Allocate** → *Associate* with the instance, so the address never changes.
+6. **Backups of the whole disk:** EC2 → Lifecycle Manager → *Create EBS snapshot policy* → target the instance's
+   volume (tag it `backup=daily`), every 24 h, keep 7.
 
 ## 3. Domain and DNS (you)
-At your registrar (or Route 53) add two **A records** pointing at the static IP:
-`api.<your-domain>` and `admin.<your-domain>`. Caddy gets HTTPS certificates for both automatically once they resolve.
+At your registrar add two **A records** pointing at the Elastic IP: `api.<your-domain>` and `admin.<your-domain>`.
+Caddy gets HTTPS certificates for both automatically once they resolve.
 
-## 4. Photo bucket and a key that can only touch it (you, ~10 min)
-1. S3 → Create bucket `lunchbox-handover-<something unique>` in ap-south-1. Keep **Block all public access** on and
-   default encryption on. Management → Lifecycle rule: expire objects after **90 days**.
-2. IAM → Users → Create user `lunchbox-server`, no console access. Permissions → *Create inline policy* → JSON:
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [{
-       "Effect": "Allow",
-       "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
-       "Resource": "arn:aws:s3:::lunchbox-handover-<something unique>/*"
-     }]
-   }
-   ```
-3. That user → Security credentials → **Create access key** → *Application running outside AWS*. These two values go
-   into `.env` (step 6) as `S3_ACCESS_KEY` / `S3_SECRET_KEY`.
-4. Bucket → Permissions → **CORS**, so the apps can upload straight to it:
-   ```json
-   [{ "AllowedMethods": ["PUT", "GET"], "AllowedOrigins": ["*"], "AllowedHeaders": ["*"], "MaxAgeSeconds": 3000 }]
-   ```
+## 4. Photo storage: Firebase Storage (you, ~5 min; the bucket already exists)
+1. Leave the Storage security rules in **production mode** (deny all). The backend hands out signed links that
+   Cloud Storage checks itself; apps never use the Firebase Storage SDK.
+2. Google Cloud console → Cloud Storage → bucket `lunchboxappv1.firebasestorage.app` → **Lifecycle** → *Add a rule*:
+   action **Delete object**, conditions **Age 90 days** and **Object name matches prefix `handover/`**. This is the
+   90-day photo retention in `docs/security.md`.
+3. Nothing to add to `.env` beyond `STORAGE_BUCKET`: the backend signs with the Firebase service-account key.
 
 ## 5. Prepare the server (Claude can do this over SSH, or you paste it)
 ```bash
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker ubuntu && newgrp docker
 sudo mkdir -p /opt/lunchbox && sudo chown ubuntu:ubuntu /opt/lunchbox
-# 2 GB swap so a memory spike does not kill the database
+# 2 GB swap absorbs memory spikes (needed on t3.small, harmless on m7i-flex.large)
 sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swap.conf && sudo sysctl --system
 ```
 If the GitHub repository is **private**, let the server pull the backend image: GitHub → Settings → Developer
-settings → *Fine-grained token* (or classic with `read:packages` only), then on the server
-`docker login ghcr.io -u <github-user>` and paste the token when asked.
+settings → token with `read:packages` only, then on the server `docker login ghcr.io -u <github-user>` and paste the
+token when asked.
 
 ## 6. The server's `.env` (you)
 Copy `deploy/.env.example` to `/opt/lunchbox/.env` on the server, `chmod 600 .env`, and fill it in:
 - `API_DOMAIN`, `ADMIN_DOMAIN` from step 3.
 - `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBIT_PASSWORD`, `LUNCHBOX_PII_KEY`, `LUNCHBOX_QR_SIGNING_KEY`: a new
   `openssl rand -base64 32` each. **Keep a copy of the PII key offline**: losing it makes encrypted data unreadable.
-- `FIREBASE_CREDENTIALS_JSON`: the service-account JSON on one line inside single quotes.
-- `S3_HANDOVER_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` from step 4.
+- `FIREBASE_CREDENTIALS_JSON`: the service-account JSON on one line inside single quotes (sign-in, push and photos).
+- `STORAGE_BUCKET=lunchboxappv1.firebasestorage.app` (already in the template).
 - `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` (test keys until launch), `RAZORPAY_WEBHOOK_SECRET` (step 9).
 - `RAZORPAYX_MODE=off` and `MSG91_MODE=off` until you have those accounts: riders are paid by hand and there is no
   SMS fallback (push still works).
@@ -76,9 +74,9 @@ Repository → Settings → Environments → New environment **`production`** (a
 - **Variables:** `API_URL=https://api.<domain>`, `WS_URL=wss://api.<domain>/ws`, `FIREBASE_WEB_API_KEY`,
   `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_APP_ID` (Firebase web app config),
   `GOOGLE_MAPS_WEB_KEY`, and optionally `DEPLOY_PATH` (default `/opt/lunchbox`).
-- **Secrets:** `SSH_HOST` (the static IP), `SSH_USER` (`ubuntu`), `SSH_KEY` (a private key made for deploys:
+- **Secrets:** `SSH_HOST` (the Elastic IP), `SSH_USER` (`ubuntu`), `SSH_KEY` (a key made for deploys:
   `ssh-keygen -t ed25519 -f lunchbox-deploy`, put the `.pub` line in the server's `~/.ssh/authorized_keys`),
-  `SSH_KNOWN_HOSTS` (output of `ssh-keyscan <static IP>`).
+  `SSH_KNOWN_HOSTS` (output of `ssh-keyscan <Elastic IP>`).
 
 ## 8. Deploy
 Push to `main` yourself, then Actions → **Deploy** → *Run workflow*. It builds the backend image (pushed to GitHub
@@ -93,21 +91,22 @@ until `/actuator/health` is `UP`. Repeat this for every release.
 3. Firebase → Authentication → Settings → **Authorized domains**: add `admin.<domain>`.
 4. Razorpay → Webhooks → `https://api.<domain>/api/v1/webhooks/razorpay`, events `payment.captured` and
    `payment.failed`; put its secret in `RAZORPAY_WEBHOOK_SECRET` and restart as above.
-5. **Backups:** `crontab -e` on the server and add
-   `30 2 * * * /opt/lunchbox/backup.sh >> /opt/lunchbox/backup.log 2>&1`. Also turn on Lightsail
-   **automatic snapshots** (instance → Snapshots, about $2/month) so the whole server can be restored.
+5. **Database backups:** `crontab -e` on the server and add
+   `30 2 * * * /opt/lunchbox/backup.sh >> /opt/lunchbox/backup.log 2>&1` (dumps kept 14 days; the snapshot policy
+   from step 2 copies the disk off the machine).
 6. Build test apps against the server: in `apps/parent/.env` and `apps/partner/.env` set
-   `EXPO_PUBLIC_API_URL=https://api.<domain>` and `EXPO_PUBLIC_WS_URL=wss://api.<domain>/ws` (emulator variable empty, fake payments off), then
-   `eas build --profile preview --platform android` in each app.
+   `EXPO_PUBLIC_API_URL=https://api.<domain>` and `EXPO_PUBLIC_WS_URL=wss://api.<domain>/ws` (emulator variable
+   empty, fake payments off), then `eas build --profile preview --platform android` in each app.
 
 ## Everyday operations (on the server, in `/opt/lunchbox`)
 | Task | Command |
 |---|---|
-| Status | `docker compose -f docker-compose.prod.yml ps` |
+| Status and memory | `docker compose -f docker-compose.prod.yml ps` and `docker stats --no-stream` |
 | Backend logs | `docker compose -f docker-compose.prod.yml logs -f --tail 200 backend` |
 | Restart after editing `.env` | `docker compose -f docker-compose.prod.yml up -d` |
 | Restore a backup | `gunzip -c backups/<file>.sql.gz \| docker compose -f docker-compose.prod.yml exec -T postgres psql -U lunchbox -d lunchbox` (into an empty database) |
 | Disk space | `df -h` and `docker system df` |
 
-Growing out of one server later (managed database, several backend copies) needs no code change: the same
-environment variables point the backend at RDS, ElastiCache and Amazon MQ.
+**Changing size:** stop the instance, *Actions → Instance settings → Change instance type*, start it, and match the
+memory lines in `.env` (8 GB: as in `.env.example`; 2 GB: delete them).
+Growing further (managed database, several backend copies) needs no code change.

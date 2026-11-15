@@ -8,14 +8,16 @@ CloudFront, WAF, Secrets Manager and KMS, all in Terraform. Sized down for a pil
 do not shrink with traffic). A pilot with one school needs a fraction of that capacity.
 
 **Decision.**
-- Production runs on **one Lightsail (or EC2) server in ap-south-1**, 4 GB / 2 vCPU, about $24 a month, with
+- Production runs on **one EC2 `m7i-flex.large` (8 GB) in ap-south-1** on the AWS free plan, paid from its credits
+  (about $70 a month; `t3.small` at about $22 stretches the credit to 6 months), with
   `deploy/docker-compose.prod.yml`: the backend image, PostgreSQL 16 + PostGIS, Redis, RabbitMQ (STOMP plugin) and
   **Caddy**, which gets and renews HTTPS certificates and serves the admin static site with the security headers that
   CloudFront used to add.
 - Only Caddy is reachable from outside (80/443); the API's actuator is hidden except `/actuator/health`.
-- Secrets live in `/opt/lunchbox/.env` on the server (mode 600), not Secrets Manager. Handover photos stay in a
-  private S3 bucket, accessed with an IAM key limited to that bucket (`S3_ACCESS_KEY` / `S3_SECRET_KEY`).
-- Backups: nightly `deploy/backup.sh` (`pg_dump`, 14 days kept, optional copy to S3) plus Lightsail snapshots.
+- Memory settings come from `.env` (8 GB values in `.env.example`); the compose fallbacks fit 2 GB plus swap.
+- Secrets live in `/opt/lunchbox/.env` on the server (mode 600), not Secrets Manager. Handover photos are in
+  Firebase Storage (ADR-0021), so the server needs no AWS keys.
+- Backups: nightly `deploy/backup.sh` (`pg_dump`, 14 days kept) plus a daily EBS snapshot policy.
 - CI/CD: the **Deploy** workflow is run by hand. It builds the image with Jib, pushes it to GitHub Container Registry,
   scans it with Trivy, builds the admin site, copies everything over SSH, restarts with `docker compose up -d` and
   waits for health `UP`. The ECS/S3/CloudFront deploy and the Terraform CI job are removed.
@@ -24,7 +26,8 @@ do not shrink with traffic). A pilot with one school needs a fraction of that ca
   paid by hand and recorded as adjustments; no SMS fallback: push only). Fakes are still refused in prod.
 
 **Consequences.**
-- Cost drops to roughly ₹2,000–4,500 a month.
+- Cost: free-plan credits cover about 6 weeks to 3 months on `m7i-flex.large`; after that about ₹5,500 a month, or
+  about ₹2,000 on `t3.small`.
 - One machine is a single point of failure: no Multi-AZ, no rolling deploys (20–40 s of downtime per deploy, so deploy
   outside the delivery window), and a lost disk means restoring the last backup or snapshot. Acceptable for a pilot;
   not for the 99.9 % target in the brief.

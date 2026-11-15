@@ -25,8 +25,8 @@ First-time setup of the server, DNS, photo bucket, `.env` and GitHub settings: [
 
 ## Database
 
-- Nightly `backup.sh` (cron) writes `backups/lunchbox-<time>.sql.gz` and keeps 14 days; set `BACKUP_BUCKET` and
-  install the AWS CLI on the server to also copy each dump to S3. Lightsail snapshots cover the whole disk.
+- Nightly `backup.sh` (cron) writes `backups/lunchbox-<time>.sql.gz` and keeps 14 days. The daily EBS snapshot
+  policy copies the whole disk off the machine (restore: create a volume from a snapshot and attach it).
 - Test a restore every month into a scratch database:
   `docker compose -f docker-compose.prod.yml exec postgres createdb -U lunchbox restore_test`, then pipe a dump into
   `psql -d restore_test`, check row counts, and drop it.

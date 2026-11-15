@@ -13,7 +13,7 @@ live tracking, verified pickups (OTP / signed QR) and geofenced photo handovers.
 | Admin console | `apps/admin/` | Next.js 15 (static export), Tailwind, shadcn/ui, TanStack Table, Recharts |
 | API client | `packages/api-client/` | Generated from the backend OpenAPI spec (`openapi-typescript` + `openapi-fetch`) |
 | Shared UI | `packages/ui/` | React Native components + design tokens |
-| Deployment | `deploy/` | One server (Lightsail/EC2, ap-south-1) with Docker Compose and Caddy (HTTPS); S3 for handover photos |
+| Deployment | `deploy/` | One EC2 server (ap-south-1, AWS free plan) with Docker Compose and Caddy (HTTPS); Firebase Storage for handover photos |
 
 Read [`docs/architecture.md`](docs/architecture.md) first, then [`docs/PROGRESS.md`](docs/PROGRESS.md) for what is
 done and what still needs verification.
