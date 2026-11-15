@@ -146,7 +146,12 @@ public final class DispatchDtos {
             String childFirstName,
             String className,
             Instant pickupWindowStart,
-            Instant pickupWindowEnd) {
+            Instant pickupWindowEnd,
+            String boxCode) {
+    }
+
+    /** One lunchbox to hand over at a school: enough to find the right box, nothing that identifies the family. */
+    public record DropBox(UUID orderId, OrderStatus orderStatus, String childFirstName, String className, String boxCode) {
     }
 
     public record DropStopDetails(
@@ -155,7 +160,8 @@ public final class DispatchDtos {
             String address,
             String handoverInstructions,
             Instant deadline,
-            List<UUID> orderIds) {
+            List<UUID> orderIds,
+            List<DropBox> boxes) {
     }
 
     public record StopView(

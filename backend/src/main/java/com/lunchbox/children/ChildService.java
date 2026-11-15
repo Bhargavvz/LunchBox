@@ -209,7 +209,8 @@ public class ChildService implements ChildDirectory, PersonalDataContributor {
 
     private static ChildResponse toResponse(Child c, SchoolInfo school) {
         return new ChildResponse(c.getId(), c.getSchoolId(), nameOf(school), c.getFirstName(), c.getLastName(),
-                c.getClassName(), c.getSection(), c.getRollNumber(), c.getAllergiesNote(), c.getCreatedAt());
+                c.getClassName(), c.getSection(), c.getRollNumber(), c.getAllergiesNote(), c.getCreatedAt(),
+                BoxCode.of(c.getId()));
     }
 
     /** Audit snapshot without health data. */

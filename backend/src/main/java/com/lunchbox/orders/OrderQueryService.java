@@ -252,7 +252,8 @@ public class OrderQueryService implements OrderQueries, PersonalDataContributor 
                     s == null ? null : s.name(), o.getScheduledDate(), o.getPickupWindowStart(), o.getPickupWindowEnd(),
                     o.getDeliveryDeadline(), o.getStatus(), o.getPartnerId() != null, o.getPickedUpAt(),
                     o.getDeliveredAt(), o.getCancelReason(), o.getFailureReason(), o.getSchoolReceivedAt(),
-                    o.getRatingStars(), o.getRatingComment(), OrderRatingService.canRate(o, now));
+                    o.getRatingStars(), o.getRatingComment(), OrderRatingService.canRate(o, now),
+                    c == null ? null : c.boxCode());
         }).toList();
     }
 

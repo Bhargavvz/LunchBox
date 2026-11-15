@@ -34,7 +34,8 @@ public final class ChildDtos {
             String section,
             String rollNumber,
             String allergiesNote,
-            Instant createdAt) {
+            Instant createdAt,
+            String boxCode) {
     }
 
     public record AdminChildResponse(

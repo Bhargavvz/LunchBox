@@ -23,6 +23,11 @@ public interface ChildDirectory {
         public String displayName() {
             return lastName == null ? firstName : firstName + " " + lastName;
         }
+
+        /** The mark written on this child's lunchbox; see {@link BoxCode}. */
+        public String boxCode() {
+            return BoxCode.of(id);
+        }
     }
 
     /** In-process event raised when a parent removes a child, so live subscriptions are cancelled. */

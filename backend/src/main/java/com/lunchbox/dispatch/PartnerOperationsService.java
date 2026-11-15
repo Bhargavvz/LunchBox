@@ -13,6 +13,7 @@ import com.lunchbox.common.settings.PlatformSettings;
 import com.lunchbox.common.storage.StorageService.PresignedUpload;
 import com.lunchbox.common.time.TimeZones;
 import com.lunchbox.common.web.Validation;
+import com.lunchbox.dispatch.web.DispatchDtos.DropBox;
 import com.lunchbox.dispatch.web.DispatchDtos.DropStopDetails;
 import com.lunchbox.dispatch.web.DispatchDtos.FailureRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.HandoverRequest;
@@ -293,8 +294,9 @@ public class PartnerOperationsService {
         Map<UUID, SchoolInfo> schoolMap = schools.findAll(list.stream().map(RouteStop::getSchoolId)
                 .filter(java.util.Objects::nonNull).collect(Collectors.toSet()));
         Map<UUID, ParentInfo> parentCache = new HashMap<>();
-        Map<UUID, List<UUID>> ordersBySchool = orderMap.values().stream()
-                .collect(Collectors.groupingBy(OrderView::schoolId, Collectors.mapping(OrderView::id, Collectors.toList())));
+        Map<UUID, List<OrderView>> ordersBySchool = orderMap.values().stream()
+                .sorted(java.util.Comparator.comparing(OrderView::id))
+                .collect(Collectors.groupingBy(OrderView::schoolId));
 
         List<StopView> views = list.stream().map(s -> {
             PickupStopDetails pickup = null;
@@ -307,13 +309,19 @@ public class PartnerOperationsService {
                 pickup = new PickupStopDetails(o.id(), o.status(), parent.firstName(), Validation.maskPhone(parent.phone()),
                         a == null ? null : a.singleLine(), a == null ? null : a.landmark(), a == null ? null : a.instructions(),
                         c == null ? null : c.firstName(), c == null ? null : c.className(),
-                        o.pickupWindowStart(), o.pickupWindowEnd());
+                        o.pickupWindowStart(), o.pickupWindowEnd(), c == null ? null : c.boxCode());
             } else {
                 SchoolInfo school = schoolMap.get(s.getSchoolId());
+                List<OrderView> atSchool = ordersBySchool.getOrDefault(s.getSchoolId(), List.of());
                 drop = new DropStopDetails(s.getSchoolId(), school == null ? null : school.name(),
                         school == null ? null : school.addressLine(), school == null ? null : school.handoverInstructions(),
                         school == null ? null : TimeZones.atIst(route.getRouteDate(), school.deliveryWindowEnd()),
-                        ordersBySchool.getOrDefault(s.getSchoolId(), List.of()));
+                        atSchool.stream().map(OrderView::id).toList(),
+                        atSchool.stream().map(o -> {
+                            ChildInfo c = childMap.get(o.childId());
+                            return new DropBox(o.id(), o.status(), c == null ? null : c.firstName(),
+                                    c == null ? null : c.className(), c == null ? null : c.boxCode());
+                        }).toList());
             }
             return new StopView(s.getId(), s.getSequence(), s.getStopType(), s.getStatus(), Geo.toGeoPoint(s.getLocation()),
                     s.getPlannedEta(), s.getArrivedAt(), s.getCompletedAt(), pickup, drop);

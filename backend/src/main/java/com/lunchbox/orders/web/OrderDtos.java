@@ -40,7 +40,8 @@ public final class OrderDtos {
             Instant schoolReceivedAt,
             Integer ratingStars,
             String ratingComment,
-            boolean canRate) {
+            boolean canRate,
+            String boxCode) {
     }
 
     public record RateOrderRequest(@NotNull @Min(1) @Max(5) Integer stars, @Size(max = 500) String comment) {
