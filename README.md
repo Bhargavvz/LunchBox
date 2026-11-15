@@ -13,7 +13,7 @@ live tracking, verified pickups (OTP / signed QR) and geofenced photo handovers.
 | Admin console | `apps/admin/` | Next.js 15 (static export), Tailwind, shadcn/ui, TanStack Table, Recharts |
 | API client | `packages/api-client/` | Generated from the backend OpenAPI spec (`openapi-typescript` + `openapi-fetch`) |
 | Shared UI | `packages/ui/` | React Native components + design tokens |
-| Infrastructure | `infra/terraform/` | AWS ap-south-1: ECS Fargate, RDS, ElastiCache, Amazon MQ, S3, CloudFront, WAF |
+| Deployment | `deploy/` | One server (Lightsail/EC2, ap-south-1) with Docker Compose and Caddy (HTTPS); S3 for handover photos |
 
 Read [`docs/architecture.md`](docs/architecture.md) first, then [`docs/PROGRESS.md`](docs/PROGRESS.md) for what is
 done and what still needs verification.
@@ -79,6 +79,8 @@ CI fails if `docs/api/openapi.json` is stale.
 
 ## Deployment
 
-Terraform lives in `infra/terraform` (`bootstrap/` once per account, then `envs/<env>`). GitHub Actions builds the
-backend image with Jib, scans it with Trivy, rolls it out to ECS, and publishes the admin static site to S3 +
-CloudFront. See [`docs/runbooks/deploy.md`](docs/runbooks/deploy.md).
+Production runs on one server with Docker Compose (`deploy/`, ADR-0020): backend, PostgreSQL + PostGIS, Redis,
+RabbitMQ and Caddy, which serves HTTPS and the admin site. The **Deploy** workflow (run by hand) builds the backend
+image with Jib, pushes it to GitHub Container Registry, scans it with Trivy, builds the admin site and rolls both out
+over SSH. First-time setup: [`docs/runbooks/aws-setup.md`](docs/runbooks/aws-setup.md); routine deploys and
+rollback: [`docs/runbooks/deploy.md`](docs/runbooks/deploy.md).

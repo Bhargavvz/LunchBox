@@ -152,19 +152,3 @@ jobs:
           node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod --audit-level high
-
-  terraform:
-    name: Terraform fmt & validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.8
-      - run: terraform fmt -check -recursive infra/terraform
-      - name: Validate each environment
-        run: |
-          for env in dev staging prod; do
-            terraform -chdir=infra/terraform/envs/$env init -backend=false -input=false
-            terraform -chdir=infra/terraform/envs/$env validate
-          done

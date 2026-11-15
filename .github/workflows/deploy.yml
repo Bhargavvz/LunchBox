@@ -1,25 +1,30 @@
 name: Deploy
 
+# Builds the backend image and the admin site, then rolls both out to the single server (ADR-0020).
+# Runs only when started by hand, so a push to main never deploys by surprise.
+#
+# Repository → Settings → Environments → production:
+#   variables: API_URL, WS_URL, FIREBASE_WEB_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_APP_ID,
+#              GOOGLE_MAPS_WEB_KEY, DEPLOY_PATH (default /opt/lunchbox)
+#   secrets:   SSH_HOST, SSH_USER, SSH_KEY (private key whose public half is in the server's authorized_keys),
+#              SSH_KNOWN_HOSTS (output of `ssh-keyscan <server>`)
+
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Target environment
-        type: choice
-        options: [staging, prod]
-        default: staging
 
 permissions:
   contents: read
-  id-token: write
+  packages: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
   backend-image:
-    name: Build backend image (Jib)
+    name: Build backend image (Jib → GHCR)
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: production
     outputs:
       image: ${{ steps.meta.outputs.image }}
     steps:
@@ -31,57 +36,33 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ap-south-1
-      - id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
       - id: meta
-        run: echo "image=${{ steps.ecr.outputs.registry }}/lunchbox-${{ github.event.inputs.environment || 'staging' }}/backend:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+        run: |
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}/backend"
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "image=$repo:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
       - name: Jib build & push
         working-directory: backend
-        run: gradle --no-daemon jib -x test
+        run: gradle --no-daemon jib -x test -Djib.to.auth.username="$GITHUB_ACTOR" -Djib.to.auth.password="$GITHUB_TOKEN"
         env:
-          JIB_IMAGE: ${{ steps.ecr.outputs.registry }}/lunchbox-${{ github.event.inputs.environment || 'staging' }}/backend
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIB_IMAGE: ${{ steps.meta.outputs.repo }}
           IMAGE_TAG: ${{ github.sha }}
       - name: Trivy image scan
         uses: aquasecurity/trivy-action@0.28.0
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
           image-ref: ${{ steps.meta.outputs.image }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
 
-  backend-deploy:
-    name: Roll out to ECS
-    needs: backend-image
+  admin-site:
+    name: Build admin site
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'staging' }}
-    steps:
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ap-south-1
-      - name: Render task definition with the new image
-        run: |
-          ENV=${{ github.event.inputs.environment || 'staging' }}
-          aws ecs describe-task-definition --task-definition lunchbox-$ENV-backend \
-            --query taskDefinition > td.json
-          jq --arg IMG "${{ needs.backend-image.outputs.image }}" \
-            '.containerDefinitions[0].image = $IMG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
-            td.json > td-new.json
-      - uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: td-new.json
-          service: backend
-          cluster: lunchbox-${{ github.event.inputs.environment || 'staging' }}
-          wait-for-service-stability: true
-
-  admin:
-    name: Deploy admin panel (S3 + CloudFront)
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -94,7 +75,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm generate:api
         env:
-          OPENAPI_SOURCE: docs/api/openapi.json
+          OPENAPI_SOURCE: ${{ github.workspace }}/docs/api/openapi.json
       - run: pnpm --filter @lunchbox/admin build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
@@ -104,12 +85,57 @@ jobs:
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
           NEXT_PUBLIC_GOOGLE_MAPS_KEY: ${{ vars.GOOGLE_MAPS_WEB_KEY }}
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/upload-artifact@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ap-south-1
-      - run: |
-          aws s3 sync apps/admin/out "s3://${{ vars.ADMIN_BUCKET }}" --delete --cache-control "public,max-age=300"
-          aws s3 cp "s3://${{ vars.ADMIN_BUCKET }}/_next" "s3://${{ vars.ADMIN_BUCKET }}/_next" --recursive \
-            --metadata-directive REPLACE --cache-control "public,max-age=31536000,immutable"
-          aws cloudfront create-invalidation --distribution-id "${{ vars.ADMIN_DISTRIBUTION_ID }}" --paths "/*"
+          name: admin-site
+          path: apps/admin/out
+          retention-days: 7
+
+  roll-out:
+    name: Roll out to the server
+    needs: [backend-image, admin-site]
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/lunchbox' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: deploy
+      - uses: actions/download-artifact@v4
+        with:
+          name: admin-site
+          path: admin-site
+      - name: SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: Copy compose files and admin site
+        run: |
+          target="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          ssh -i ~/.ssh/id_deploy "$target" "mkdir -p '$DEPLOY_PATH/admin.new' '$DEPLOY_PATH/rabbitmq'"
+          scp -i ~/.ssh/id_deploy deploy/docker-compose.prod.yml deploy/Caddyfile deploy/backup.sh "$target:$DEPLOY_PATH/"
+          scp -i ~/.ssh/id_deploy deploy/rabbitmq/enabled_plugins "$target:$DEPLOY_PATH/rabbitmq/"
+          scp -i ~/.ssh/id_deploy -r admin-site/. "$target:$DEPLOY_PATH/admin.new/"
+      - name: Pull and restart
+        run: |
+          ssh -i ~/.ssh/id_deploy "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s <<EOF
+          set -euo pipefail
+          cd '$DEPLOY_PATH'
+          test -f .env || { echo ".env is missing in $DEPLOY_PATH (copy .env.example and fill it in)"; exit 1; }
+          chmod +x backup.sh
+          rm -rf admin.old && { [ -d admin ] && mv admin admin.old || true; } && mv admin.new admin
+          export BACKEND_IMAGE='${{ needs.backend-image.outputs.image }}'
+          sed -i '/^BACKEND_IMAGE=/d' .env && echo "BACKEND_IMAGE=\$BACKEND_IMAGE" >> .env
+          docker compose -f docker-compose.prod.yml pull
+          docker compose -f docker-compose.prod.yml up -d --remove-orphans
+          for i in \$(seq 1 40); do
+            if docker compose -f docker-compose.prod.yml exec -T caddy wget -qO- http://backend:8080/actuator/health 2>/dev/null | grep -q '"UP"'; then
+              echo "backend healthy"; docker image prune -f >/dev/null; exit 0
+            fi
+            sleep 5
+          done
+          echo "backend did not report UP within 200 s"; docker compose -f docker-compose.prod.yml logs --tail 100 backend; exit 1
+          EOF

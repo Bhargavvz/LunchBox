@@ -14,20 +14,18 @@ can make**, and **work Claude does once those exist**. Some steps take days no m
 
 ## 1. Accounts and keys (owner)
 
-Create each in **test/sandbox mode first**. Never paste keys into chat: put them in AWS Secrets Manager, GitHub
+Create each in **test/sandbox mode first**. Never paste keys into chat: put them in the server's `.env`, GitHub
 secrets or EAS secrets as noted, and tell Claude only that they are there.
 
 | # | What | Where it goes | Blocks |
 |---|---|---|---|
-| 1 | **AWS account** (ap-south-1) with billing alerts, an admin IAM user for Terraform, and a domain in **Route 53** (e.g. `lunchbox.in`) | Local `aws configure`, then Terraform | Everything server-side |
+| 1 | **AWS account** (ap-south-1) with a billing alert, a **Lightsail 4 GB** server with a static IP, a domain with `api.` and `admin.` A records, and a private S3 photo bucket | The server's `/opt/lunchbox/.env` (see `runbooks/aws-setup.md`) | Everything server-side |
 | 2 | **GitHub**: push this branch; add secrets `EXPO_TOKEN`, `NVD_API_KEY` | Repo → Settings → Secrets | CI and deploys |
-| 3 | **Firebase**: a `prod` (and `staging`) project; enable Phone sign-in; upgrade to **Identity Platform** and enable TOTP MFA; register both Android apps (and iOS later); download `google-services.json` per app; create a backend service-account key | EAS file secrets (`GOOGLE_SERVICES_JSON`), Secrets Manager (service account), GitHub vars `FIREBASE_*` | Any real sign-in |
+| 3 | **Firebase**: a `prod` (and `staging`) project; enable Phone sign-in; upgrade to **Identity Platform** and enable TOTP MFA; register both Android apps (and iOS later); download `google-services.json` per app; create a backend service-account key | EAS file secrets (`GOOGLE_SERVICES_JSON`), server `.env` (service account), GitHub vars `FIREBASE_*` | Any real sign-in |
 | 4 | **Google Maps Platform**: Android, iOS and web keys, each restricted (SHA-1 / bundle ID / admin domain) | `.env`/EAS secrets, GitHub var `GOOGLE_MAPS_WEB_KEY` | Live maps |
 | 5 | **Expo / EAS** account, two projects, an access token | `EXPO_TOKEN` | App builds |
-| 6 | **Razorpay** (Subscriptions) + **RazorpayX** (Payouts): KYC-approved business account, test keys, webhook secrets, plans created ⏳ | Secrets Manager | Taking money, paying riders |
-| 7 | **MSG91**: auth key + **DLT-registered** sender ID and 5 templates ⏳ (DLT approval takes days) | Secrets Manager | SMS fallback |
-| 8 | **Exotel**: SID, API key/token, an ExoPhone ⏳ (KYC) | Secrets Manager | Masked calls |
-| 9 | **IDfy**: account ID + API key | Secrets Manager | Rider KYC checks |
+| 6 | **Razorpay** (Orders, ADR-0018) + **RazorpayX** (Payouts): KYC-approved business account, test keys, webhook secrets, plans created ⏳ | Server `.env` (RazorpayX optional: `RAZORPAYX_MODE=off` pays riders by hand) | Taking money, paying riders |
+| 7 | **MSG91**: auth key + **DLT-registered** sender ID and 5 templates ⏳ (DLT approval takes days) | Server `.env` (optional: `MSG91_MODE=off`) | SMS fallback |
 | 10 | **Google Play Console** ($25, identity verification ⏳) and, later, **Apple Developer** ($99/yr) | EAS Submit | Store releases |
 | 11 | **Sentry** project per app (optional, recommended) | `SENTRY_DSN` | Crash reports |
 | 12 | Public **privacy policy and terms** pages (DPDP), a support email and phone | Store listings, app links | Store approval |
@@ -46,12 +44,12 @@ Reply yes / no / your change for each; Claude updates code, tests and ADRs.
 
 | Step | What happens | Verified by |
 |---|---|---|
-| Staging infra | `terraform apply` for bootstrap and `envs/staging` (VPC, RDS + PostGIS, ElastiCache, Amazon MQ, ECS, ALB, CloudFront, WAF) | `terraform plan` clean; health check `UP` |
-| Secrets | Wire every key into Secrets Manager; generate fresh `LUNCHBOX_PII_KEY` and `LUNCHBOX_QR_SIGNING_KEY` | Backend boots with `*_MODE=live` one provider at a time |
-| CI/CD | Get `ci.yml` green; run `deploy.yml` for staging | Green pipeline |
-| Apps | `eas build --profile preview` for both apps against staging; internal testers install | Full flow on real phones |
-| Load test | k6 scripts in `load/` against staging | p95 latency and error-rate targets in `docs/runbooks/load-testing.md` |
-| Prod | Same Terraform for `envs/prod` (Multi-AZ, read replica, backups, alarms); deploy; first super admin | Smoke test, one real ₹1 subscription and one ₹1 payout |
+| Server | Install Docker, swap and the `deploy/` files on the server (`runbooks/aws-setup.md` step 5) | `docker compose ps` all healthy |
+| Secrets | Fill `/opt/lunchbox/.env`; generate fresh `LUNCHBOX_PII_KEY` and `LUNCHBOX_QR_SIGNING_KEY` | Backend boots in the `prod` profile (it refuses fakes) |
+| CI/CD | Get `ci.yml` green; run `deploy.yml` | Health check `UP` over HTTPS |
+| Apps | `eas build --profile preview` for both apps against the server; internal testers install | Full flow on real phones |
+| Load test | k6 scripts in `load/` against the server, outside delivery hours | p95 latency and error-rate targets in `docs/runbooks/load-testing.md` |
+| Launch | Razorpay live keys, backups cron, Lightsail snapshots, first super admin | Smoke test, one real ₹1 plan payment, one restored backup |
 | Stores | `eas build --profile production`, `eas submit` to Play **internal testing** first ⏳ | Play review |
 
 ## 4. Not done in code yet
@@ -64,7 +62,7 @@ Reply yes / no / your change for each; Claude updates code, tests and ADRs.
 
 ## Realistic timeline
 
-- **Today:** staging on AWS and internal test builds, once items 1–5 exist.
-- **This week:** live payments and SMS in test mode, load test, production infra.
-- **1–3 weeks:** Razorpay activation, MSG91 DLT approval, Exotel KYC and Play Store review are external approvals
+- **Today:** the server on AWS and internal test builds, once items 1–5 exist.
+- **This week:** payments in test mode end to end, load test, backups.
+- **1–3 weeks:** Razorpay activation, MSG91 DLT approval and Play Store review are external approvals
   that set the real launch date.

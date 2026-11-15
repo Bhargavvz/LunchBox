@@ -2,7 +2,34 @@
 
 _Last updated: 2026-11-15_
 
-## Status: all phases written; backend (127 tests) and JS checks pass; both apps run natively on the Android emulator against the local stack. Not deployed.
+## Status: all phases written; backend (135 tests) and JS checks pass; both apps run natively on the Android emulator against the local stack. Not deployed.
+
+## 2026-11-15 (night) — one server instead of Terraform/ECS (ADR-0020)
+
+- **Removed:** `infra/terraform`, the Terraform CI job and the ECS/S3/CloudFront deploy.
+- **Added:** `deploy/` (production compose: backend, PostGIS, Redis, RabbitMQ, Caddy with automatic HTTPS and the
+  admin site; `.env.example`; nightly `backup.sh`), and a manual **Deploy** workflow (Jib → GHCR, Trivy, admin
+  build, SSH roll-out with a health check). `runbooks/aws-setup.md` and `deploy.md` rewritten for one Lightsail
+  server (~₹2,000–4,500/month).
+- **New `off` mode** for RazorpayX and MSG91, allowed in prod: no automatic payouts (riders paid by hand), no SMS
+  fallback. Fakes are still refused in prod (`IntegrationModeGuardTest`).
+- **Verified:** 135 backend tests pass; `caddy validate` on the Caddyfile; both apps rebuilt against `lunchboxappv1`,
+  installed on the emulator, and the parent app reaches the sign-in screen.
+  **Not verified:** the Deploy workflow and the compose stack on a real server (no server yet); a real OTP sign-in.
+
+## 2026-11-15 (evening) — calling and KYC removed; real Firebase ready; AWS guide
+
+- **Removed (ADR-0019):** Exotel masked calling (both call buttons, endpoints, `masked_calls`) and IDfy/document KYC
+  (documents, provider, bucket, partner photo). Riders now need a single operations approval
+  (`POST /admin/partners/{id}/approval`, *Approve rider* in the admin). `V11` migrates existing data.
+- **Fixed:** prepaid plans had no webhook backstop; `payment.captured` for an open plan order now activates it.
+- **Real Firebase:** `scripts/use-auth.ps1` and `scripts/dev-backend.ps1` switch apps, admin and backend between
+  the emulator and `lunchboxappv1`. The backend was started against the real project (key loaded, push live,
+  separate `lunchbox_firebase` database, all 11 migrations). Phone sign-in, a test number, email sign-in, Identity
+  Platform and SHA-1s are in place; admin TOTP is still off.
+- **AWS:** `runbooks/aws-setup.md`, step by step, with pilot sizes.
+- **Verified:** backend unit + integration tests, JS type-check/lint/tests, admin build.
+  **Not verified:** a real SMS OTP on a device (needs the native apps rebuilt against the real project).
 
 ## 2026-11-15 (afternoon) — both apps running natively on the Android emulator; prepaid billing
 
@@ -32,11 +59,11 @@ everything below as "implemented, unverified" until the verification checklist p
 | 0 Foundations | Monorepo (pnpm + Turborepo), docker-compose, Spring Boot skeleton, Expo apps, Next.js admin, shared config, CI, README, architecture + ADRs | ✅ | ❌ |
 | 1 Data & Auth | Flyway V1–V8, Firebase token verification + claims, RBAC + ownership, users/parents/children/schools/addresses/service areas APIs, OpenAPI → TS client, audit log | ✅ | ❌ |
 | 2 Subscriptions & Orders | Razorpay subscriptions + webhooks, order generation job, holidays/leave days, state machine, outbox | ✅ | ❌ |
-| 3 Dispatch & Partner app | Partner onboarding + KYC (IDfy), greedy assignment, OR-Tools routing, partner app, OTP/QR pickup, geofenced photo handover, S3 uploads, offline queue | ✅ | ❌ |
-| 4 Tracking & Notifications | STOMP relay, Redis GEO, parent live map with marker interpolation, geofencing, FCM + MSG91 fallback, Exotel masking | ✅ | ❌ |
+| 3 Dispatch & Partner app | Partner onboarding + approval (KYC removed, ADR-0019), greedy assignment, OR-Tools routing, partner app, OTP/QR pickup, geofenced photo handover, S3 uploads, offline queue | ✅ | ❌ |
+| 4 Tracking & Notifications | STOMP relay, Redis GEO, parent live map with marker interpolation, geofencing, FCM + MSG91 fallback (masked calls removed, ADR-0019) | ✅ | ❌ |
 | 5 Admin panel | Dashboard + live map, management screens, polygon editor, reports from replica, settings, audit viewer | ✅ | ❌ |
 | 6 Earnings & Payouts | Append-only ledger, RazorpayX payouts + webhooks, partner earnings screens | ✅ | ❌ |
-| 7 Hardening | Security mapping, k6 scripts, Grafana/Prometheus/CloudWatch, Terraform dev/staging/prod, runbooks, EAS config, store checklist | ✅ | ❌ |
+| 7 Hardening | Security mapping, k6 scripts, Grafana/Prometheus, single-server production compose (ADR-0020), runbooks, EAS config, store checklist | ✅ | ❌ |
 
 ## 2026-11-15 — "Ink & Mango" redesign, box marks, and fixes found by running the stack
 
@@ -126,8 +153,8 @@ Look at these first:
    versions with the installed Expo SDK, then `pnpm generate:api && pnpm typecheck && pnpm lint && pnpm test`.
 5. `pnpm --filter @lunchbox/admin build` and `pnpm --filter @lunchbox/admin e2e`.
 6. Build Android development clients with EAS and run the Maestro flows.
-7. Deploy to staging with Terraform (needs AWS, Route 53, ACM, Firebase and provider sandbox credentials — see
-   `runbooks/deploy.md`), then run the k6 scripts (`runbooks/load-testing.md`).
+7. Deploy to the single server (needs an AWS account, a domain, Firebase and Razorpay test keys — see
+   `runbooks/aws-setup.md`), then run the k6 scripts (`runbooks/load-testing.md`).
 
 ## What needs your credentials or devices
 
@@ -137,9 +164,7 @@ Look at these first:
 | Google Maps | Android, iOS and web API keys (restricted) |
 | Razorpay / RazorpayX | Test-mode keys, webhook secrets, RazorpayX account number |
 | MSG91 | Auth key and DLT-approved template ids for the five SMS templates |
-| Exotel | SID, API key/token, ExoPhone caller id |
-| IDfy | Account id and API key (sandbox) |
-| AWS | Account, hosted zone, ACM certificates, `terraform apply` |
+| AWS | Account, one Lightsail server, a domain, a private S3 photo bucket |
 | Devices | Android + iOS devices/emulators for dev builds, background-location and camera testing |
 
 ## Known gaps and follow-ups
@@ -153,7 +178,7 @@ Look at these first:
 - **Google Route Optimization API** is implemented but untested against the live API (needs a GCP project with the
   API enabled and a service account); it is off by default.
 - **Invoices** are simple receipts (no GST breakdown) — confirm tax treatment with finance.
-- **Aadhaar** verification is manual review (IDfy Aadhaar needs a holder-driven OTP flow).
+- **Rider checks** happen offline before an operator approves a rider (ADR-0019).
 
 ## Open questions for the product owner
 

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 /**
  * Client metadata. {@code server.forward-headers-strategy=framework} makes {@link HttpServletRequest#getRemoteAddr()}
- * honour X-Forwarded-For from the ALB, so we never parse that header ourselves.
+ * honour X-Forwarded-For from Caddy (which overwrites any client-sent value), so we never parse that header ourselves.
  */
 public final class ClientInfo {
 

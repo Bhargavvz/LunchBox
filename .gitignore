@@ -36,12 +36,6 @@ GoogleService-Info.plist
 # generated api client
 packages/api-client/src/generated/
 
-# terraform
-infra/terraform/**/.terraform/
-infra/terraform/**/*.tfstate
-infra/terraform/**/*.tfstate.*
-infra/terraform/**/*.tfvars
-!infra/terraform/**/*.tfvars.example
 
 # playwright
 apps/admin/test-results/

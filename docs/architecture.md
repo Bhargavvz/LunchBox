@@ -15,41 +15,35 @@ flowchart LR
         GM[Google Maps]
     end
     subgraph AWS ap-south-1
-        CF[CloudFront + WAF] --> S3A[(S3 admin site)]
-        ALB[ALB + WAF]
-        subgraph ECS Fargate
+        subgraph Server[One Lightsail/EC2 server · Docker Compose]
+            CADDY[Caddy<br/>HTTPS · admin static site]
             API[LunchBox backend<br/>Spring Boot modular monolith]
+            PG[(PostgreSQL 16 + PostGIS<br/>nightly pg_dump)]
+            RDC[(Redis<br/>GEO · rate limits · locks)]
+            MQ[(RabbitMQ<br/>events · STOMP relay)]
         end
-        RDS[(RDS PostgreSQL 16 + PostGIS<br/>Multi-AZ)]
-        RR[(Read replica<br/>reports)]
-        RDC[(ElastiCache Redis<br/>GEO · rate limits · locks)]
-        MQ[(Amazon MQ RabbitMQ<br/>events · STOMP relay)]
-        S3[(S3 handover + KYC<br/>SSE-KMS, private)]
-        SM[Secrets Manager + KMS]
+        S3[(S3 handover photos<br/>private, 90-day expiry)]
     end
     subgraph Third parties
-        RZ[Razorpay Subscriptions<br/>RazorpayX Payouts]
-        MSG[MSG91 SMS]
-        EX[Exotel masking]
-        IDF[IDfy KYC]
+        RZ[Razorpay Orders<br/>RazorpayX Payouts, optional]
+        MSG[MSG91 SMS, optional]
     end
-    P & D -- HTTPS / WSS --> ALB --> API
-    A --> CF
-    A -- HTTPS / WSS --> ALB
+    P & D & A -- HTTPS / WSS --> CADDY --> API
     P & D & A -- sign in --> FA
     API -- verify ID tokens --> FA
     API --> FCM --> P & D
-    API --> RDS
-    RDS -. replication .-> RR
-    API -- reports --> RR
+    API --> PG
     API --> RDC
     API <--> MQ
     API -- presigned URLs --> S3
     P & D -- direct PUT/GET --> S3
-    API --> RZ & MSG & EX & IDF
-    RZ -- webhooks HMAC --> ALB
-    API --> SM
+    API --> RZ & MSG
+    RZ -- webhooks HMAC --> CADDY
 ```
+
+Deployment is one server (ADR-0020). Every connection is an environment variable, so the database, Redis and
+RabbitMQ can move to RDS, ElastiCache and Amazon MQ, and the backend can run as several copies, without code
+changes.
 
 ## Backend: modular monolith
 
@@ -64,7 +58,7 @@ other's repositories; they call those interfaces or react to events.
 | `schools`, `children`, `addresses`, `serviceareas` | master data | `SchoolDirectory`, `ChildDirectory`, `AddressDirectory`, `ServiceAreaDirectory` |
 | `subscriptions` | plans, subscriptions, leave days, Razorpay subscription webhooks | `SubscriptionQueries`, `SubscriptionEvents` |
 | `orders` | orders, status history, state machine, nightly generation | `OrderCommands`, `OrderQueries`, `OrderEvents` |
-| `dispatch` | partners, KYC, shifts, assignment, routes, partner-app operations, masked calls | `PartnerDirectory`, `DispatchTracking` |
+| `dispatch` | partners and their approval, shifts, assignment, routes, partner-app operations | `PartnerDirectory`, `DispatchTracking` |
 | `verification` | pickup OTP / signed QR, geofenced handover photos | `PickupVerifier`, `HandoverVerifier` |
 | `tracking` | STOMP endpoint, Redis GEO, ping persistence, geofence monitor | — |
 | `notifications` | notification centre, push/SMS, broadcasts | `NotificationService` |
@@ -152,6 +146,6 @@ assigned stops, only on the delivery day).
 | API p95 < 300 ms | Virtual threads, indexed queries, short-TTL principal cache, Redis for hot tracking state, read replica for reports |
 | Live tracking < 3 s | STOMP broker relay, Redis-only hot path, persistence batched off the request path |
 | 10k tracked deliveries | Stateless API behind ALB; RabbitMQ fan-out; k6 scenario in `load/tracking.js` |
-| 99.9 % availability | Multi-AZ RDS/Redis/MQ, ECS min 3 tasks with circuit-breaker rollbacks, health/readiness probes, graceful shutdown |
+| Availability | Pilot: one server with `restart: unless-stopped`, health checks, nightly backups and snapshots; deploys outside delivery hours. 99.9 % needs the managed-services path in ADR-0020 |
 | Flaky 4G | Partner offline action queue with idempotency keys; pings buffered and batch-sent |
-| Observability | ECS-format JSON logs with `requestId`; OpenTelemetry traces; Prometheus metrics; CloudWatch alarms; Sentry |
+| Observability | JSON logs with `requestId`; OpenTelemetry traces; Prometheus metrics; Sentry |

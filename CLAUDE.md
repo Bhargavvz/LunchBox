@@ -17,7 +17,7 @@ Delivery partners pick up home-cooked lunchboxes from parents' homes and hand th
 | Role | Surface | Core jobs |
 |---|---|---|
 | Parent | Mobile app (Expo) | Register, manage multiple children (school, class, section, roll number), manage home addresses, subscribe, view scheduled pickups, live-track deliveries, get notifications, view order history, manage account and payments |
-| Delivery Partner | Mobile app (Expo) | Secure login, daily pickup assignments, delivery instructions, masked parent calling, optimized route navigation, confirm pickup (QR/OTP), mark school handover (geotagged photo), daily/monthly earnings |
+| Delivery Partner | Mobile app (Expo) | Secure login, daily pickup assignments, delivery instructions, optimized route navigation, confirm pickup (QR/OTP), mark school handover (geotagged photo), daily/monthly earnings |
 | School Admin (optional, later) | Admin panel (scoped) | View today's incoming meals for their school, confirm receipt |
 | Platform Admin | Web admin panel | Manage parents, students, schools, partners, orders, service areas, schedules, notifications, settings; analytics and reports |
 
@@ -38,27 +38,27 @@ Child safety, transparency and on-time delivery are the top priorities.
 **Admin panel**
 - Next.js (App Router), TypeScript strict, Tailwind CSS, shadcn/ui, TanStack Table, Recharts
 - Firebase Auth (email + MFA for admins)
-- Deployed to S3 + CloudFront (static export) or AWS Amplify
+- Static export served by Caddy on the production server (ADR-0020)
 
 **Backend**
 - Spring Boot 3, Java 21 (virtual threads enabled), Gradle (Kotlin DSL)
 - Spring Web, Spring Security (validating Firebase ID tokens via Firebase Admin SDK), Spring Data JPA, Hibernate Spatial
-- Spring WebSocket + STOMP with external broker relay (Amazon MQ for RabbitMQ; local RabbitMQ in Docker)
+- Spring WebSocket + STOMP with external broker relay (RabbitMQ in Docker, locally and in production)
 - Flyway, MapStruct, Lombok, Jakarta Validation, Resilience4j, springdoc-openapi
 - Spring Scheduler + ShedLock; RabbitMQ for async jobs
 - Transactional outbox pattern for domain events
 - Google OR-Tools (Java) for route optimization (Google Route Optimization API as optional provider behind an interface)
 
 **Data**
-- PostgreSQL 16 + PostGIS (AWS RDS Multi-AZ, one read replica for reports)
-- Redis (AWS ElastiCache): cache, Redis GEO for live locations, rate limiting, distributed locks
-- Amazon S3: handover photos, KYC documents (private buckets, pre-signed URLs, lifecycle rules, SSE-KMS)
+- PostgreSQL 16 + PostGIS (Docker on the production server; optional read replica URL for reports)
+- Redis (Docker): cache, Redis GEO for live locations, rate limiting, distributed locks
+- Amazon S3: handover photos (private bucket, pre-signed URLs, lifecycle rules, SSE-KMS)
 
 **Firebase (only these)**: Firebase Auth (phone OTP for parents and partners, email+MFA for admins, roles via custom claims), Firebase Cloud Messaging.
 
-**Third parties**: Razorpay Subscriptions + RazorpayX Payouts, MSG91 (SMS fallback), Exotel (call masking), IDfy (partner KYC). Every third party sits behind a Java interface with a sandbox/fake implementation for local dev and tests.
+**Third parties**: Razorpay (prepaid Orders; Subscriptions optional) + RazorpayX Payouts, MSG91 (SMS fallback). No call masking and no document KYC (ADR-0019): riders are approved by operations, and nobody in the apps sees another person's phone number. Every third party sits behind a Java interface with a sandbox/fake implementation for local dev and tests.
 
-**Infrastructure**: AWS Mumbai (ap-south-1). Docker, ECS Fargate for launch (keep manifests portable to EKS later), ALB with WebSocket support, Route 53, ACM, CloudFront, WAF, Secrets Manager, KMS. All infrastructure in **Terraform**.
+**Infrastructure** (ADR-0020, to keep the budget low): one Lightsail/EC2 server in AWS Mumbai (ap-south-1) running `deploy/docker-compose.prod.yml` (backend, PostgreSQL + PostGIS, Redis, RabbitMQ, Caddy for automatic HTTPS and the admin site), nightly `pg_dump` backups, S3 for handover photos. No Terraform for now; configuration stays in environment variables so managed services (RDS, ElastiCache, Amazon MQ) can be swapped in later without code changes.
 
 **DevOps / quality**: GitHub Actions, Jib for backend images, JUnit 5 + Mockito + Testcontainers, Jest + React Native Testing Library, Playwright (admin), Maestro (mobile E2E), k6 (load), Sentry, OpenTelemetry, Prometheus + Grafana, CloudWatch alarms, Spring Boot Actuator.
 
@@ -78,7 +78,7 @@ lunchbox/
 │   ├── api-client/       # TypeScript client GENERATED from backend OpenAPI spec
 │   ├── ui/               # shared RN components + design tokens
 │   └── config/           # shared eslint, tsconfig, prettier
-├── infra/terraform/      # envs: dev, staging, prod
+├── deploy/              # production docker compose, Caddyfile, .env.example, backup script
 ├── docker-compose.yml    # postgres+postgis, redis, rabbitmq, localstack(s3), firebase emulator
 └── .github/workflows/
 ```
@@ -121,7 +121,7 @@ Post-MVP (interfaces now): Hungarian batch matching, DBSCAN clustering, Kalman f
 
 See `docs/architecture.md`, `docs/security.md` and `docs/PROGRESS.md` for the elaborated requirements and how each is implemented.
 Non-negotiables: Firebase ID token verified on every request and every STOMP CONNECT; `@PreAuthorize` + ownership checks;
-partners see only parent first name, address, instructions and a masked number; DPDP consent/export/deletion; admin MFA; full audit trail.
+partners see only parent first name, address and instructions (no phone number); DPDP consent/export/deletion; admin MFA; full audit trail.
 
 ## 13. Build Phases
 

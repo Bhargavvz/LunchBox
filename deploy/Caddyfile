@@ -1,0 +1,30 @@
+# HTTPS certificates are issued and renewed automatically (Let's Encrypt) once both DNS names point at this server.
+{$API_DOMAIN} {
+	encode zstd gzip
+	# The actuator is for the server itself; only health is public.
+	@internal path /actuator/* /v3/api-docs* /swagger-ui*
+	handle @internal {
+		@health path /actuator/health /actuator/health/*
+		handle @health {
+			reverse_proxy backend:8080
+		}
+		respond 404
+	}
+	reverse_proxy backend:8080
+}
+
+{$ADMIN_DOMAIN} {
+	encode zstd gzip
+	root * /srv/admin
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.amazonaws.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://{$API_DOMAIN} wss://{$API_DOMAIN} https://*.googleapis.com https://*.amazonaws.com; frame-src https://*.firebaseapp.com; frame-ancestors 'none'"
+	}
+	@static path /_next/static/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+	try_files {path} {path}/ {path}/index.html /index.html
+	file_server
+}

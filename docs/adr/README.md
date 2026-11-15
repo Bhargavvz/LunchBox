@@ -20,3 +20,5 @@
 | [0016](0016-ink-and-mango-design-system.md) | "Ink & Mango" design system across mobile and admin |
 | [0017](0017-box-marks.md) | Box marks on lunchboxes |
 | [0018](0018-prepaid-billing-via-orders.md) | Prepaid lunch plans paid through Razorpay Orders |
+| [0019](0019-no-call-masking-or-document-kyc.md) | No masked calling (Exotel) and no document KYC (IDfy) |
+| [0020](0020-single-server-deployment.md) | One server with Docker Compose instead of Terraform/ECS |

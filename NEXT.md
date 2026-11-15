@@ -149,13 +149,11 @@ Start with the first three, because the mobile apps need them. Use test or sandb
 | 4 | **Razorpay** | Test-mode key id + secret, and a webhook secret. Create the subscription plans in the dashboard. | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_MODE` |
 | 5 | **RazorpayX** | Test key, account number, webhook secret. | `RAZORPAYX_*` |
 | 6 | **MSG91** | Auth key and **DLT-approved** template ids for the five SMS templates. DLT approval takes days, so start early. | `MSG91_AUTH_KEY`, `MSG91_TPL_*` |
-| 7 | **Exotel** | SID, API key/token and an ExoPhone caller id (for masked calls). | `EXOTEL_SID`, `EXOTEL_API_KEY`, `EXOTEL_API_TOKEN`, `EXOTEL_CALLER_ID` |
-| 8 | **IDfy** | Sandbox account id + API key (partner KYC). | `IDFY_ACCOUNT_ID`, `IDFY_API_KEY` |
-| 9 | **AWS** | An account in ap-south-1, a Route 53 hosted zone for your domain, and permission to run Terraform. | See Part 9 |
+| 9 | **AWS** | An account in ap-south-1, one Lightsail server, a domain and a private S3 photo bucket. | See Part 9 |
 | 10 | **Sentry** (optional) | A project per app. | `SENTRY_DSN` |
 | 11 | **Google Route Optimization API** (optional, off by default) | A GCP project with the API enabled + a service account. | `ROUTING_PROVIDER`, `GOOGLE_ROUTES_*` |
 
-Each provider has a `*_MODE` switch: `fake` or `live`. `live` calls the real API, with whatever keys you give it, test or production.
+Each provider has a `*_MODE` switch: `fake`, `live`, or (RazorpayX and MSG91 only) `off`. `live` calls the real API, with whatever keys you give it, test or production.
 
 - Keep `fake` locally.
 - In staging, set `live` with **test-mode keys**, one provider at a time, once its keys work.
@@ -229,8 +227,8 @@ Reply to Claude with yes / no / your change for each. Claude will update the cod
    them later in Admin → Settings.
 7. [ ] **Ratings window.** Parents can rate a delivery **once, up to 7 days** after it (ADR-0014). OK?
 8. [ ] **Invoices.** They are simple receipts with **no GST breakdown**. Check the tax treatment with your accountant.
-9. [ ] **Aadhaar.** Aadhaar checks for partners are a **manual review** (IDfy's Aadhaar flow needs an OTP from the holder). OK
-   for launch?
+9. [ ] **Rider checks.** Riders are approved by operations with no document upload (ADR-0019). Decide what you check
+   offline (ID, police verification) before approving.
 10. [ ] **Approve the ADRs** still marked *Proposed*:
     - ADR-0013: extra libraries
     - ADR-0014: ratings
@@ -256,25 +254,19 @@ Reply to Claude with yes / no / your change for each. Claude will update the cod
 
 ---
 
-## Part 9 — Deploy to staging (AWS)
+## Part 9 — Deploy to the server (AWS)
 
-Follow `docs/runbooks/deploy.md`. In short:
+Follow `docs/runbooks/aws-setup.md` (one Lightsail server with Docker Compose, ADR-0020). In short:
 
-1. [ ] `cd infra/terraform/bootstrap && terraform init && terraform apply -var github_repository=<owner>/<repo>`.
-   This creates the state bucket and the GitHub OIDC deploy role.
-2. [ ] `cd infra/terraform/envs/staging`, fill in the variables (domain, hosted zone, certificates), then
-   `terraform init && terraform apply`.
-3. [ ] Put the secrets into **AWS Secrets Manager**:
-   - provider keys: Razorpay, RazorpayX, MSG91, Exotel, IDfy, Firebase service account
-   - two new random 32-byte keys: `LUNCHBOX_PII_KEY` and `LUNCHBOX_QR_SIGNING_KEY`
-   - database and RabbitMQ passwords
-
-   **Never reuse the local all-zero keys.**
-4. [ ] Run `deploy.yml` for staging. Set `BOOTSTRAP_SUPER_ADMIN_EMAIL` once to create the first admin, then remove it.
-5. [ ] Point the Razorpay/RazorpayX webhooks at the staging API.
-6. [ ] Build the staging apps: `pnpm build:preview` in each app. They use the `staging` channel for EAS Update.
-7. [ ] Load test with k6 (`docs/runbooks/load-testing.md`), using Firebase test phone numbers.
-8. [ ] Check that the dashboards and alarms receive data (Grafana/Prometheus, CloudWatch, Sentry).
+1. [ ] Create the Lightsail 4 GB server with a static IP, point `api.` and `admin.` at it, create the private S3
+   photo bucket and an IAM key limited to it.
+2. [ ] Install Docker on the server and fill `/opt/lunchbox/.env` from `deploy/.env.example`. Generate two new
+   32-byte keys for `LUNCHBOX_PII_KEY` and `LUNCHBOX_QR_SIGNING_KEY`. **Never reuse the local all-zero keys.**
+3. [ ] Add the GitHub `production` environment (variables and SSH secrets), push to `main`, run **Deploy**.
+4. [ ] Create the first super admin with `BOOTSTRAP_SUPER_ADMIN_EMAIL`, then empty it.
+5. [ ] Point the Razorpay webhook at the API. Install the backup cron and turn on Lightsail snapshots.
+6. [ ] Build test apps against the server: `pnpm build:preview` in each app.
+7. [ ] Load test with k6 (`docs/runbooks/load-testing.md`) outside delivery hours, using Firebase test numbers.
 
 ---
 
@@ -282,16 +274,14 @@ Follow `docs/runbooks/deploy.md`. In short:
 
 - [ ] Security review against `docs/security.md`:
   - admin MFA enforced in staging/prod
-  - WAF rules
   - S3 buckets private, with pre-signed URLs only
   - audit log populated for every admin write
 - [ ] Child-safety review:
   - partners never see the parent's full name, phone or the child's photo
-  - masked calls work
   - handover needs the geofence + photo
 - [ ] DPDP: consent capture, data export and account deletion tested end to end. Publish the privacy policy and terms.
-- [ ] Production Terraform (`envs/prod`): RDS Multi-AZ + read replica, backups, alarms.
-- [ ] Switch providers to `live` one at a time. Run one real ₹1 subscription and one real payout.
+- [ ] Backups: restore one nightly dump into a scratch database; Lightsail snapshots on.
+- [ ] Switch providers to `live` one at a time. Run one real ₹1 plan payment.
 - [ ] Store submission: follow `docs/release/store-checklist.md`. This covers the Play Console data-safety form,
   justifying background location, screenshots (the new UI is ready for them), and the Apple review notes.
 - [ ] Incident runbook (`docs/runbooks/incident-response.md`): name who is on call for SOS alerts during delivery
