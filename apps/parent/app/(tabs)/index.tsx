@@ -1,7 +1,8 @@
-import { IST, istTime, type OrderResponse } from '@lunchbox/api-client';
+import { IST, istTime, istTimeRange, type OrderResponse } from '@lunchbox/api-client';
 import {
   Avatar,
   Banner,
+  BoxMark,
   Button,
   Card,
   EmptyState,
@@ -35,19 +36,38 @@ const CODE_STATUSES = new Set(['ASSIGNED', 'REASSIGNED', 'PARTNER_EN_ROUTE', 'SC
 const TRACKABLE = new Set(['PARTNER_EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT', 'AT_SCHOOL', 'DELIVERED']);
 
 function istHour(now = new Date()): number {
-  return Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: IST }).format(now));
+  return Number(
+    new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: IST }).format(now),
+  );
 }
 
-function MetaTile({ icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  const theme = useTheme();
+/** One timing fact: icon and label above, the time itself in the display face so it can be read at a glance. */
+function TimeFact({
+  icon,
+  label,
+  value,
+  grow = 1,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  grow?: number;
+}) {
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.sunken, borderRadius: theme.radius.md, padding: 12, gap: 4 }}
-          accessible accessibilityLabel={`${label}: ${value}`}>
+    <View style={{ flex: grow, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}`}>
       <Row gap={1.5}>
-        <Icon as={icon} size={14} color="textMuted" />
-        <Text variant="overline" muted>{label}</Text>
+        <Icon as={icon} size={15} color="textMuted" />
+        <Text variant="caption" muted>
+          {label}
+        </Text>
       </Row>
-      <Text variant="bodyStrong" style={{ fontVariant: ['tabular-nums'] }}>{value}</Text>
+      <Text
+        variant="numeral"
+        numberOfLines={1}
+        style={{ fontVariant: ['tabular-nums'], fontSize: 20, lineHeight: 27 }}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -65,13 +85,21 @@ function OrderCard({ order }: { order: OrderResponse }) {
   return (
     <Card tone="raised" padding={0} accessibilityLabel={`${order.childName}: ${labels[order.status]}`}>
       <View style={{ padding: 18, gap: 18 }}>
-        <Row gap={3}>
-          <Avatar name={order.childName ?? ''} size={46} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text variant="heading" numberOfLines={1}>{order.childName}</Text>
-            <Text variant="caption" muted numberOfLines={1}>{order.schoolName}</Text>
+        <Row gap={3} align="flex-start">
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text variant="heading" numberOfLines={1}>
+              {order.childName}
+            </Text>
+            <Text variant="caption" muted numberOfLines={1} style={{ marginTop: -4 }}>
+              {order.schoolName}
+            </Text>
+            <StatusPill status={order.status} labels={labels} />
           </View>
-          <StatusPill status={order.status} labels={labels} />
+          {order.boxCode ? (
+            <BoxMark code={order.boxCode} size="md" />
+          ) : (
+            <Avatar name={order.childName ?? ''} size={46} />
+          )}
         </Row>
 
         <JourneyRail
@@ -80,17 +108,29 @@ function OrderCard({ order }: { order: OrderResponse }) {
         />
 
         {delivered ? (
-          <Row gap={2} style={{ backgroundColor: theme.colors.primarySoft, borderRadius: theme.radius.md, padding: 12 }}>
-            <Icon as={CircleCheck} size={18} color="onPrimarySoft" />
-            <Text variant="bodyStrong" style={{ color: theme.colors.onPrimarySoft, flex: 1 }}>
+          <Row
+            gap={2}
+            style={{ backgroundColor: theme.colors.successSoft, borderRadius: theme.radius.md, padding: 12 }}
+          >
+            <Icon as={CircleCheck} size={18} color="onSuccessSoft" />
+            <Text variant="bodyStrong" style={{ color: theme.colors.onSuccessSoft, flex: 1 }}>
               {t('today.deliveredAt', { time: istTime(order.deliveredAt ?? order.schoolReceivedAt) })}
             </Text>
           </Row>
         ) : (
-          <Row gap={2.5} align="stretch">
-            <MetaTile icon={Clock3} label={t('today.pickup')}
-                      value={`${istTime(order.pickupWindowStart)} – ${istTime(order.pickupWindowEnd)}`} />
-            <MetaTile icon={School} label={t('today.atSchoolBy')} value={istTime(order.deliveryDeadline)} />
+          <Row
+            gap={4}
+            align="stretch"
+            style={{ paddingTop: 14, borderTopWidth: 1, borderTopColor: theme.colors.border }}
+          >
+            <TimeFact
+              icon={Clock3}
+              label={t('today.pickup')}
+              grow={1.5}
+              value={istTimeRange(order.pickupWindowStart, order.pickupWindowEnd).text}
+            />
+            <View style={{ width: 1, backgroundColor: theme.colors.border }} />
+            <TimeFact icon={School} label={t('today.atSchoolBy')} value={istTime(order.deliveryDeadline)} />
           </Row>
         )}
 
@@ -98,30 +138,27 @@ function OrderCard({ order }: { order: OrderResponse }) {
         {order.cancelReason ? <Banner tone="warning">{order.cancelReason}</Banner> : null}
 
         {TRACKABLE.has(order.status) || codeable ? (
-          <Row gap={2.5}>
-            {codeable ? (
-              <View style={{ flex: 1 }}>
-                <Button
-                  title={showCode ? t('today.hideCode') : t('today.showCode')}
-                  variant={live ? 'secondary' : 'primary'}
-                  icon={QrCode}
-                  onPress={() => setShowCode((v) => !v)}
-                  testID={`show-code-${order.id}`}
-                />
-              </View>
-            ) : null}
+          // Stacked, full width: each label stays readable at any text size and in Hindi.
+          <View style={{ gap: 10 }}>
             {TRACKABLE.has(order.status) ? (
-              <View style={{ flex: 1 }}>
-                <Button
-                  title={delivered ? t('today.details') : t('today.track')}
-                  variant={delivered ? 'secondary' : 'primary'}
-                  icon={delivered ? undefined : Navigation}
-                  onPress={() => router.push(`/orders/${order.id}`)}
-                  testID={`track-${order.id}`}
-                />
-              </View>
+              <Button
+                title={delivered ? t('today.details') : t('today.track')}
+                variant={delivered ? 'secondary' : 'primary'}
+                icon={delivered ? undefined : Navigation}
+                onPress={() => router.push(`/orders/${order.id}`)}
+                testID={`track-${order.id}`}
+              />
             ) : null}
-          </Row>
+            {codeable ? (
+              <Button
+                title={showCode ? t('today.hideCode') : t('today.showCode')}
+                variant={live ? 'secondary' : 'primary'}
+                icon={QrCode}
+                onPress={() => setShowCode((v) => !v)}
+                testID={`show-code-${order.id}`}
+              />
+            ) : null}
+          </View>
         ) : null}
       </View>
 
@@ -138,21 +175,33 @@ export default function TodayScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const firstName = useSession((s) => s.me?.parent?.firstName ?? '');
-  const today = useQuery({ queryKey: ['orders', 'today'], queryFn: api.orders.today, refetchInterval: 30_000 });
+  const today = useQuery({
+    queryKey: ['orders', 'today'],
+    queryFn: api.orders.today,
+    refetchInterval: 30_000,
+  });
 
   if (today.isLoading) return <Loading safeTop label={t('common.loading')} />;
 
   const hour = istHour();
   const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   const dateLine = new Intl.DateTimeFormat(i18n.language === 'hi' ? 'hi-IN' : 'en-IN', {
-    weekday: 'long', day: 'numeric', month: 'long', timeZone: IST,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: IST,
   }).format(new Date());
   const orders = today.data ?? [];
   const moving = orders.filter((o) => isLive(o.status)).length;
   const delivered = orders.filter((o) => o.status === 'DELIVERED').length;
 
   return (
-    <Screen testID="today-screen" safeTop refreshing={today.isRefetching} onRefresh={() => void today.refetch()}>
+    <Screen
+      testID="today-screen"
+      safeTop
+      refreshing={today.isRefetching}
+      onRefresh={() => void today.refetch()}
+    >
       <PageTitle
         eyebrow={dateLine}
         title={firstName ? t(`today.greeting.${greeting}`, { name: firstName }) : t('today.title')}
@@ -166,14 +215,21 @@ export default function TodayScreen() {
                 : t('today.summary', { count: orders.length })
         }
         trailing={
-          <PressableScale onPress={() => router.push('/(tabs)/account')} accessibilityRole="button"
-                          accessibilityLabel={t('tabs.account')}>
+          <PressableScale
+            onPress={() => router.push('/(tabs)/account')}
+            accessibilityRole="button"
+            accessibilityLabel={t('tabs.account')}
+          >
             <Avatar name={firstName || 'LunchBox'} size={42} />
           </PressableScale>
         }
       />
 
-      {today.error ? <Banner tone="danger" title={t('common.problem')}>{errorMessage(today.error)}</Banner> : null}
+      {today.error ? (
+        <Banner tone="danger" title={t('common.problem')}>
+          {errorMessage(today.error)}
+        </Banner>
+      ) : null}
 
       {today.data && orders.length === 0 ? (
         <Card tone="sunken">
@@ -181,12 +237,20 @@ export default function TodayScreen() {
             art={<TiffinArt size={92} mood="muted" steam />}
             title={t('today.none')}
             message={t('today.noneHint')}
-            action={<Button title={t('today.manageChildren')} variant="outline" onPress={() => router.push('/(tabs)/children')} />}
+            action={
+              <Button
+                title={t('today.manageChildren')}
+                variant="outline"
+                onPress={() => router.push('/(tabs)/children')}
+              />
+            }
           />
         </Card>
       ) : null}
 
-      {orders.map((o) => <OrderCard key={o.id} order={o} />)}
+      {orders.map((o) => (
+        <OrderCard key={o.id} order={o} />
+      ))}
     </Screen>
   );
 }

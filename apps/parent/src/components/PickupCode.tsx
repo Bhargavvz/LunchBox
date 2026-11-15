@@ -1,4 +1,4 @@
-import { Banner, Icon, Row, Skeleton, Text, elevation, useTheme } from '@lunchbox/ui';
+import { Banner, Icon, Row, Skeleton, Text, elevation, palette, useTheme } from '@lunchbox/ui';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldCheck } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
@@ -58,7 +58,7 @@ export function PickupCode({ orderId, notchColor }: { orderId: string; notchColo
       <View style={{ padding: 20, paddingTop: 16, alignItems: 'center', gap: 14 }}>
         <View style={{ padding: 14, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border }}
               accessible accessibilityLabel={t('code.qrLabel')}>
-          <QRCode value={data.qrToken} size={188} color="#1C1A17" backgroundColor="#FFFFFF" />
+          <QRCode value={data.qrToken} size={188} color={palette.ink900} backgroundColor={palette.white} />
         </View>
         <QrLife key={data.qrToken} expiresAt={data.qrExpiresAt} />
         <Row gap={2} align="flex-start" style={{ alignSelf: 'stretch', backgroundColor: theme.colors.primarySoft,

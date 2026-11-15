@@ -3,23 +3,33 @@ import { Platform } from 'react-native';
 import { api } from './api';
 import { queryClient } from './queryClient';
 
-/** Asks for notification permission and registers the FCM token with the backend (idempotent). */
+/**
+ * Asks for notification permission and registers the FCM token with the backend (idempotent). Never throws: push is
+ * an extra, so a device without Play services, an emulator on the local test project, or a network blip must not
+ * break sign-in. The next app start tries again.
+ */
 export async function registerForPush(): Promise<void> {
-  const status = await messaging().requestPermission();
-  const enabled =
-    status === messaging.AuthorizationStatus.AUTHORIZED || status === messaging.AuthorizationStatus.PROVISIONAL;
-  if (!enabled) return;
-  const token = await messaging().getToken();
-  await api.notifications.registerDevice({
-    token,
-    platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
-    app: 'PARENT',
-  });
+  try {
+    const status = await messaging().requestPermission();
+    const enabled =
+      status === messaging.AuthorizationStatus.AUTHORIZED || status === messaging.AuthorizationStatus.PROVISIONAL;
+    if (!enabled) return;
+    const token = await messaging().getToken();
+    await api.notifications.registerDevice({
+      token,
+      platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
+      app: 'PARENT',
+    });
+  } catch (e) {
+    if (__DEV__) console.warn('Push registration skipped:', e instanceof Error ? e.message : e);
+  }
 }
 
 export function onTokenRefresh(): () => void {
   return messaging().onTokenRefresh((token) => {
-    void api.notifications.registerDevice({ token, platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID', app: 'PARENT' });
+    void api.notifications
+      .registerDevice({ token, platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID', app: 'PARENT' })
+      .catch(() => undefined);
   });
 }
 
@@ -58,7 +68,7 @@ function open(message: FirebaseMessagingTypes.RemoteMessage | null, navigate: (h
  * Call once the session is ready so the auth gate does not override the navigation.
  */
 export function bindNotificationTaps(navigate: (href: string) => void): () => void {
-  void messaging().getInitialNotification().then((m) => open(m, navigate));
+  void messaging().getInitialNotification().then((m) => open(m, navigate)).catch(() => undefined);
   const offOpened = messaging().onNotificationOpenedApp((m) => open(m, navigate));
   const offForeground = messaging().onMessage(() => {
     void queryClient.invalidateQueries({ queryKey: ['notifications'] });

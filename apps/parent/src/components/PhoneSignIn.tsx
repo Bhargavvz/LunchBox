@@ -1,6 +1,6 @@
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
-import { Banner, Button, OtpInput, Row, Screen, Text, TextField, TiffinArt, Wordmark, useTheme } from '@lunchbox/ui';
-import { ArrowRight, Pencil } from 'lucide-react-native';
+import { Banner, Button, Icon, OtpInput, Row, Screen, Text, TextField, TiffinArt, Wordmark, useTheme } from '@lunchbox/ui';
+import { ArrowRight, House, Pencil, School, ShieldCheck, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
@@ -27,6 +27,36 @@ function authError(e: unknown, t: (k: string) => string): string {
     default:
       return e instanceof Error ? e.message : String(e);
   }
+}
+
+/** The three handoffs a parent is trusting us with: a real sequence, so it is drawn as one connected rail. */
+function JourneySteps() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const steps: [LucideIcon, string][] = [
+    [House, t('auth.steps.pack')],
+    [ShieldCheck, t('auth.steps.pickup')],
+    [School, t('auth.steps.school')],
+  ];
+  return (
+    <View style={{ gap: 12, paddingTop: 8 }} accessibilityRole="list" accessibilityLabel={t('auth.steps.title')}>
+      <Text variant="label" muted accessibilityRole="header">{t('auth.steps.title')}</Text>
+      {steps.map(([glyph, label], i) => (
+        <Row key={label} gap={3} align="stretch">
+          <View style={{ alignItems: 'center', width: 36 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: i === 1 ? theme.colors.accentSoft : theme.colors.primarySoft }}>
+              <Icon as={glyph} size={18} color={i === 1 ? 'onAccentSoft' : 'onPrimarySoft'} strokeWidth={2} />
+            </View>
+            {i < steps.length - 1 ? (
+              <View style={{ flex: 1, width: 2, minHeight: 10, marginVertical: 3, backgroundColor: theme.colors.border }} />
+            ) : null}
+          </View>
+          <Text style={{ flex: 1, paddingTop: 6, paddingBottom: i < steps.length - 1 ? 8 : 0 }}>{label}</Text>
+        </Row>
+      ))}
+    </View>
+  );
 }
 
 /**
@@ -139,6 +169,7 @@ export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; not
             />
             <Button title={t('auth.sendCode')} trailingIcon={ArrowRight} size="lg" onPress={send} loading={busy}
                     disabled={!validPhone} testID="send-code" />
+            <JourneySteps />
           </>
         ) : (
           <>

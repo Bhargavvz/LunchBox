@@ -34,6 +34,12 @@
       "expired": "This code has expired. Ask for a new one.",
       "tooMany": "Too many attempts. Please wait a few minutes and try again.",
       "network": "No internet connection. Check your network and try again."
+    },
+    "steps": {
+      "title": "How a lunchbox travels",
+      "pack": "You pack it at home",
+      "pickup": "A verified partner collects it with your code",
+      "school": "It is handed over at school, with a photo"
     }
   },
   "register": {
@@ -99,7 +105,9 @@
     "deliveredAt": "Handed over at school at {{time}}",
     "hideCode": "Hide code",
     "details": "View details",
-    "manageChildren": "Manage children"
+    "manageChildren": "Manage children",
+    "pickupShort": "Pickup",
+    "schoolShort": "At school by"
   },
   "code": {
     "title": "Pickup code",
@@ -174,7 +182,14 @@
       "section": "Keep it under 10 characters",
       "rollNumber": "Use letters, numbers, / or -",
       "allergies": "Keep notes under 1000 characters"
-    }
+    },
+    "paidUntil": "Paid until {{date}}",
+    "endsSoon": "Plan ends {{date}}. Renew to keep pickups going.",
+    "ended": "Plan ended. Renew to restart pickups.",
+    "renew": "Renew for {{price}}",
+    "finishPayment": "Complete payment of {{price}}",
+    "renewDue": "Renewal due",
+    "renewed": "Plan renewed until {{date}}"
   },
   "address": {
     "title": "Pickup addresses",
@@ -368,5 +383,10 @@
     "emptyHint": "Every lunchbox we carry will be listed here, with its timeline.",
     "count_one": "1 delivery",
     "count_other": "{{count}} deliveries"
+  },
+  "box": {
+    "label": "Box mark",
+    "onLid": "Write {{code}} on the lid",
+    "hint": "Your partner matches this mark at pickup and at the school gate, so boxes never get swapped. A marker pen or a sticker works."
   }
 }

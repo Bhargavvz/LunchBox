@@ -1,4 +1,4 @@
-import { Icon, IconButton, elevation, mapStyle, useTheme } from '@lunchbox/ui';
+import { Icon, IconButton, mapStyle, useTheme } from '@lunchbox/ui';
 import { Bike, House, LocateFixed, School } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -44,7 +44,8 @@ export function LiveMap({
   ).current;
 
   useEffect(() => {
-    const timer = setTimeout(() => setSettled(true), 600);
+    // Android snapshots custom marker views; give icons and fonts time to draw before freezing the bitmap.
+    const timer = setTimeout(() => setSettled(true), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -97,7 +98,8 @@ export function LiveMap({
           tracksViewChanges={!settled}
         >
           <View style={{ alignItems: 'center' }}>
-            <View style={[styles.pin, { backgroundColor: theme.colors.accent, borderColor: theme.colors.surface }, elevation(theme, 2)]}>
+            {/* No elevation inside markers: Android renders shadowed views in marker snapshots as blank. */}
+            <View style={[styles.pin, { backgroundColor: theme.colors.accent, borderColor: theme.colors.surface }]}>
               <Icon as={destinationType === 'HOME' ? House : School} size={18} color={theme.colors.onAccent} strokeWidth={2.2} />
             </View>
             <View style={[styles.pinTail, { borderTopColor: theme.colors.accent }]} />
@@ -112,8 +114,7 @@ export function LiveMap({
           >
             <View style={styles.partnerWrap}>
               <View style={[styles.halo, { backgroundColor: theme.colors.primary }]} />
-              <View style={[styles.partner, { backgroundColor: theme.colors.primary, borderColor: theme.colors.surface },
-                elevation(theme, 2)]}>
+              <View style={[styles.partner, { backgroundColor: theme.colors.primary, borderColor: theme.colors.surface }]}>
                 <Icon as={Bike} size={18} color={theme.colors.onPrimary} strokeWidth={2.2} />
               </View>
             </View>

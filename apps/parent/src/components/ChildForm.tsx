@@ -3,7 +3,9 @@ import type { ChildRequest, ChildResponse } from '@lunchbox/api-client';
 import {
   Avatar,
   Banner,
+  BoxMark,
   Button,
+  Card,
   Icon,
   ListGroup,
   ListItem,
@@ -126,6 +128,18 @@ export function ChildForm({
         </View>
       </Row>
       {error ? <Banner tone="danger" title={t('common.problem')}>{error}</Banner> : null}
+
+      {initial?.boxCode ? (
+        <Card tone="accent" gap={3}>
+          <Row gap={3}>
+            <BoxMark code={initial.boxCode} size="md" />
+            <Text variant="subheading" style={{ flex: 1, color: theme.colors.onAccentSoft }}>
+              {t('box.onLid', { code: initial.boxCode })}
+            </Text>
+          </Row>
+          <Text variant="caption" style={{ color: theme.colors.onAccentSoft }}>{t('box.hint')}</Text>
+        </Card>
+      ) : null}
 
       <SectionHeader title={t('children.about')} />
       {field('firstName', t('children.firstName'), t('children.errors.firstName'),

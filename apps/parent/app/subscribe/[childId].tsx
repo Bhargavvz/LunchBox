@@ -22,9 +22,8 @@ import { Check, CircleCheck, Lock, MapPin, Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
-import RazorpayCheckout from 'react-native-razorpay';
 import { api } from '../../src/lib/api';
-import { config } from '../../src/lib/config';
+import { payAndVerify } from '../../src/lib/checkout';
 import { errorMessage } from '../../src/lib/queryClient';
 
 const WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const;
@@ -96,25 +95,7 @@ export default function SubscribeScreen() {
         daysOfWeek: days,
         startDate,
       });
-      let paymentId: string;
-      let signature: string;
-      if (config.useFakePayments) {
-        const sim = await api.subscriptions.devSimulateCharge(checkout.providerSubscriptionId, checkout.amountPaise);
-        paymentId = sim.razorpayPaymentId;
-        signature = sim.razorpaySignature;
-      } else {
-        const result = await RazorpayCheckout.open({
-          key: checkout.razorpayKeyId,
-          subscription_id: checkout.providerSubscriptionId,
-          name: 'LunchBox',
-          description: checkout.planName,
-          prefill: { name: checkout.prefillName ?? '', contact: checkout.prefillContact ?? '' },
-          theme: { color: theme.colors.primary },
-        });
-        paymentId = result.razorpay_payment_id;
-        signature = result.razorpay_signature;
-      }
-      await api.subscriptions.verify(checkout.subscriptionId, { razorpayPaymentId: paymentId, razorpaySignature: signature });
+      await payAndVerify(checkout, theme.colors.primary);
       await qc.invalidateQueries({ queryKey: ['subscriptions'] });
       haptic.success();
       setDone(true);

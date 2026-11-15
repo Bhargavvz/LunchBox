@@ -1,7 +1,8 @@
-import { etaText, istDateTime, istTime } from '@lunchbox/api-client';
+import { etaText, istDateTime, istTime, istTimeRange } from '@lunchbox/api-client';
 import {
   Avatar,
   Banner,
+  BoxMark,
   Button,
   Card,
   Icon,
@@ -78,7 +79,10 @@ export default function OrderTrackingScreen() {
             <Text variant="figure">{etaText(etaSeconds)}</Text>
           </View>
         ) : (
-          <Text variant="title" style={{ marginTop: 4 }}>{order.childName}</Text>
+          <Row gap={3} style={{ marginTop: 4 }}>
+            <Text variant="title" style={{ flex: 1 }} numberOfLines={1}>{order.childName}</Text>
+            {order.boxCode ? <BoxMark code={order.boxCode} size="md" /> : null}
+          </Row>
         )}
         <Text muted>
           {live && etaSeconds !== null ? `${order.childName} · ${order.schoolName}` : order.schoolName}
@@ -100,7 +104,7 @@ export default function OrderTrackingScreen() {
                 <Text variant="overline" muted>{t('today.pickup')}</Text>
               </Row>
               <Text variant="bodyStrong">
-                {t('today.pickupWindow', { from: istTime(order.pickupWindowStart), to: istTime(order.pickupWindowEnd) })}
+                {t('today.pickupWindow', istTimeRange(order.pickupWindowStart, order.pickupWindowEnd))}
               </Text>
               <Text variant="caption" muted>{t('today.deadline', { time: istTime(order.deliveryDeadline) })}</Text>
             </View>

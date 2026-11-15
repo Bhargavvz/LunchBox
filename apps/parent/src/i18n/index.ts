@@ -1,3 +1,5 @@
+// Hermes (Android) ships no Intl.PluralRules; i18next needs it to pick "One child" vs "2 children".
+import 'intl-pluralrules';
 import { getLocales } from 'expo-localization';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
