@@ -11,7 +11,8 @@ The emulator reaches your PC at `10.0.2.2`, which is what `apps/*/.env` already 
      **Android SDK Platform-Tools** and **NDK (Side by side)**. Apply.
 2. **Set environment variables** (Windows → *Edit environment variables for your account*), then open a new terminal:
    - `ANDROID_HOME` = `%LOCALAPPDATA%\Android\Sdk`
-   - `JAVA_HOME` = `C:\Program Files\Android\Android Studio\jbr`
+   - `JAVA_HOME` = your JDK 21, e.g. `C:\Program Files\Java\jdk-21.0.12.1`. Not Android Studio's `jbr`: it is Java 25
+     now, which Gradle 8 cannot run.
    - Add to `Path`: `%ANDROID_HOME%\platform-tools` and `%ANDROID_HOME%\emulator`
 3. Check: `adb version` and `emulator -list-avds` both print something.
 4. **Device Manager:** use the existing `Medium_Phone_API_37.0` or create a Pixel device with a *Google Play* image.
@@ -22,7 +23,7 @@ The emulator reaches your PC at `10.0.2.2`, which is what `apps/*/.env` already 
 ```powershell
 docker compose up -d                       # Postgres, Redis, RabbitMQ, S3, Firebase emulator
 ./scripts/seed-emulator-admin.ps1          # local admin login (emulator data resets on restart)
-pnpm dev:backend                           # http://localhost:8080/actuator/health → UP
+./scripts/dev-backend.ps1                  # http://localhost:8080/actuator/health → UP
 emulator -avd Medium_Phone_API_37.0        # or press ▶ in Device Manager
 ```
 
@@ -71,7 +72,9 @@ with `docker compose exec postgres psql -U lunchbox -d lunchbox -c "delete from 
 and run the script again.
 
 For the rider's handover photo to upload from the emulator, start the backend with
-`$env:S3_PRESIGN_ENDPOINT = "http://10.0.2.2:4566"` so the upload links point at your PC.
+`$env:S3_PRESIGN_ENDPOINT = "http://10.0.2.2:4566"` so the upload links point at your PC (`dev-backend.ps1` does this).
+
+For real SMS OTPs instead of the emulator, see `real-firebase.md`.
 
 ## Signing in on the emulator
 
@@ -86,7 +89,7 @@ For the rider's handover photo to upload from the emulator, start the backend wi
 | Symptom | Fix |
 |---|---|
 | `SDK location not found` | `ANDROID_HOME` not set in this terminal; reopen the terminal |
-| `Unsupported class file major version` | `JAVA_HOME` must be JDK 17 or 21 (Android Studio's `jbr` works) |
+| `Unsupported class file major version`, or Gradle fails with just `25.0.4` | `JAVA_HOME` must be JDK 21, not Android Studio's `jbr` (Java 25) |
 | App shows "network error" | Backend not running, or `.env` doesn't use `10.0.2.2` |
 | Build runs out of memory | Stop the admin dev server and close the browser, then retry |
 | Emulator very slow | Enable *Windows Hypervisor Platform* in *Turn Windows features on or off*, reboot |

@@ -1,45 +1,47 @@
-# Switching from the Firebase emulator to the real project (`lunchboxappv1`)
+# Real phone OTP: switching from the Firebase emulator to the real project (`lunchboxappv1`)
 
-Local development signs in through the Firebase Auth emulator (`demo-lunchbox`). The real project is already wired
-for builds; these steps switch a machine over to it. Everything below is local and git-ignored.
+Local development signs in through the Firebase Auth emulator (`demo-lunchbox`, codes from
+`docker compose logs firebase`). Two scripts switch everything to the real project, where OTPs arrive by SMS (or
+instantly for the test numbers set in the console) and push notifications are real.
 
-## Already in place
-- `apps/parent/google-services.json` and `apps/partner/google-services.json`: one file covering all four Android apps
-  (`in.lunchbox.parent`, `in.lunchbox.parent.development`, `in.lunchbox.partner`, `in.lunchbox.partner.development`).
-- `apps/admin/.env.production.local`: the web app config, used only by `next build`.
+## State of the Firebase project (checked 2026-11-15)
+| Setting | State |
+|---|---|
+| Phone sign-in | **On**, 1 test number configured |
+| Email/Password sign-in (staff) | **On** |
+| Identity Platform | **Upgraded** |
+| Admin TOTP two-factor | **Off**: turn on before staging/production (Authentication → Settings → Multi-factor → TOTP) |
+| SHA-1 on all four Android apps | **Added** (debug key `5E:8F:16:06…`) |
+| Authorized domains | `localhost` and the firebaseapp/web.app domains; add the admin domain when it exists |
 
-## In the Firebase console (once)
-1. **Authentication → Sign-in method**: enable **Phone** (parents, riders) and **Email/Password** (staff).
-2. **Phone numbers for testing**: add e.g. `+91 98765 43210` → `123456`, so testing sends no SMS.
-3. **Project settings → Your apps**: on each Android app, **Add fingerprint**:
-   - Local/emulator builds (standard React Native debug key, not secret):
-     SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`
-   - EAS builds: run `eas credentials` and add the SHA-1 and SHA-256 it shows.
-   - Play Store builds: add the **App signing key** SHA-1 from Play Console → Setup → App integrity.
-4. **Upgrade to Identity Platform** and enable **TOTP multi-factor**, so staff sign-in can require an authenticator.
-5. **Authentication → Settings → Authorized domains**: add the admin domain once it exists.
-6. **Project settings → Service accounts → Generate new private key**. Save it **outside the repo** (e.g.
-   `C:\Users\<you>\.secrets\lunchbox-firebase-admin.json`). Never paste it into chat or commit it. The backend needs
-   it to set role claims; verification alone would not be enough.
+Recommended, also in Project settings → Your apps: add the debug **SHA-256**
+`FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C` to each app, and enable
+the **Play Integrity API** in Google Cloud for the project. Phone sign-in then verifies the app silently on real
+phones; without it Firebase shows a short reCAPTCHA page first (the emulator always shows it).
+For EAS and Play Store builds, add the SHA-1/SHA-256 shown by `eas credentials` and the Play Console *App signing
+key* respectively.
 
-## Switch a machine to the real project
-Backend (PowerShell, from `backend/`):
+## Keep the service-account key safe
+Move the key out of Downloads into a folder only you use, e.g. `C:\Users\<you>\.secrets\lunchbox-firebase-admin.json`.
+Never commit it or paste it anywhere. The backend reads it to verify sign-ins, set roles and send push notifications.
+
+## Switch (PowerShell, from the repository root)
 ```powershell
-$env:GOOGLE_CLOUD_PROJECT = "lunchboxappv1"
-$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\Users\<you>\.secrets\lunchbox-firebase-admin.json"
-Remove-Item Env:FIREBASE_AUTH_EMULATOR_HOST -ErrorAction SilentlyContinue
-$env:BOOTSTRAP_SUPER_ADMIN_EMAIL = "<your staff email>"   # first run only
-.\gradlew.bat bootRun --args=--spring.profiles.active=local
+./scripts/use-auth.ps1 -Target firebase      # apps and admin point at the real project
+./scripts/dev-backend.ps1 -Auth firebase     # backend: real token checks, live push, database "lunchbox_firebase"
 ```
-Mobile apps (`apps/parent/.env`, `apps/partner/.env`):
+Then rebuild each native app once (the Firebase config is compiled in):
+```powershell
+cd apps/parent;  npx expo prebuild --platform android --no-install
 ```
-GOOGLE_SERVICES_JSON=./google-services.json
-EXPO_PUBLIC_FIREBASE_AUTH_EMULATOR=
-```
-Then rebuild the native app (`npx expo run:android`); `.env` changes to native config need a rebuild.
+and install it as in `android-emulator.md` (same for `apps/partner`).
 
-Admin: create your staff user under **Authentication → Users → Add user** with the bootstrap email, then sign in.
-`require-admin-mfa` is off in the `local` profile; staging and production enforce it.
+- Real mode uses its own local database, because accounts created through the emulator are tied to emulator user
+  ids. Run `node scripts/seed-local-demo.mjs` only against the emulator; in real mode create the school, plan and
+  rider in the admin.
+- First admin: pass `-BootstrapAdminEmail you@example.com` to `dev-backend.ps1` once, add that email under
+  Authentication → Users → Add user, then sign in at http://localhost:3000/login/. `require-admin-mfa` is off in the
+  `local` profile; staging and production enforce it.
+- Riders: create them in the admin with their real phone number and press **Approve rider**; they can then sign in.
 
-To go back to the emulator, restore the two `.env` lines (`./google-services.local.json` and `10.0.2.2:9099`) and
-start the backend with `FIREBASE_AUTH_EMULATOR_HOST=localhost:9099`.
+To go back: `./scripts/use-auth.ps1 -Target emulator` and `./scripts/dev-backend.ps1` (and rebuild the apps).
