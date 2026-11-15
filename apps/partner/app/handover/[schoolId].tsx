@@ -1,13 +1,30 @@
-import { Banner, Button, EmptyState, Icon, PressableScale, Row, Screen, Text, TiffinArt, haptic, useTheme, useToast } from '@lunchbox/ui';
-import { useQueryClient } from '@tanstack/react-query';
+import type { TodayRoute } from '@lunchbox/api-client';
+import {
+  Banner,
+  BoxMark,
+  Button,
+  EmptyState,
+  Icon,
+  ListGroup,
+  PressableScale,
+  Row,
+  Screen,
+  SlideToConfirm,
+  Text,
+  TiffinArt,
+  haptic,
+  useTheme,
+  useToast,
+} from '@lunchbox/ui';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as FileSystem from 'expo-file-system/legacy';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, CircleCheck, MapPin, RotateCcw, Upload } from 'lucide-react-native';
+import { Camera, Check, CircleCheck, MapPin, RotateCcw } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, View } from 'react-native';
 import { api } from '../../src/lib/api';
 import { currentPosition } from '../../src/lib/locationTask';
 import { runOrQueue } from '../../src/lib/offlineQueue';
@@ -32,7 +49,21 @@ export default function HandoverScreen() {
   const [capturing, setCapturing] = useState(false);
   const [stage, setStage] = useState<Stage>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+  const route = useQuery<TodayRoute>({ queryKey: ['route'], queryFn: api.partner.todayRoute });
+  const boxes = route.data?.stops.find((st) => st.drop?.schoolId === schoolId)?.drop?.boxes
+    .filter((b) => b.orderStatus !== 'CANCELLED' && b.orderStatus !== 'PICKUP_FAILED') ?? [];
+  const left = boxes.filter((b) => !ticked.has(b.orderId)).length;
   const busy = stage !== 'idle';
+  const toggle = (orderId: string) => {
+    haptic.tap();
+    setTicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
 
   if (!permission) return null;
   if (!permission.granted) {
@@ -92,8 +123,15 @@ export default function HandoverScreen() {
       footer={
         photo ? (
           <>
-            <Button title={stage === 'uploading' ? t('handover.uploading') : stage === 'confirming' ? t('handover.confirming') : t('handover.submit')}
-                    icon={Upload} size="lg" loading={busy} onPress={submit} testID="submit-handover" />
+            {busy ? (
+              <Text variant="caption" muted center>
+                {stage === 'uploading' ? t('handover.uploading') : t('handover.confirming')}
+              </Text>
+            ) : left > 0 ? (
+              <Text variant="caption" tone="accent" center>{t('handover.boxesLeft', { count: left })}</Text>
+            ) : null}
+            <SlideToConfirm label={t('handover.slide')} tone="success" loading={busy} disabled={left > 0}
+                            onConfirm={() => void submit()} testID="submit-handover" />
             <Button title={t('handover.retake')} variant="ghost" icon={RotateCcw} onPress={() => setPhoto(null)} disabled={busy} />
           </>
         ) : undefined
@@ -105,11 +143,47 @@ export default function HandoverScreen() {
       </View>
       {error ? <Banner tone="danger" title={t('common.problem')}>{error}</Banner> : null}
 
+      {boxes.length > 0 ? (
+        <View style={{ gap: 8 }}>
+          <Row justify="space-between">
+            <Text variant="label" muted>{t('handover.checklist')}</Text>
+            <Text variant="label" tone={left === 0 ? 'success' : 'muted'} style={{ fontVariant: ['tabular-nums'] }}>
+              {boxes.length - left}/{boxes.length}
+            </Text>
+          </Row>
+          <ListGroup>
+            {boxes.map((b) => {
+              const on = ticked.has(b.orderId);
+              return (
+                <Pressable key={b.orderId} onPress={() => toggle(b.orderId)} accessibilityRole="checkbox"
+                           accessibilityState={{ checked: on }} testID={`box-${b.orderId}`}
+                           accessibilityLabel={`${b.childFirstName ?? ''} ${b.boxCode ?? ''}`}
+                           style={({ pressed }) => ({ backgroundColor: pressed ? theme.colors.sunken : 'transparent' })}>
+                  <Row gap={3} style={{ paddingHorizontal: 14, paddingVertical: 12, minHeight: 60 }}>
+                    {b.boxCode ? <BoxMark code={b.boxCode} size="sm" /> : null}
+                    <Text style={{ flex: 1 }} numberOfLines={1}>
+                      {b.childFirstName}{b.className ? `, ${t('stop.classShort', { cls: b.className })}` : ''}
+                    </Text>
+                    <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: on ? theme.colors.success : 'transparent', borderWidth: on ? 0 : 2,
+                      borderColor: theme.colors.borderStrong }}>
+                      {on ? <Icon as={Check} size={18} color={theme.dark ? theme.colors.background : theme.colors.onPrimary}
+                                  strokeWidth={3} /> : null}
+                    </View>
+                  </Row>
+                </Pressable>
+              );
+            })}
+          </ListGroup>
+          {left === 0 && !photo ? <Text variant="caption" muted>{t('handover.needPhoto')}</Text> : null}
+        </View>
+      ) : null}
+
       <View style={{ aspectRatio: 3 / 4, borderRadius: 24, overflow: 'hidden', backgroundColor: '#000' }}>
         {photo ? (
           <>
             <Image source={{ uri: photo }} style={{ flex: 1 }} accessibilityLabel={t('handover.preview')} />
-            <Row gap={1.5} style={{ position: 'absolute', top: 14, left: 14, backgroundColor: 'rgba(12,11,10,0.6)',
+            <Row gap={1.5} style={{ position: 'absolute', top: 14, left: 14, backgroundColor: 'rgba(20,27,45,0.65)',
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
               <CircleCheck size={14} color="#FFFFFF" />
               <Text variant="caption" style={{ color: '#FFFFFF' }}>{t('handover.captured')}</Text>

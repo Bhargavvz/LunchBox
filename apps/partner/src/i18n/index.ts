@@ -1,3 +1,5 @@
+// Hermes (Android) ships no Intl.PluralRules; i18next needs it to pick "One child" vs "2 children".
+import 'intl-pluralrules';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
 import i18n from 'i18next';

@@ -11,7 +11,7 @@ import { currentPosition } from '../../src/lib/locationTask';
 import { runOrQueue } from '../../src/lib/offlineQueue';
 import { errorMessage } from '../../src/lib/queryClient';
 
-const SHADE = 'rgba(12,11,10,0.62)';
+const SHADE = 'rgba(20,27,45,0.62)';
 const CORNER = 34;
 
 /** Scans the parent's short-lived signed QR and confirms the pickup. */
@@ -92,7 +92,7 @@ export default function ScanScreen() {
             {corner({ top: 0, right: 0 }, { borderTopWidth: 4, borderRightWidth: 4, borderTopRightRadius: 18 })}
             {corner({ bottom: 0, left: 0 }, { borderBottomWidth: 4, borderLeftWidth: 4, borderBottomLeftRadius: 18 })}
             {corner({ bottom: 0, right: 0 }, { borderBottomWidth: 4, borderRightWidth: 4, borderBottomRightRadius: 18 })}
-            <Animated.View style={{ position: 'absolute', left: 14, right: 14, height: 2, borderRadius: 1, backgroundColor: palette.turmeric500,
+            <Animated.View style={{ position: 'absolute', left: 14, right: 14, height: 2, borderRadius: 1, backgroundColor: palette.mango500,
               opacity: busy ? 0 : 0.9, transform: [{ translateY: sweep.interpolate({ inputRange: [0, 1], outputRange: [14, frame - 16] }) }] }} />
           </View>
           <View style={{ flex: 1, backgroundColor: SHADE }} />

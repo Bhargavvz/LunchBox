@@ -1,4 +1,14 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { ConfigContext, ExpoConfig } from 'expo/config';
+
+/**
+ * A Firebase config file path, or undefined when the file is absent. Expo refuses to load the whole config if a
+ * listed file is missing, which would block Android development on a machine without the iOS plist (and vice versa).
+ */
+function ifPresent(path: string): string | undefined {
+  return existsSync(resolve(__dirname, path)) ? path : undefined;
+}
 
 const env = process.env.APP_ENV ?? 'development';
 const isProd = env === 'production';
@@ -15,7 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   updates: { url: process.env.EAS_UPDATE_URL },
   ios: {
     bundleIdentifier: isProd ? 'in.lunchbox.partner' : `in.lunchbox.partner.${env}`,
-    googleServicesFile: process.env.GOOGLE_SERVICES_PLIST ?? './GoogleService-Info.plist',
+    googleServicesFile: ifPresent(process.env.GOOGLE_SERVICES_PLIST ?? './GoogleService-Info.plist'),
     supportsTablet: false,
     config: { googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_KEY },
     infoPlist: {
@@ -28,7 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: isProd ? 'in.lunchbox.partner' : `in.lunchbox.partner.${env}`,
-    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+    googleServicesFile: ifPresent(process.env.GOOGLE_SERVICES_JSON ?? './google-services.json'),
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } },
     permissions: [
       'ACCESS_COARSE_LOCATION',

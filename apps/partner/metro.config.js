@@ -27,8 +27,9 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === 'web' && webShims[moduleName]) {
     return { type: 'sourceFile', filePath: path.join(shims, webShims[moduleName]) };
   }
-  // zustand's ESM build reads import.meta, which the classic web bundle cannot parse; use its CommonJS build.
-  if (platform === 'web' && (moduleName === 'zustand' || moduleName.startsWith('zustand/'))) {
+  // zustand's ESM build reads import.meta, which neither the classic web bundle nor Hermes (Android) can run; use its
+  // CommonJS build everywhere.
+  if (moduleName === 'zustand' || moduleName.startsWith('zustand/')) {
     const entry = moduleName === 'zustand' ? 'index' : moduleName.slice('zustand/'.length);
     return { type: 'sourceFile', filePath: path.resolve(workspaceRoot, 'node_modules/zustand', entry + '.js') };
   }

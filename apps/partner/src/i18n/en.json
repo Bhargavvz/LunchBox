@@ -103,7 +103,12 @@
       "COMPLETED": "Done",
       "FAILED": "Failed",
       "SKIPPED": "Skipped"
-    }
+    },
+    "boxMark": "Box mark",
+    "matchMark": "Match this mark on the lid before you take the box.",
+    "slidePickup": "Slide to confirm pickup",
+    "boxesHere": "Boxes for this school",
+    "classShort": "Class {{cls}}"
   },
   "handover": {
     "title": "Handover photo",
@@ -118,7 +123,13 @@
     "geofence": "Your location is checked against the school gate, so submit from the school.",
     "permissionTitle": "Camera needed",
     "preview": "Handover photo preview",
-    "uploadFailed": "Photo upload failed ({{status}}). Try again."
+    "uploadFailed": "Photo upload failed ({{status}}). Try again.",
+    "checklist": "Tick each box as you hand it over",
+    "boxesLeft_one": "1 box still to tick",
+    "boxesLeft_other": "{{count}} boxes still to tick",
+    "allTicked": "All boxes ticked",
+    "slide": "Slide to hand over",
+    "needPhoto": "Take the photo to finish"
   },
   "issue": {
     "title": "Report an issue",
