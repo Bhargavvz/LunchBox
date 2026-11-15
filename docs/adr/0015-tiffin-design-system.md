@@ -1,6 +1,6 @@
 # ADR-0015: Tiffin design system across mobile and admin
 
-**Status:** Proposed. Please confirm the palette and typefaces.
+**Status:** Superseded by ADR-0016.
 
 **Context.** The three surfaces (parent app, partner app, admin console) were built on default component styles with
 ad-hoc colours (`#14875A`, `#C62828`, Tailwind blues). They worked but looked generic. The product's promise is trust:

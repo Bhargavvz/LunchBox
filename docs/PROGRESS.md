@@ -1,8 +1,28 @@
 # Progress
 
-_Last updated: 2026-10-25_
+_Last updated: 2026-11-15_
 
-## Status: code written for all phases (0–7), **not yet compiled, run or tested**
+## Status: all phases written; backend (127 tests) and JS checks pass; both apps run natively on the Android emulator against the local stack. Not deployed.
+
+## 2026-11-15 (afternoon) — both apps running natively on the Android emulator; prepaid billing
+
+**Native Android.** Both apps build (`expo run:android` / Gradle) and run on the emulator against the local stack:
+real phone sign-in through the Firebase Auth emulator, Today, Children, live tracking on a real Google Map, the
+pickup ticket; rider sign-in, route, stop screen with box mark, Navigate (opens Google Maps), masked call, arrival,
+background location task. See `runbooks/android-emulator.md` for the Windows path-length workaround.
+
+**Fixed on the way (native-only bugs).** Missing iOS Firebase file broke the Expo config; Hermes has no
+`Intl.PluralRules` (added `intl-pluralrules`); zustand's ESM build uses `import.meta` (now CommonJS on all
+platforms); push registration threw without Play services; OTP boxes collapsed; shared button rows shrank labels;
+map markers rendered blank; content ran under the status bar; the status pill overflowed stop cards;
+`expo-system-ui` added for window-level dark mode.
+
+**Prepaid billing (ADR-0018).** Razorpay Subscriptions is not enabled on the account, so plans are paid per period
+through Razorpay Orders, with renew, lapse and reminders. Verified in Razorpay test mode up to the native checkout.
+
+**Verified.** 127 backend tests, all JS type-check/lint/tests (26), native builds of both apps.
+**Not verified:** finishing a Razorpay test payment inside the checkout (adb typing into its web view is unreliable;
+do it by hand), slide-to-confirm pickup and the handover photo on the emulator (memory pressure made input unreliable).
 
 At the owner's request the full codebase was written in one pass, without running builds, linters or tests. Treat
 everything below as "implemented, unverified" until the verification checklist passes.
@@ -17,6 +37,47 @@ everything below as "implemented, unverified" until the verification checklist p
 | 5 Admin panel | Dashboard + live map, management screens, polygon editor, reports from replica, settings, audit viewer | ✅ | ❌ |
 | 6 Earnings & Payouts | Append-only ledger, RazorpayX payouts + webhooks, partner earnings screens | ✅ | ❌ |
 | 7 Hardening | Security mapping, k6 scripts, Grafana/Prometheus/CloudWatch, Terraform dev/staging/prod, runbooks, EAS config, store checklist | ✅ | ❌ |
+
+## 2026-11-15 — "Ink & Mango" redesign, box marks, and fixes found by running the stack
+
+**Design (ADR-0016).** New palette (royal ink, mango, leaf, sindoor on notebook paper) and Devanagari-capable type
+(Baloo 2 + Mukta) in `packages/ui`; no all-caps labels; borderless cards; readable disabled buttons; docked tab bar
+with an ink tab-mark; restyled tiffin art, wordmark, map style and toasts. New `BoxMark` and `SlideToConfirm`
+components with tests.
+
+**Feature: box marks (ADR-0017).** Backend `BoxCode` + `boxCode` on child, order and pickup-stop responses, and a new
+`DropStopDetails.boxes` list. Parent: mark on Today, Children, the child form ("Write ZB96 on the lid") and tracking.
+Partner: mark on route and stop screens, slide-to-confirm pickup, and a box-by-box checklist that unlocks
+slide-to-hand-over at the school gate. Sign-in now shows how a lunchbox travels (three steps).
+
+**Bugs fixed.**
+- React Native 0.81.4 vs 0.81.5 across packages installed two copies of React Native (Jest could not start; native
+  builds would have hit "native modules" errors). All on 0.81.5 now; Jest also transforms `jest-expo`'s copy.
+- Local S3 had no credentials, so every pre-signed upload (KYC, handover photos) returned 500. Static LocalStack keys
+  in the `local` profile only, plus an optional `S3_PRESIGN_ENDPOINT` for the Android emulator.
+- Shell scripts were checked out with CRLF on Windows, so LocalStack never created its buckets. Added `.gitattributes`.
+- The web previews could not reach the backend or the auth emulator when `.env` used the emulator alias `10.0.2.2`.
+- Rider stop cards overflowed the screen width; pickup windows wrapped onto two lines (new `istTimeRange`).
+
+**Verified.** `pnpm typecheck`, `pnpm lint`, `pnpm test` (26 JS tests) and `./gradlew test` all pass. Signed in to
+both apps in the browser previews against the local backend with seeded data (`scripts/seed-local-demo.mjs`), and
+checked sign-in, Today, pickup code, Children (light and dark), route and stop screens.
+**Admin console** restyled on the same tokens (light and dark checked against live data; `pnpm build` passes).
+**Not verified:** a native Android build, the slide gesture on a touch screen (the accessibility path is unit-tested)
+and the handover camera flow. What production still needs is in `release/go-live-checklist.md`.
+
+## 2026-11-15 — first local run
+
+- `pnpm install` succeeds; backend `compileJava compileTestJava` is **BUILD SUCCESSFUL**.
+- `docker compose up -d` brings up all five services healthy; the backend starts with the `local` profile and
+  `/actuator/health` reports `UP`.
+- Admin sign-in works end to end against the Firebase Auth emulator (`scripts/seed-emulator-admin.ps1` creates a
+  verified local admin) and the dashboard loads live data from the backend.
+- The parent app renders on Expo web (sign-in screen). Not yet run: backend tests, `pnpm typecheck/lint/test`,
+  native Android build (steps in `runbooks/android-emulator.md`).
+- Project skills added under `.claude/skills/`: `frontend-design`, `webapp-testing` (anthropics/skills) and
+  `expo-design-system`, `expo-native-ui`, `expo-animation`, `expo-router`, `expo-data-fetching`, `expo-dev-client`,
+  `expo-upgrade` (expo/skills).
 
 ## 2026-10-25 — gap-closing pass (also unverified: nothing was compiled or run, at the owner's request)
 
