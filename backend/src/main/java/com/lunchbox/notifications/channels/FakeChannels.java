@@ -32,4 +32,14 @@ public class FakeChannels {
             return true;
         };
     }
+
+    /** {@code msg91.mode=off}: no SMS fallback; push notifications still go out. Allowed in production. */
+    @Bean
+    @ConditionalOnProperty(name = "lunchbox.integrations.msg91.mode", havingValue = "off")
+    public SmsSender disabledSmsSender() {
+        return (phone, template, variables) -> {
+            log.debug("SMS fallback is off; not sending {}", template);
+            return false;
+        };
+    }
 }

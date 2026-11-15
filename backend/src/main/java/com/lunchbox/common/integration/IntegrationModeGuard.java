@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /** Refuses to start the prod profile with any sandbox fake wired in place of a real provider. */
 @Component
@@ -33,12 +34,14 @@ public class IntegrationModeGuard {
         modes.put("razorpay", i.razorpay().mode());
         modes.put("razorpayx", i.razorpayx().mode());
         modes.put("msg91", i.msg91().mode());
-        modes.put("exotel", i.exotel().mode());
-        modes.put("idfy", i.idfy().mode());
         modes.put("fcm", i.fcm().mode());
+        // Payments and push are essential; SMS fallback and payouts may be switched OFF, but never faked.
+        Set<String> mayBeOff = Set.of("razorpayx", "msg91");
         modes.forEach((name, mode) -> {
-            if (mode != Mode.LIVE) {
-                throw new IllegalStateException("Integration '" + name + "' must be LIVE in the prod profile");
+            boolean ok = mode == Mode.LIVE || (mode == Mode.OFF && mayBeOff.contains(name));
+            if (!ok) {
+                throw new IllegalStateException("Integration '" + name + "' must be LIVE"
+                        + (mayBeOff.contains(name) ? " or OFF" : "") + " in the prod profile");
             }
         });
         if (!properties.security().requireAdminMfa()) {

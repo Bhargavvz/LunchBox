@@ -59,6 +59,8 @@ public class PayoutService {
     private final WebhookInbox inbox;
     private final NotificationService notifications;
     private final AuditService audit;
+    @org.springframework.beans.factory.annotation.Value("#{'${lunchbox.integrations.razorpayx.mode:fake}'.equalsIgnoreCase('off')}")
+    private boolean payoutsOff;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate tx;
     private final Clock clock;
@@ -113,10 +115,16 @@ public class PayoutService {
     @Scheduled(cron = "${lunchbox.jobs.payout-cron}", zone = "Asia/Kolkata")
     @SchedulerLock(name = "weeklyPayouts", lockAtMostFor = "PT30M")
     public void scheduledRun() {
+        if (payoutsOff) {
+            return;
+        }
         run(TimeZones.todayIst(clock).minusDays(1));
     }
 
     public PayoutRunResult run(LocalDate periodEnd) {
+        if (payoutsOff) {
+            throw com.lunchbox.common.error.Errors.unprocessable("payouts_off", DisabledPayoutGateway.MESSAGE);
+        }
         long min = settings.payRates().minPayoutPaise();
         int created = 0;
         long total = 0;
