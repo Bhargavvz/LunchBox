@@ -37,8 +37,17 @@ interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
             select s from Subscription s
             where s.status = com.lunchbox.subscriptions.Subscription.Status.ACTIVE
               and s.startDate <= :date and (s.endDate is null or s.endDate >= :date)
+              and (s.currentPeriodEnd is null or s.currentPeriodEnd > :dayStart)
             """)
-    List<Subscription> findActiveOn(@Param("date") LocalDate date);
+    List<Subscription> findActiveOn(@Param("date") LocalDate date, @Param("dayStart") java.time.Instant dayStart);
+
+    /** Active prepaid plans whose paid period ends before {@code before}. */
+    @Query("""
+            select s from Subscription s
+            where s.status = com.lunchbox.subscriptions.Subscription.Status.ACTIVE
+              and s.razorpaySubscriptionId is null and s.currentPeriodEnd is not null and s.currentPeriodEnd < :before
+            """)
+    List<Subscription> findPrepaidEndingBefore(@Param("before") java.time.Instant before);
 
     @Query("""
             select s from Subscription s

@@ -74,6 +74,28 @@ public class RazorpayGateway implements PaymentGateway {
                 .retrieve().toBodilessEntity();
     }
 
+    /** Not retried automatically: a retry after a read timeout could create a second order for one checkout. */
+    @Override
+    @CircuitBreaker(name = "razorpay")
+    public ProviderOrder createOrder(long amountPaise, String receipt, Map<String, String> notes) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("amount", amountPaise);
+        body.put("currency", "INR");
+        body.put("receipt", receipt);
+        // Capture on authorisation, so a paid period never depends on a later capture call or webhook.
+        body.put("payment_capture", 1);
+        body.put("notes", notes);
+        JsonNode res = http.post().uri("/orders").contentType(MediaType.APPLICATION_JSON).body(body)
+                .retrieve().body(JsonNode.class);
+        return new ProviderOrder(res.path("id").asText(), res.path("amount").asLong(amountPaise));
+    }
+
+    @Override
+    public boolean verifyOrderSignature(String orderId, String paymentId, String signature) {
+        String expected = Hmac.sha256Hex(config.keySecret(), orderId + "|" + paymentId);
+        return Hmac.constantTimeEquals(expected, signature);
+    }
+
     @Override
     public boolean verifyCheckoutSignature(String paymentId, String subscriptionId, String signature) {
         String expected = Hmac.sha256Hex(config.keySecret(), paymentId + "|" + subscriptionId);

@@ -22,7 +22,10 @@ import com.lunchbox.subscriptions.web.SubscriptionDtos.SubscriptionResponse;
 import com.lunchbox.subscriptions.web.SubscriptionDtos.UpdateScheduleRequest;
 import com.lunchbox.users.UserDirectory;
 import com.lunchbox.users.UserDirectory.ParentInfo;
+import com.lunchbox.common.time.TimeZones;
+import com.lunchbox.subscriptions.SubscriptionEvents.RenewalDue;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
@@ -33,6 +36,9 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalTime;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -61,11 +67,18 @@ public class SubscriptionService implements SubscriptionQueries, PersonalDataCon
     private final AuditService audit;
     private final ApplicationEventPublisher events;
     private final Clock clock;
+    /** ADR-0018: "prepaid" (Razorpay Orders, one payment per period) or "subscription" (Razorpay auto-debit). */
+    private final boolean prepaidBilling;
+
+    /** How early before a prepaid period ends the parent may renew, and is reminded to. */
+    static final Duration RENEWAL_WINDOW = Duration.ofDays(7);
+    static final Duration REMINDER_LEAD = Duration.ofDays(3);
 
     public SubscriptionService(SubscriptionRepository subscriptions, PlanRepository plans, LeaveDayRepository leaves,
                                ChildDirectory children, AddressDirectory addresses, SchoolDirectory schools,
                                UserDirectory users, PaymentGateway gateway, PaymentRecorder payments,
-                               PickupWindows windows, AuditService audit, ApplicationEventPublisher events, Clock clock) {
+                               PickupWindows windows, AuditService audit, ApplicationEventPublisher events, Clock clock,
+                               @Value("${lunchbox.billing.mode:prepaid}") String billingMode) {
         this.subscriptions = subscriptions;
         this.plans = plans;
         this.leaves = leaves;
@@ -79,6 +92,11 @@ public class SubscriptionService implements SubscriptionQueries, PersonalDataCon
         this.audit = audit;
         this.events = events;
         this.clock = clock;
+        this.prepaidBilling = !"subscription".equalsIgnoreCase(billingMode);
+    }
+
+    public boolean prepaidBilling() {
+        return prepaidBilling;
     }
 
     // ---- SubscriptionQueries ----
@@ -86,7 +104,7 @@ public class SubscriptionService implements SubscriptionQueries, PersonalDataCon
     @Override
     @Transactional(readOnly = true)
     public List<ScheduleEntry> schedulesFor(LocalDate date) {
-        return subscriptions.findActiveOn(date).stream()
+        return subscriptions.findActiveOn(date, TimeZones.atIst(date, LocalTime.MIDNIGHT)).stream()
                 .map(s -> new ScheduleEntry(s.getId(), s.getChildId(), s.getParentId(), s.getAddressId(), s.getDaysOfWeek()))
                 .toList();
     }
@@ -114,11 +132,17 @@ public class SubscriptionService implements SubscriptionQueries, PersonalDataCon
         if (!subscriptions.findByChildIdAndStatusIn(child.id(), Subscription.LIVE).isEmpty()) {
             throw Errors.conflict("subscription_exists", "This child already has a subscription.");
         }
-        if (plan.getRazorpayPlanId() == null) {
+        if (!prepaidBilling && plan.getRazorpayPlanId() == null) {
             throw Errors.unavailable("plan_not_ready", "This plan is not available for purchase yet.");
         }
         Subscription sub = subscriptions.saveAndFlush(new Subscription(parentId, child.id(), plan.getId(),
                 request.addressId(), request.daysOfWeek(), request.startDate()));
+        if (prepaidBilling) {
+            audit.record("subscription.created", "Subscription", sub.getId(), null,
+                    Map.of("childId", child.id(), "planId", plan.getId(), "startDate", request.startDate().toString(),
+                            "billing", "prepaid"));
+            return startPeriodCheckout(sub, plan, parentId);
+        }
         int totalCount = plan.getBillingPeriod() == Plan.BillingPeriod.MONTHLY ? 12 : 4;
         Map<String, String> notes = new LinkedHashMap<>();
         notes.put("lunchbox_subscription_id", sub.getId().toString());
@@ -129,7 +153,87 @@ public class SubscriptionService implements SubscriptionQueries, PersonalDataCon
                 Map.of("childId", child.id(), "planId", plan.getId(), "startDate", request.startDate().toString()));
         ParentInfo parent = users.requireParent(parentId);
         return new CheckoutResponse(sub.getId(), provider.id(), gateway.keyId(), provider.shortUrl(), plan.getPricePaise(),
-                plan.getName(), parent.firstName(), parent.phone());
+                plan.getName(), parent.firstName(), parent.phone(), null);
+    }
+
+    /**
+     * Prepaid renewal: opens a Razorpay order for the next period. Allowed in the last {@link #RENEWAL_WINDOW} of a paid
+     * period, after it lapsed (HALTED), or to finish a first payment that was abandoned (PENDING_PAYMENT).
+     */
+    @Transactional
+    public CheckoutResponse renew(UUID parentUserId, UUID subscriptionId) {
+        UUID parentId = users.requireParentId(parentUserId);
+        Subscription sub = subscriptions.findByIdAndParentId(subscriptionId, parentId)
+                .filter(Subscription::isLive)
+                .orElseThrow(() -> Errors.notFound("Subscription"));
+        if (!sub.isPrepaid()) {
+            throw Errors.unprocessable("auto_debit", "This plan renews automatically.");
+        }
+        Instant now = clock.instant();
+        boolean renewable = sub.getStatus() == Subscription.Status.HALTED
+                || sub.getStatus() == Subscription.Status.PENDING_PAYMENT
+                || (sub.getStatus() == Subscription.Status.ACTIVE && sub.getCurrentPeriodEnd() != null
+                && sub.getCurrentPeriodEnd().minus(RENEWAL_WINDOW).isBefore(now));
+        if (!renewable) {
+            throw Errors.unprocessable("too_early", "You can renew in the last 7 days of your plan.");
+        }
+        Plan plan = plans.findById(sub.getPlanId()).orElseThrow();
+        return startPeriodCheckout(sub, plan, parentId);
+    }
+
+    /** Opens a Razorpay order for one billing period of {@code plan}. */
+    private CheckoutResponse startPeriodCheckout(Subscription sub, Plan plan, UUID parentId) {
+        Map<String, String> notes = new LinkedHashMap<>();
+        notes.put("lunchbox_subscription_id", sub.getId().toString());
+        notes.put("lunchbox_parent_id", parentId.toString());
+        // Razorpay receipts are at most 40 characters.
+        String receipt = ("lb-" + sub.getId().toString().replace("-", "")).substring(0, 35);
+        PaymentGateway.ProviderOrder order = gateway.createOrder(plan.getPricePaise(), receipt, notes);
+        sub.awaitOrder(order.id());
+        audit.record("subscription.checkout_opened", "Subscription", sub.getId(), null,
+                Map.of("orderId", order.id(), "amountPaise", plan.getPricePaise()));
+        ParentInfo parent = users.requireParent(parentId);
+        return new CheckoutResponse(sub.getId(), null, gateway.keyId(), null, plan.getPricePaise(), plan.getName(),
+                parent.firstName(), parent.phone(), order.id());
+    }
+
+    /**
+     * End of the period a prepaid payment buys. A renewal made before the current period ends extends it; otherwise the
+     * period starts on the plan's start date or today (IST), whichever is later. Periods end at IST midnight.
+     */
+    static Instant nextPeriodEnd(Subscription sub, Plan plan, Clock clock) {
+        int months = plan.getBillingPeriod() == Plan.BillingPeriod.MONTHLY ? 1 : 3;
+        Instant now = clock.instant();
+        if (sub.getCurrentPeriodEnd() != null && sub.getCurrentPeriodEnd().isAfter(now)) {
+            LocalDate from = TimeZones.dateIst(sub.getCurrentPeriodEnd());
+            return TimeZones.atIst(from.plusMonths(months), LocalTime.MIDNIGHT);
+        }
+        LocalDate today = TimeZones.todayIst(clock);
+        LocalDate from = sub.getStartDate().isAfter(today) ? sub.getStartDate() : today;
+        return TimeZones.atIst(from.plusMonths(months), LocalTime.MIDNIGHT);
+    }
+
+    /** Hourly: lapses prepaid plans whose period has ended and reminds parents a few days before. */
+    @Transactional
+    public int sweepPrepaid() {
+        Instant now = clock.instant();
+        int changed = 0;
+        for (Subscription sub : subscriptions.findPrepaidEndingBefore(now.plus(REMINDER_LEAD))) {
+            Instant end = sub.getCurrentPeriodEnd();
+            if (!end.isAfter(now)) {
+                sub.lapse();
+                audit.record("subscription.lapsed", "Subscription", sub.getId(), Map.of("status", "ACTIVE"),
+                        Map.of("status", sub.getStatus().name(), "periodEnd", end.toString()));
+                events.publishEvent(new SubscriptionEnded(sub.getId(), sub.getChildId(), TimeZones.dateIst(end),
+                        "plan period ended; renew to continue"));
+                changed++;
+            } else if (!end.equals(sub.getRenewalRemindedFor())) {
+                sub.markReminded(end);
+                events.publishEvent(new RenewalDue(sub.getId(), sub.getParentId(), sub.getChildId(), end));
+                changed++;
+            }
+        }
+        return changed;
     }
 
     /** Client-side confirmation after checkout; the signature proves Razorpay authorised the mandate payment. */
@@ -138,16 +242,35 @@ public class SubscriptionService implements SubscriptionQueries, PersonalDataCon
         UUID parentId = users.requireParentId(parentUserId);
         Subscription sub = subscriptions.findByIdAndParentId(subscriptionId, parentId)
                 .orElseThrow(() -> Errors.notFound("Subscription"));
-        if (sub.getRazorpaySubscriptionId() == null
-                || !gateway.verifyCheckoutSignature(paymentId, sub.getRazorpaySubscriptionId(), signature)) {
+        Plan plan = plans.findById(sub.getPlanId()).orElseThrow();
+        if (sub.isPrepaid()) {
+            return verifyPeriodPayment(sub, plan, parentId, paymentId, signature);
+        }
+        if (!gateway.verifyCheckoutSignature(paymentId, sub.getRazorpaySubscriptionId(), signature)) {
             throw Errors.badRequest("invalid_signature", "We could not verify this payment. Please contact support.");
         }
-        Plan plan = plans.findById(sub.getPlanId()).orElseThrow();
         payments.recordAuthorized(parentId, sub.getId(), paymentId, plan.getPricePaise(), plan.getName());
         Subscription.Status before = sub.getStatus();
         sub.activate(null);
         audit.record("subscription.activated", "Subscription", sub.getId(), Map.of("status", before.name()),
                 Map.of("status", sub.getStatus().name(), "via", "checkout"));
+        return toResponse(sub, plan, children.require(sub.getChildId()));
+    }
+
+    private SubscriptionResponse verifyPeriodPayment(Subscription sub, Plan plan, UUID parentId, String paymentId,
+                                                     String signature) {
+        String orderId = sub.getRazorpayOrderId();
+        if (orderId == null || !gateway.verifyOrderSignature(orderId, paymentId, signature)) {
+            throw Errors.badRequest("invalid_signature", "We could not verify this payment. Please contact support.");
+        }
+        Subscription.Status before = sub.getStatus();
+        Instant periodEnd = nextPeriodEnd(sub, plan, clock);
+        payments.recordCaptured(parentId, sub.getId(), paymentId, null, plan.getPricePaise(), null, plan.getName(),
+                clock.instant());
+        sub.orderPaid();
+        sub.activate(periodEnd);
+        audit.record("subscription.paid", "Subscription", sub.getId(), Map.of("status", before.name()),
+                Map.of("status", sub.getStatus().name(), "orderId", orderId, "paidUntil", periodEnd.toString()));
         return toResponse(sub, plan, children.require(sub.getChildId()));
     }
 

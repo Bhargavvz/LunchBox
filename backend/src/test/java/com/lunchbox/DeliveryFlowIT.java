@@ -84,12 +84,15 @@ class DeliveryFlowIT extends IntegrationTest {
                 "planId", plan.get("id").asText(), "addressId", address.get("id").asText(),
                 "daysOfWeek", List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"),
                 "startDate", "2026-10-19"), 201);
-        String providerSub = checkout.get("providerSubscriptionId").asText();
+        // Prepaid billing (ADR-0018): the checkout pays a Razorpay order for one period.
+        assertThat(checkout.get("providerSubscriptionId").isNull()).isTrue();
+        String razorpayOrderId = checkout.get("providerOrderId").asText();
         String paymentId = "pay_it_" + UUID.randomUUID().toString().substring(0, 8);
         JsonNode sub = post("/api/v1/subscriptions/" + checkout.get("subscriptionId").asText() + "/verify", parent,
                 Map.of("razorpayPaymentId", paymentId,
-                        "razorpaySignature", FakePaymentGateway.sign(paymentId, providerSub)), 200);
+                        "razorpaySignature", FakePaymentGateway.signOrder(razorpayOrderId, paymentId)), 200);
         assertThat(sub.get("status").asText()).isEqualTo("ACTIVE");
+        assertThat(sub.get("currentPeriodEnd").isNull()).isFalse();
 
         // ---- Partner onboarding + KYC ----
         JsonNode partner = post("/api/v1/admin/partners", admin, Map.of("phone", "+919800000002", "profile", Map.of(

@@ -61,7 +61,9 @@ public final class SubscriptionDtos {
             long amountPaise,
             String planName,
             String prefillName,
-            String prefillContact) {
+            String prefillContact,
+            /* Prepaid billing: the Razorpay order the checkout pays (providerSubscriptionId is then null). */
+            String providerOrderId) {
     }
 
     public record VerifyCheckoutRequest(

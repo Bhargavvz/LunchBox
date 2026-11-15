@@ -62,6 +62,14 @@ public class Subscription extends BaseEntity {
     @Column(name = "checkout_short_url")
     private String checkoutShortUrl;
 
+    /** Prepaid billing (ADR-0018): the open Razorpay order for the next paid period, if any. */
+    @Column(name = "razorpay_order_id")
+    private String razorpayOrderId;
+
+    /** The period end a renewal reminder was last sent for. */
+    @Column(name = "renewal_reminded_for")
+    private Instant renewalRemindedFor;
+
     @Column(name = "current_period_end")
     private Instant currentPeriodEnd;
 
@@ -87,6 +95,30 @@ public class Subscription extends BaseEntity {
     void linkProvider(String providerSubscriptionId, String shortUrl) {
         this.razorpaySubscriptionId = providerSubscriptionId;
         this.checkoutShortUrl = shortUrl;
+    }
+
+    /** Prepaid when no auto-debit subscription exists at Razorpay. */
+    public boolean isPrepaid() {
+        return razorpaySubscriptionId == null;
+    }
+
+    void awaitOrder(String orderId) {
+        this.razorpayOrderId = orderId;
+    }
+
+    void orderPaid() {
+        this.razorpayOrderId = null;
+    }
+
+    void markReminded(Instant forPeriodEnd) {
+        this.renewalRemindedFor = forPeriodEnd;
+    }
+
+    /** A prepaid period ran out: deliveries stop until the parent renews (HALTED = payment pending). */
+    void lapse() {
+        if (status == Status.ACTIVE) {
+            this.status = Status.HALTED;
+        }
     }
 
     void activate(Instant periodEnd) {

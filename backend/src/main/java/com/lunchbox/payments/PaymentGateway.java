@@ -2,7 +2,10 @@ package com.lunchbox.payments;
 
 import java.util.Map;
 
-/** Razorpay Subscriptions behind an interface; {@link FakePaymentGateway} is used locally and in tests. */
+/**
+ * Razorpay behind an interface; {@link FakePaymentGateway} is used locally and in tests. Two billing styles share it:
+ * prepaid periods paid through Orders (ADR-0018, the default) and auto-debit through Subscriptions.
+ */
 public interface PaymentGateway {
 
     /** Public key id the mobile checkout needs. */
@@ -21,6 +24,15 @@ public interface PaymentGateway {
     /** Verifies {@code X-Razorpay-Signature}: HMAC_SHA256(raw body, webhook secret). */
     boolean verifyWebhookSignature(String rawBody, String signature);
 
+    /** A one-time Razorpay Order for {@code amountPaise}; the checkout pays it. */
+    ProviderOrder createOrder(long amountPaise, String receipt, Map<String, String> notes);
+
+    /** Verifies the signature an order checkout returns: HMAC_SHA256(order_id + "|" + payment_id, key_secret). */
+    boolean verifyOrderSignature(String orderId, String paymentId, String signature);
+
     record ProviderSubscription(String id, String shortUrl, String status) {
+    }
+
+    record ProviderOrder(String id, long amountPaise) {
     }
 }

@@ -43,6 +43,22 @@ public class FakePaymentGateway implements PaymentGateway {
     }
 
     @Override
+    public ProviderOrder createOrder(long amountPaise, String receipt, Map<String, String> notes) {
+        String id = "order_fake_" + shortId();
+        log.info("[fake razorpay] created order {} for {} paise ({})", id, amountPaise, receipt);
+        return new ProviderOrder(id, amountPaise);
+    }
+
+    @Override
+    public boolean verifyOrderSignature(String orderId, String paymentId, String signature) {
+        return Hmac.constantTimeEquals(signOrder(orderId, paymentId), signature);
+    }
+
+    public static String signOrder(String orderId, String paymentId) {
+        return Hmac.sha256Hex(FAKE_KEY_SECRET, orderId + "|" + paymentId);
+    }
+
+    @Override
     public boolean verifyCheckoutSignature(String paymentId, String subscriptionId, String signature) {
         return Hmac.constantTimeEquals(sign(paymentId, subscriptionId), signature);
     }

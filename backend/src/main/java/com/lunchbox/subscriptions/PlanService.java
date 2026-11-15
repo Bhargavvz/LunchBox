@@ -18,11 +18,14 @@ public class PlanService {
     private final PlanRepository plans;
     private final PaymentGateway gateway;
     private final AuditService audit;
+    private final boolean prepaidBilling;
 
-    public PlanService(PlanRepository plans, PaymentGateway gateway, AuditService audit) {
+    public PlanService(PlanRepository plans, PaymentGateway gateway, AuditService audit,
+                       @org.springframework.beans.factory.annotation.Value("${lunchbox.billing.mode:prepaid}") String billingMode) {
         this.plans = plans;
         this.gateway = gateway;
         this.audit = audit;
+        this.prepaidBilling = !"subscription".equalsIgnoreCase(billingMode);
     }
 
     @Transactional(readOnly = true)
@@ -43,8 +46,11 @@ public class PlanService {
         }
         Plan plan = plans.save(new Plan(request.code(), request.name().trim(), request.description(), request.pricePaise(),
                 request.billingPeriod(), request.maxDaysPerWeek()));
-        int interval = request.billingPeriod() == Plan.BillingPeriod.MONTHLY ? 1 : 3;
-        plan.linkProviderPlan(gateway.createPlan(plan.getName(), plan.getPricePaise(), "monthly", interval));
+        // Prepaid billing (ADR-0018) charges per order, so no plan is needed at Razorpay.
+        if (!prepaidBilling) {
+            int interval = request.billingPeriod() == Plan.BillingPeriod.MONTHLY ? 1 : 3;
+            plan.linkProviderPlan(gateway.createPlan(plan.getName(), plan.getPricePaise(), "monthly", interval));
+        }
         PlanResponse response = toResponse(plan);
         audit.record("plan.created", "Plan", plan.getId(), null, response);
         return response;

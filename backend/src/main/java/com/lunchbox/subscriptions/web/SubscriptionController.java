@@ -92,6 +92,15 @@ public class SubscriptionController {
                         request.razorpayPaymentId(), request.razorpaySignature()));
     }
 
+    @PostMapping("/api/v1/subscriptions/{subscriptionId}/renew")
+    @PreAuthorize(Roles.PARENT)
+    @Operation(summary = "Prepaid plans: open a Razorpay order for the next period")
+    public CheckoutResponse renew(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID subscriptionId,
+                                  @RequestHeader(value = IdempotencyService.HEADER, required = false) String idempotencyKey) {
+        return idempotency.execute(idempotencyKey, user.requireUserId(), "subscription.renew", subscriptionId,
+                CheckoutResponse.class, () -> subscriptions.renew(user.requireUserId(), subscriptionId));
+    }
+
     @PutMapping("/api/v1/subscriptions/{subscriptionId}/schedule")
     @PreAuthorize(Roles.PARENT)
     public SubscriptionResponse updateSchedule(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID subscriptionId,

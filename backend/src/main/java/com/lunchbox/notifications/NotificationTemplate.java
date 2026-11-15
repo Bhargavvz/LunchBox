@@ -18,6 +18,7 @@ public enum NotificationTemplate {
     ADMIN_DELIVERY_FAILED("admin.delivery_failed", null, true),
     ADMIN_PARTNER_ISSUE("admin.partner_issue", null, true),
     PAYOUT_PROCESSED("payout.processed", null, false),
+    PLAN_RENEWAL_DUE("plan.renewal_due", null, false),
     BROADCAST("broadcast", null, false);
 
     private final String key;

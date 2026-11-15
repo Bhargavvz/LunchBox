@@ -41,6 +41,17 @@ public class DevPaymentsController {
     public record SimulatedCheckout(String razorpayPaymentId, String razorpaySignature) {
     }
 
+    public record SimulateOrderPaymentRequest(@NotBlank String orderId) {
+    }
+
+    /** Local development only: pays a prepaid order the way the Razorpay checkout would. */
+    @PostMapping("/api/v1/dev/payments/simulate-order-payment")
+    @PreAuthorize(Roles.PARENT)
+    public SimulatedCheckout simulateOrder(@RequestBody SimulateOrderPaymentRequest request) {
+        String paymentId = "pay_fake_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+        return new SimulatedCheckout(paymentId, FakePaymentGateway.signOrder(request.orderId(), paymentId));
+    }
+
     @PostMapping("/api/v1/dev/payments/simulate-charge")
     @PreAuthorize(Roles.PARENT)
     public SimulatedCheckout simulate(@RequestBody SimulateChargeRequest request) throws Exception {
