@@ -33,6 +33,9 @@ class DeliveryFlowIT extends IntegrationTest {
     @Autowired
     JdbcTemplate jdbc;
 
+    @Autowired
+    com.lunchbox.dispatch.RoutePlanningService routePlanning;
+
     @Test
     void lunchboxGoesFromHomeToSchool() throws Exception {
         // ---- Platform setup (Sunday 10:00 IST) ----
@@ -112,6 +115,23 @@ class DeliveryFlowIT extends IntegrationTest {
         JsonNode assigned = post("/api/v1/admin/jobs/auto-assign?date=2026-10-19", admin, null, 200);
         assertThat(assigned.get("assigned").asInt()).isEqualTo(1);
 
+        // Two planners at once (auto-assign and the rider's shift start in the same instant) must not collide.
+        jdbc.update("DELETE FROM route_stops");
+        jdbc.update("DELETE FROM routes");
+        java.time.LocalDate monday = java.time.LocalDate.parse("2026-10-19");
+        UUID partnerUuid = UUID.fromString(partnerId);
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            var first = pool.submit(() -> routePlanning.plan(partnerUuid, monday));
+            var second = pool.submit(() -> routePlanning.plan(partnerUuid, monday));
+            assertThat(first.get()).isPresent();
+            assertThat(second.get()).isEqualTo(first.get());
+        } finally {
+            pool.shutdown();
+        }
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM routes WHERE partner_id = ?", Integer.class, partnerUuid))
+                .isEqualTo(1);
+
         // ---- Monday morning ----
         clock.set(Instant.parse("2026-10-19T03:30:00Z")); // 09:00 IST
         post("/api/v1/partner/shift/start", partnerToken, Map.of("location", Map.of("lat", 12.97, "lng", 77.59)), 200);
@@ -134,6 +154,13 @@ class DeliveryFlowIT extends IntegrationTest {
                 "consents", List.of(Map.of("purpose", "ACCOUNT_AND_SERVICE", "granted", true))), 201);
         call(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/orders/" + orderId),
                 stranger, null, 404);
+
+        // After the school's delivery deadline the parent is told the code expired instead of being shown a dead one.
+        Instant morning = clock.instant();
+        clock.set(Instant.parse("2026-10-19T17:00:00Z")); // 22:30 IST
+        call(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/orders/" + orderId + "/pickup-code"),
+                parent, null, 422);
+        clock.set(morning);
 
         JsonNode code = get200("/api/v1/orders/" + orderId + "/pickup-code", parent);
         String otp = code.get("otp").asText();

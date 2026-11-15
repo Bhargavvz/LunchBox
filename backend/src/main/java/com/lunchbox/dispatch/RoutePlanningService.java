@@ -21,6 +21,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,13 +57,15 @@ public class RoutePlanningService {
     private final LunchBoxProperties properties;
     private final MeterRegistry meters;
     private final java.time.Clock clock;
+    private final JdbcTemplate jdbc;
 
     public RoutePlanningService(RouteRepository routes, RouteStopRepository stops, AssignmentRepository assignments,
                                 PartnerShiftRepository shifts, PartnerDirectory partners, OrderQueries orders,
                                 SchoolDirectory schools, @Qualifier(RoutingConfig.PRIMARY) RouteOptimizer primary,
                                 SchoolClusterRouteOptimizer fallback, LunchBoxProperties properties, MeterRegistry meters,
-                                java.time.Clock clock) {
+                                java.time.Clock clock, JdbcTemplate jdbc) {
         this.clock = clock;
+        this.jdbc = jdbc;
         this.routes = routes;
         this.stops = stops;
         this.assignments = assignments;
@@ -82,6 +85,10 @@ public class RoutePlanningService {
      */
     @Transactional
     public Optional<UUID> plan(UUID partnerId, LocalDate date) {
+        // Auto-assign, reassignment and the rider's own shift/route start can plan the same route at once. A
+        // transaction-scoped advisory lock per partner and day makes them take turns, so the second planner sees the
+        // first one's route instead of inserting a duplicate (routes are unique per partner and day).
+        jdbc.query("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))", rs -> null, "route:" + partnerId + ":" + date);
         PartnerDirectory.PartnerInfo partner = partners.require(partnerId);
         List<OrderView> assigned = orders.forPartnerAndDate(partnerId, date).stream()
                 .filter(o -> o.status() == OrderStatus.ASSIGNED || o.status() == OrderStatus.PARTNER_EN_ROUTE
@@ -184,8 +191,11 @@ public class RoutePlanningService {
         }
     }
 
-    /** Adds stops for orders OR-Tools dropped, at the position the heuristic would visit them. */
-    private static RoutePlan mergeUnserved(RoutePlan primary, RoutePlan heuristic) {
+    /**
+     * Adds stops for orders OR-Tools dropped, at the position the heuristic would visit them. The merged route covers
+     * the heuristic's stops, so its distance and duration are reported (never less than the primary's).
+     */
+    static RoutePlan mergeUnserved(RoutePlan primary, RoutePlan heuristic) {
         Set<UUID> missing = Set.copyOf(primary.lateOrUnservedOrderIds());
         List<PlannedStop> merged = new ArrayList<>(primary.stops());
         for (PlannedStop hs : heuristic.stops()) {
@@ -207,7 +217,9 @@ public class RoutePlanningService {
                 }
             }
         }
-        return new RoutePlan(primary.optimizer(), merged, primary.distanceMeters(), primary.durationSeconds(),
+        return new RoutePlan(primary.optimizer(), merged,
+                Math.max(primary.distanceMeters(), heuristic.distanceMeters()),
+                Math.max(primary.durationSeconds(), heuristic.durationSeconds()),
                 primary.lateOrUnservedOrderIds());
     }
 

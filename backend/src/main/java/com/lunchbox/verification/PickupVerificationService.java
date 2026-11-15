@@ -71,6 +71,12 @@ public class PickupVerificationService implements PickupVerifier {
                         Verification.Status.PENDING)
                 .orElseGet(() -> verifications.save(Verification.pendingOtp(orderId,
                         cipher.encrypt(String.format("%06d", random.nextInt(1_000_000))), order.deliveryDeadline())));
+        if (otp.getExpiresAt() != null && otp.getExpiresAt().isBefore(clock.instant())) {
+            // Past the school's delivery deadline the code can no longer be used; never show a dead code.
+            otp.expire();
+            throw Errors.unprocessable("code_expired",
+                    "Today's pickup code has expired because the school's delivery time has passed.");
+        }
         QrTokens.Issued qr = qrTokens.issue(orderId);
         return new PickupCodeResponse(orderId, cipher.decrypt(otp.getCodeCiphertext()), qr.token(), qr.expiresAt(),
                 otp.getExpiresAt());
