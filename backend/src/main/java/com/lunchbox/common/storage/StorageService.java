@@ -3,7 +3,7 @@ package com.lunchbox.common.storage;
 import java.time.Duration;
 import java.util.Optional;
 
-/** Private object storage with short-lived pre-signed URLs (S3 in AWS, LocalStack locally). */
+/** Private object storage with short-lived pre-signed URLs (Firebase Storage in production, LocalStack S3 locally). */
 public interface StorageService {
 
     enum Bucket { HANDOVER }

@@ -2,6 +2,7 @@ package com.lunchbox.common.storage;
 
 import com.lunchbox.common.config.LunchBoxProperties;
 import jakarta.annotation.PreDestroy;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -28,7 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/** S3 or an S3-compatible store (LocalStack locally). Production uses {@link FirebaseStorageService} (ADR-0021). */
 @Component
+@ConditionalOnProperty(name = "lunchbox.storage.provider", havingValue = "s3", matchIfMissing = true)
 public class S3StorageService implements StorageService {
 
     private final LunchBoxProperties.Storage config;

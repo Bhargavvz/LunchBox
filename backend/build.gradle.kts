@@ -54,6 +54,12 @@ dependencies {
 
     implementation("com.google.firebase:firebase-admin:9.4.1")
     implementation("com.google.ortools:ortools-java:9.11.4210")
+    constraints {
+        // OR-Tools brings protobuf 4.26, which dropped GeneratedMessageV3 that Google Cloud Storage (Firebase
+        // Storage) still uses; 4.28+ restored it and runs both.
+        implementation("com.google.protobuf:protobuf-java:4.29.3")
+        implementation("com.google.protobuf:protobuf-java-util:4.29.3")
+    }
 
     implementation(platform("software.amazon.awssdk:bom:2.28.29"))
     implementation("software.amazon.awssdk:s3")

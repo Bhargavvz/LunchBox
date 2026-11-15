@@ -43,9 +43,9 @@ operations contacts the parent from the admin console.
 | Control | Implementation |
 |---|---|
 | TLS everywhere | ALB TLS 1.2/1.3 policy, HSTS; RDS `rds.force_ssl`; Redis in-transit encryption; AMQPS/STOMP-TLS to Amazon MQ |
-| Encryption at rest | KMS CMK for RDS, Redis, MQ, S3 (SSE-KMS, bucket keys), Secrets Manager |
+| Encryption at rest | PII columns encrypted by the application (ADR-0008); server disk on encrypted EBS; photos in Firebase Storage with Google-managed encryption (ADR-0021); secrets in a mode-600 `.env` |
 | Application-level PII encryption | AES-256-GCM (`PiiCipher`) for address lines/instructions, allergy notes, bank account numbers, OTPs |
-| Private objects | S3 public-access block, deny non-TLS, short-lived pre-signed URLs (5 min) |
+| Private objects | Firebase Storage rules deny all client access; only 5-minute V4 signed URLs from the backend (HTTPS only) |
 | Secrets | Secrets Manager → ECS task secrets; EAS secrets for mobile; GitHub OIDC for deploys (no static keys) |
 | Input validation | Jakarta Validation on every DTO and parameter; RFC 7807 errors that never leak internals |
 | Abuse controls | Redis token buckets (auth/public/per-user/pickup-verify/calls/location); WAF managed rules + rate rule |
@@ -62,7 +62,7 @@ operations contacts the parent from the admin console.
 | Withdrawal | `POST /api/v1/me/consents` with `granted=false`; live tracking stops immediately (STOMP subscription refused, snapshot hides location) |
 | Right to access | `GET /api/v1/me/export` aggregates every module's `PersonalDataContributor` |
 | Right to erasure | `DELETE /api/v1/me`: cancels subscriptions, anonymises parent/children/addresses, deletes notifications and device tokens, deletes the Firebase user; payment records retained (statutory) |
-| Purpose limitation / retention | <a id="retention"></a>Location pings: 90 days (partition drop). Handover photos: 90 days (S3 lifecycle). Notifications: 180 days. OTP ciphertext scrubbed after 2 days. Webhook inbox: 400 days. Audit logs: 3 years |
+| Purpose limitation / retention | <a id="retention"></a>Location pings: 90 days (partition drop). Handover photos: 90 days (Cloud Storage lifecycle rule on `handover/`). Notifications: 180 days. OTP ciphertext scrubbed after 2 days. Webhook inbox: 400 days. Audit logs: 3 years |
 
 ## Supply chain
 

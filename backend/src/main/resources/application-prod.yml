@@ -10,6 +10,8 @@ lunchbox:
     fcm:
       mode: live
   storage:
+    # Handover photos in Firebase Storage (STORAGE_BUCKET, e.g. lunchboxappv1.firebasestorage.app), ADR-0021.
+    provider: ${STORAGE_PROVIDER:firebase}
     endpoint: ""
     path-style: false
 

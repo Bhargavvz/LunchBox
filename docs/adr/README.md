@@ -22,3 +22,4 @@
 | [0018](0018-prepaid-billing-via-orders.md) | Prepaid lunch plans paid through Razorpay Orders |
 | [0019](0019-no-call-masking-or-document-kyc.md) | No masked calling (Exotel) and no document KYC (IDfy) |
 | [0020](0020-single-server-deployment.md) | One server with Docker Compose instead of Terraform/ECS |
+| [0021](0021-firebase-storage-for-handover-photos.md) | Handover photos in Firebase Storage instead of Amazon S3 |

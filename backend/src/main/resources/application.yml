@@ -190,10 +190,11 @@ lunchbox:
     username: ${DB_REPLICA_USERNAME:${DB_USERNAME:lunchbox}}
     password: ${DB_REPLICA_PASSWORD:${DB_PASSWORD:lunchbox}}
   storage:
+    provider: ${STORAGE_PROVIDER:s3}   # s3 (LocalStack locally) or firebase (production, ADR-0021)
     region: ${AWS_REGION:ap-south-1}
     endpoint: ${S3_ENDPOINT:}
     path-style: false
-    handover-bucket: ${S3_HANDOVER_BUCKET}
+    handover-bucket: ${STORAGE_BUCKET:${S3_HANDOVER_BUCKET}}
     kms-key-id: ${S3_KMS_KEY_ID:}
     presign-ttl: 5m
     presign-endpoint: ${S3_PRESIGN_ENDPOINT:}
