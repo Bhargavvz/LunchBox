@@ -1,0 +1,17 @@
+# Shell scripts run inside Linux containers and CI, so they must keep LF endings even on a Windows checkout
+# (core.autocrlf would otherwise turn "#!/bin/sh" into "#!/bin/sh\r", which does not exist).
+*.sh        text eol=lf
+gradlew     text eol=lf
+Dockerfile  text eol=lf
+docker/**   text eol=lf
+
+# Windows-only launchers keep CRLF.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binary
+*.jar       binary
+*.png       binary
+*.jpg       binary
+*.woff2     binary

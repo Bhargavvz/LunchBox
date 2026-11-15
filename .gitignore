@@ -49,3 +49,6 @@ apps/admin/playwright-report/
 
 # Local web preview exports of the mobile apps
 dist-web/
+
+# Local secrets for the backend (Spring loads ./config/application-*.yml from the working directory)
+backend/config/
