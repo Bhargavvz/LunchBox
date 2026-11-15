@@ -2,14 +2,19 @@ import { Icon, IconButton, mapStyle, useTheme } from '@lunchbox/ui';
 import { Bike, House, LocateFixed, School } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { AnimatedRegion, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import type { LivePosition } from '../hooks/useOrderTracking';
 
 const EDGE = { top: 110, bottom: 90, left: 70, right: 70 };
+const GLIDE_MS = 2500;
+const FRAME_MS = 50;
 
 /**
- * Smoothly animates the partner marker between fixes (pings arrive every few seconds), so movement looks
- * continuous rather than jumping. The camera follows until the parent pans; the locate button resumes following.
+ * Smoothly moves the partner marker between fixes (pings arrive every few seconds), so movement looks continuous
+ * rather than jumping. The camera follows until the parent pans; the locate button resumes following.
+ *
+ * The glide is interpolated here and fed to a plain Marker: react-native-maps' Marker.Animated clips custom marker
+ * views on Android with the New Architecture (only a quarter of the scooter showed).
  */
 export function LiveMap({
   partner,
@@ -34,20 +39,20 @@ export function LiveMap({
   // Custom marker views must be rasterised once on Android before tracksViewChanges can be switched off.
   const [settled, setSettled] = useState(false);
   const style = useMemo(() => mapStyle(theme), [theme]);
-  const animated = useRef(
-    new AnimatedRegion({
-      latitude: partner?.lat ?? destination.lat,
-      longitude: partner?.lng ?? destination.lng,
-      latitudeDelta: 0,
-      longitudeDelta: 0,
-    }),
-  ).current;
+  const [shown, setShown] = useState<{ lat: number; lng: number } | null>(partner);
+  const shownRef = useRef(shown);
+  shownRef.current = shown;
 
+  // Android snapshots custom marker views. Freeze them only once the map is ready and the icons have drawn, and
+  // redraw when the partner first appears; freezing earlier leaves blank markers (only the pin tail shows).
+  const [mapReady, setMapReady] = useState(false);
+  const hasPartner = partner !== null;
   useEffect(() => {
-    // Android snapshots custom marker views; give icons and fonts time to draw before freezing the bitmap.
-    const timer = setTimeout(() => setSettled(true), 1500);
+    if (!mapReady) return;
+    setSettled(false);
+    const timer = setTimeout(() => setSettled(true), 2000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [mapReady, hasPartner]);
 
   const frame = (p: LivePosition | null) => {
     if (!p) return;
@@ -62,20 +67,23 @@ export function LiveMap({
 
   useEffect(() => {
     if (!partner) return;
-    animated
-      .timing({
-        latitude: partner.lat,
-        longitude: partner.lng,
-        latitudeDelta: 0,
-        longitudeDelta: 0,
-        duration: 2500,
-        useNativeDriver: false,
-        toValue: 0,
-      } as never)
-      .start();
     if (following) frame(partner);
+    const from = shownRef.current;
+    if (!from) {
+      setShown({ lat: partner.lat, lng: partner.lng });
+      return;
+    }
+    // Ease-out glide from where the marker is now to the new fix.
+    const started = Date.now();
+    const timer = setInterval(() => {
+      const t = Math.min(1, (Date.now() - started) / GLIDE_MS);
+      const k = 1 - (1 - t) * (1 - t);
+      setShown({ lat: from.lat + (partner.lat - from.lat) * k, lng: from.lng + (partner.lng - from.lng) * k });
+      if (t >= 1) clearInterval(timer);
+    }, FRAME_MS);
+    return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partner, destination.lat, destination.lng, animated]);
+  }, [partner, destination.lat, destination.lng]);
 
   return (
     <View style={[styles.wrap, { height }]} accessible accessibilityLabel={`${partnerLabel}, ${destinationLabel}`}>
@@ -90,6 +98,7 @@ export function LiveMap({
         showsCompass={false}
         toolbarEnabled={false}
         onPanDrag={() => setFollowing(false)}
+        onMapReady={() => setMapReady(true)}
       >
         <Marker
           coordinate={{ latitude: destination.lat, longitude: destination.lng }}
@@ -105,20 +114,21 @@ export function LiveMap({
             <View style={[styles.pinTail, { borderTopColor: theme.colors.accent }]} />
           </View>
         </Marker>
-        {partner ? (
-          <Marker.Animated
-            coordinate={animated as never}
+        {shown ? (
+          <Marker
+            coordinate={{ latitude: shown.lat, longitude: shown.lng }}
             anchor={{ x: 0.5, y: 0.5 }}
             title={partnerLabel}
             tracksViewChanges={!settled}
           >
-            <View style={styles.partnerWrap}>
-              <View style={[styles.halo, { backgroundColor: theme.colors.primary }]} />
+            {/* The halo is the container (no absolute layers): Android clips absolutely positioned children out of
+                marker snapshots, which left only a quarter of the scooter visible. */}
+            <View collapsable={false} style={[styles.halo, { backgroundColor: theme.colors.primarySoft }]}>
               <View style={[styles.partner, { backgroundColor: theme.colors.primary, borderColor: theme.colors.surface }]}>
-                <Icon as={Bike} size={18} color={theme.colors.onPrimary} strokeWidth={2.2} />
+                <Icon as={Bike} size={16} color={theme.colors.onPrimary} strokeWidth={2.2} />
               </View>
             </View>
-          </Marker.Animated>
+          </Marker>
         ) : null}
       </MapView>
       {!following && partner ? (
@@ -151,7 +161,7 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
   },
-  partnerWrap: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
-  halo: { position: 'absolute', width: 64, height: 64, borderRadius: 32, opacity: 0.16 },
-  partner: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  // Kept small: Android cuts larger custom marker bitmaps (a 60 dp marker showed only its top-left quarter).
+  halo: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  partner: { width: 34, height: 34, borderRadius: 17, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
 });
