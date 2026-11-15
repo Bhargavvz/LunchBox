@@ -8,6 +8,13 @@ if (emulatorHost) {
   auth().settings.appVerificationDisabledForTesting = true;
 }
 
+// Development builds only: skip Play Integrity / reCAPTCHA so the real project's *test* phone numbers (Firebase console
+// → Authentication → Sign-in method → Phone → Phone numbers for testing) sign in on an emulator. Real numbers do not
+// work while this is on. `__DEV__` is false in release builds, so it can never reach a store build.
+if (__DEV__ && !emulatorHost && process.env.EXPO_PUBLIC_FIREBASE_TEST_NUMBERS_ONLY === 'true') {
+  auth().settings.appVerificationDisabledForTesting = true;
+}
+
 export async function idToken(force = false): Promise<string | null> {
   const user = auth().currentUser;
   return user ? user.getIdToken(force) : null;
