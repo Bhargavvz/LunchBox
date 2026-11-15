@@ -130,6 +130,31 @@ class PrepaidBillingTest {
     }
 
     @Test
+    void theWebhookActivatesAPlanWhoseAppNeverConfirmedThePayment() {
+        Subscription sub = subscription(LocalDate.parse("2026-11-20"));
+        sub.awaitOrder("order_fake_2");
+        when(subscriptions.findByRazorpayOrderId("order_fake_2")).thenReturn(Optional.of(sub));
+
+        service.onOrderPaid("order_fake_2", "pay_2", 150_000, "upi", clock.instant());
+
+        assertThat(sub.getStatus()).isEqualTo(Subscription.Status.ACTIVE);
+        assertThat(sub.getCurrentPeriodEnd()).isEqualTo(istMidnight("2026-12-20"));
+        verify(payments).recordCaptured(eq(parentId), any(), eq("pay_2"), any(), eq(150_000L), eq("upi"), any(), any());
+    }
+
+    @Test
+    void theWebhookIgnoresAnAmountThatDoesNotMatchThePlan() {
+        Subscription sub = subscription(LocalDate.parse("2026-11-20"));
+        sub.awaitOrder("order_fake_3");
+        when(subscriptions.findByRazorpayOrderId("order_fake_3")).thenReturn(Optional.of(sub));
+
+        service.onOrderPaid("order_fake_3", "pay_3", 100, "upi", clock.instant());
+
+        assertThat(sub.getStatus()).isEqualTo(Subscription.Status.PENDING_PAYMENT);
+        verify(payments, never()).recordCaptured(any(), any(), any(), any(), anyLong(), any(), any(), any());
+    }
+
+    @Test
     void renewingIsRefusedEarlierThanSevenDaysBeforeTheEnd() {
         Subscription sub = subscription(LocalDate.parse("2026-11-01"));
         sub.activate(istMidnight("2026-12-15"));

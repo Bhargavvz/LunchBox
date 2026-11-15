@@ -29,6 +29,8 @@ interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
 
     Optional<Subscription> findByRazorpaySubscriptionId(String providerId);
 
+    Optional<Subscription> findByRazorpayOrderId(String razorpayOrderId);
+
     List<Subscription> findByChildIdAndStatusIn(UUID childId, Collection<Subscription.Status> statuses);
 
     boolean existsByAddressIdAndStatusIn(UUID addressId, Collection<Subscription.Status> statuses);

@@ -274,6 +274,28 @@ public class SubscriptionService implements SubscriptionQueries, PersonalDataCon
         return toResponse(sub, plan, children.require(sub.getChildId()));
     }
 
+    /** Webhook path for a prepaid order (see {@link PrepaidWebhookHandler}); idempotent. */
+    @Transactional
+    public void onOrderPaid(String orderId, String paymentId, long amountPaise, String method, Instant paidAt) {
+        subscriptions.findByRazorpayOrderId(orderId).ifPresentOrElse(sub -> {
+            Plan plan = plans.findById(sub.getPlanId()).orElseThrow();
+            if (amountPaise != plan.getPricePaise()) {
+                log.warn("Order {} paid {} paise, plan {} costs {}; not activating", orderId, amountPaise, plan.getId(),
+                        plan.getPricePaise());
+                return;
+            }
+            Subscription.Status before = sub.getStatus();
+            Instant periodEnd = nextPeriodEnd(sub, plan, clock);
+            payments.recordCaptured(sub.getParentId(), sub.getId(), paymentId, null, amountPaise, method, plan.getName(),
+                    paidAt);
+            sub.orderPaid();
+            sub.activate(periodEnd);
+            audit.record("subscription.paid", "Subscription", sub.getId(), Map.of("status", before.name()),
+                    Map.of("status", sub.getStatus().name(), "orderId", orderId, "paidUntil", periodEnd.toString(),
+                            "via", "webhook"));
+        }, () -> log.info("payment.captured for order {} matches no open plan order (already confirmed)", orderId));
+    }
+
     @Transactional
     public SubscriptionResponse updateSchedule(UUID parentUserId, UUID subscriptionId, UpdateScheduleRequest request) {
         UUID parentId = users.requireParentId(parentUserId);

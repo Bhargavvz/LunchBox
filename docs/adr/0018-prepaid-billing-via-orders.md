@@ -26,8 +26,9 @@ Subscriptions has to be enabled for an account by Razorpay. Waiting would block 
 **Consequences.**
 - Parents renew once a month (or quarter) with one tap instead of a standing mandate. The app shows "Paid until …",
   a reminder in the last 7 days, and **Renew** / **Complete payment** on the child card.
-- A payment verified in the app activates the plan immediately; the `payment.captured` webhook (needs a public URL,
-  so staging) is a backstop, not a requirement.
+- A payment verified in the app activates the plan immediately. `PrepaidWebhookHandler` handles Razorpay's
+  `payment.captured` for the plan's open order as a backstop (app closed before it confirmed), checking the amount;
+  it needs the webhook configured, which needs a public URL (staging).
 - Schema: `V10__prepaid_orders.sql` adds `subscriptions.razorpay_order_id` and `renewal_reminded_for`.
 - Tests: `PrepaidBillingTest` (periods, early renewal, quarterly, signature checks, sweep) and `DeliveryFlowIT`
   (end-to-end with a prepaid payment).
