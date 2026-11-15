@@ -35,7 +35,7 @@ import java.util.UUID;
 
 /**
  * Greedy nearest-available assignment. Orders are taken in pickup-window order; each goes to the eligible partner
- * (scheduled shift, KYC approved, spare capacity, within service radius) with the lowest score, where score is the
+ * (scheduled shift, approved, spare capacity, within service radius) with the lowest score, where score is the
  * Haversine distance from the partner's start point to the home, halved when the partner already serves that school
  * (keeps school runs together). A Redis lock per order plus the partial unique index on active assignments guarantee
  * an order is never double-assigned even when ops staff assign manually at the same time.

@@ -53,7 +53,7 @@ public class ShiftService {
     public ShiftResponse schedule(UUID partnerId, ShiftRequest request) {
         DeliveryPartner partner = partners.findById(partnerId).orElseThrow(() -> Errors.notFound("Partner"));
         if (!partner.canWork()) {
-            throw Errors.unprocessable("partner_not_eligible", "Only active, KYC-approved partners can be scheduled.");
+            throw Errors.unprocessable("partner_not_eligible", "Only active, approved partners can be scheduled.");
         }
         if (request.date().isBefore(TimeZones.todayIst(clock))) {
             throw Errors.badRequest("date_in_past", "Shifts cannot be scheduled in the past.");

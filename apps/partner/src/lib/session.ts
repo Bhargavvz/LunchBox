@@ -13,7 +13,7 @@ interface SessionState {
 }
 
 /**
- * Only KYC-approved partners can sign in: the backend links the phone number to a pre-provisioned partner account
+ * Only partners approved by operations can sign in: the backend links the phone number to a pre-provisioned partner account
  * on first sign-in and refuses (403) partners who are not approved or are deactivated.
  */
 export const useSession = create<SessionState>((set) => ({

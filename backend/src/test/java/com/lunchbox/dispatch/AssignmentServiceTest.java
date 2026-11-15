@@ -118,7 +118,7 @@ class AssignmentServiceTest {
     @Test
     void skipsPartnersWhoCannotWork() {
         DeliveryPartner unapproved = partner(12.9700, 77.5900, 5, 5000);
-        ReflectionTestUtils.setField(unapproved, "kycStatus", DeliveryPartner.KycStatus.IN_REVIEW);
+        ReflectionTestUtils.setField(unapproved, "approvalStatus", DeliveryPartner.ApprovalStatus.PENDING);
         shiftsFor(unapproved);
         pending(order(12.9705, 77.5905, schoolA));
 
@@ -182,7 +182,7 @@ class AssignmentServiceTest {
         DeliveryPartner p = new DeliveryPartner(UUID.randomUUID());
         ReflectionTestUtils.setField(p, "id", UUID.randomUUID());
         p.updateProfile("Ravi", null, DeliveryPartner.VehicleType.SCOOTER, "KA01AB1234", capacity, Geo.point(lat, lng), radiusM);
-        p.kycDecision(true, UUID.randomUUID(), null, T0);
+        p.decide(true, UUID.randomUUID(), null, T0);
         when(partners.findById(p.getId())).thenReturn(Optional.of(p));
         when(orderQueries.forPartnerAndDate(p.getId(), DATE)).thenReturn(List.of());
         return p;

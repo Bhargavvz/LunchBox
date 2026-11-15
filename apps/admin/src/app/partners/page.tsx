@@ -33,7 +33,7 @@ function CreatePartner() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild><Button>Add partner</Button></DialogTrigger>
-      <DialogContent title="Onboard delivery partner" description="The partner can sign in once KYC is approved.">
+      <DialogContent title="Onboard delivery partner" description="The partner can sign in once you approve them.">
         <form className="space-y-3" onSubmit={(e: FormEvent) => { e.preventDefault(); create.mutate(); }}>
           {create.error ? <Alert>{errorText(create.error)}</Alert> : null}
           <Field label="Mobile (10 digits)" htmlFor="p-phone"><Input id="p-phone" required value={f.phone} onChange={set('phone')} inputMode="tel" /></Field>
@@ -59,18 +59,18 @@ function CreatePartner() {
 export default function PartnersPage() {
   const { can } = useAuth();
   const [q, setQ] = useState('');
-  const [kyc, setKyc] = useState('');
+  const [status, setStatus] = useState('');
   const [page, setPage] = useState(0);
   const partners = useQuery({
-    queryKey: ['partners', q, kyc, page],
-    queryFn: () => api.admin.partners({ q: q || undefined, kycStatus: kyc || undefined, page, size: 25 }),
+    queryKey: ['partners', q, status, page],
+    queryFn: () => api.admin.partners({ q: q || undefined, approvalStatus: status || undefined, page, size: 25 }),
   });
   const columns = useMemo<ColumnDef<AdminPartner, unknown>[]>(() => [
     { header: 'Name', cell: ({ row }) => <Link className="font-medium text-primary hover:underline" href={`/partners/detail/?id=${row.original.id}`}>{row.original.firstName} {row.original.lastName ?? ''}</Link> },
     { header: 'Phone', accessorKey: 'phone' },
     { header: 'Vehicle', cell: ({ row }) => `${row.original.vehicleType} ${row.original.vehicleNumber ?? ''}` },
     { header: 'Capacity', accessorKey: 'capacity' },
-    { header: 'KYC', cell: ({ row }) => <StatusBadge status={row.original.kycStatus} /> },
+    { header: 'Approval', cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} /> },
     { header: 'Rating', cell: ({ row }) => row.original.rating ?? '—' },
     { header: 'Active', cell: ({ row }) => (row.original.active ? 'Yes' : 'No') },
   ], []);
@@ -79,9 +79,9 @@ export default function PartnersPage() {
       <PageHeader eyebrow="Operations" title="Delivery partners" actions={can('SUPER_ADMIN', 'OPS_ADMIN') ? <CreatePartner /> : null} />
       <div className="mb-4 flex flex-wrap gap-3">
         <Field label="Search" htmlFor="q"><Input id="q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Name or vehicle" /></Field>
-        <Field label="KYC" htmlFor="kyc">
-          <Select id="kyc" value={kyc} onChange={(e) => { setKyc(e.target.value); setPage(0); }}>
-            {['', 'NOT_STARTED', 'SUBMITTED', 'IN_REVIEW', 'APPROVED', 'REJECTED'].map((s) => <option key={s} value={s}>{s || 'All'}</option>)}
+        <Field label="Approval" htmlFor="approval">
+          <Select id="approval" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
+            {['', 'PENDING', 'APPROVED', 'REJECTED'].map((s) => <option key={s} value={s}>{s || 'All'}</option>)}
           </Select>
         </Field>
       </div>

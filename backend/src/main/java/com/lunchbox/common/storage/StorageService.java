@@ -6,7 +6,7 @@ import java.util.Optional;
 /** Private object storage with short-lived pre-signed URLs (S3 in AWS, LocalStack locally). */
 public interface StorageService {
 
-    enum Bucket { HANDOVER, KYC }
+    enum Bucket { HANDOVER }
 
     PresignedUpload presignUpload(Bucket bucket, String key, String contentType, long maxBytes);
 

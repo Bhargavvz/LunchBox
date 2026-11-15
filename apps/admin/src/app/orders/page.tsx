@@ -24,7 +24,7 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
     queryFn: () => api.admin.nearbyPartners(order.pickupLocation.lat, order.pickupLocation.lng, 5000),
     enabled: order.scheduledDate === todayIst(),
   });
-  const partners = useQuery({ queryKey: ['partners-approved'], queryFn: () => api.admin.partners({ kycStatus: 'APPROVED', size: 200 }) });
+  const partners = useQuery({ queryKey: ['partners-approved'], queryFn: () => api.admin.partners({ approvalStatus: 'APPROVED', size: 200 }) });
   const [partnerId, setPartnerId] = useState('');
   const [reason, setReason] = useState('');
   const refresh = () => {

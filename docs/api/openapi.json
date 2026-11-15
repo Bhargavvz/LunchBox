@@ -279,6 +279,13 @@
           "active" : {
             "type" : "boolean"
           },
+          "approvalNotes" : {
+            "type" : "string"
+          },
+          "approvalStatus" : {
+            "enum" : [ "PENDING", "APPROVED", "REJECTED" ],
+            "type" : "string"
+          },
           "capacity" : {
             "format" : "int32",
             "type" : "integer"
@@ -295,13 +302,6 @@
           },
           "id" : {
             "format" : "uuid",
-            "type" : "string"
-          },
-          "kycNotes" : {
-            "type" : "string"
-          },
-          "kycStatus" : {
-            "enum" : [ "NOT_STARTED", "SUBMITTED", "IN_REVIEW", "APPROVED", "REJECTED" ],
             "type" : "string"
           },
           "lastName" : {
@@ -336,7 +336,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "active", "capacity", "createdAt", "firstName", "homeZone", "id", "kycNotes", "kycStatus", "lastName", "payoutAccountLinked", "phone", "rating", "ratingCount", "serviceRadiusM", "userId", "vehicleNumber", "vehicleType" ],
+        "required" : [ "active", "approvalNotes", "approvalStatus", "capacity", "createdAt", "firstName", "homeZone", "id", "lastName", "payoutAccountLinked", "phone", "rating", "ratingCount", "serviceRadiusM", "userId", "vehicleNumber", "vehicleType" ],
         "type" : "object"
       },
       "AdminRouteResponse" : {
@@ -476,6 +476,19 @@
           }
         },
         "required" : [ "childId", "childName", "createdAt", "currentPeriodEnd", "daysOfWeek", "endDate", "id", "parentId", "planName", "startDate", "status" ],
+        "type" : "object"
+      },
+      "ApprovalRequest" : {
+        "properties" : {
+          "approved" : {
+            "type" : "boolean"
+          },
+          "notes" : {
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "AssignRequest" : {
@@ -639,18 +652,6 @@
           }
         },
         "required" : [ "audience", "body", "createdAt", "id", "recipientCount", "schoolId", "status", "title" ],
-        "type" : "object"
-      },
-      "CallResponse" : {
-        "properties" : {
-          "message" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "message", "status" ],
         "type" : "object"
       },
       "CancelRequest" : {
@@ -1364,72 +1365,6 @@
         "type" : "object"
       },
       "JsonNode" : { },
-      "KycDecisionRequest" : {
-        "properties" : {
-          "approved" : {
-            "type" : "boolean"
-          },
-          "notes" : {
-            "maxLength" : 500,
-            "minLength" : 0,
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "KycDocumentRequest" : {
-        "properties" : {
-          "dateOfBirth" : {
-            "format" : "date",
-            "type" : "string"
-          },
-          "docType" : {
-            "enum" : [ "AADHAAR", "PAN", "DRIVING_LICENSE", "VEHICLE_RC", "PHOTO", "POLICE_VERIFICATION" ],
-            "type" : "string"
-          },
-          "documentNumber" : {
-            "maxLength" : 40,
-            "minLength" : 0,
-            "pattern" : "^[A-Za-z0-9 -]*$",
-            "type" : "string"
-          },
-          "s3Key" : {
-            "maxLength" : 300,
-            "minLength" : 0,
-            "type" : "string"
-          }
-        },
-        "required" : [ "docType", "s3Key" ],
-        "type" : "object"
-      },
-      "KycDocumentResponse" : {
-        "properties" : {
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "docType" : {
-            "enum" : [ "AADHAAR", "PAN", "DRIVING_LICENSE", "VEHICLE_RC", "PHOTO", "POLICE_VERIFICATION" ],
-            "type" : "string"
-          },
-          "documentNumberMasked" : {
-            "type" : "string"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "status" : {
-            "enum" : [ "UPLOADED", "VERIFYING", "VERIFIED", "FAILED" ],
-            "type" : "string"
-          },
-          "viewUrl" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "createdAt", "docType", "documentNumberMasked", "id", "status", "viewUrl" ],
-        "type" : "object"
-      },
       "LeaveDayRequest" : {
         "properties" : {
           "date" : {
@@ -2182,9 +2117,6 @@
           "firstName" : {
             "type" : "string"
           },
-          "photoUrl" : {
-            "type" : "string"
-          },
           "rating" : {
             "type" : "number"
           },
@@ -2196,7 +2128,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "firstName", "photoUrl", "rating", "vehicleNumber", "vehicleType" ],
+        "required" : [ "firstName", "rating", "vehicleNumber", "vehicleType" ],
         "type" : "object"
       },
       "PartnerMeResponse" : {
@@ -2486,9 +2418,6 @@
           "landmark" : {
             "type" : "string"
           },
-          "maskedPhone" : {
-            "type" : "string"
-          },
           "orderId" : {
             "format" : "uuid",
             "type" : "string"
@@ -2509,7 +2438,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "address", "boxCode", "childFirstName", "className", "instructions", "landmark", "maskedPhone", "orderId", "orderStatus", "parentFirstName", "pickupWindowEnd", "pickupWindowStart" ],
+        "required" : [ "address", "boxCode", "childFirstName", "className", "instructions", "landmark", "orderId", "orderStatus", "parentFirstName", "pickupWindowEnd", "pickupWindowStart" ],
         "type" : "object"
       },
       "PingBatchRequest" : {
@@ -3421,21 +3350,6 @@
         },
         "type" : "object"
       },
-      "UploadUrlRequest" : {
-        "properties" : {
-          "contentType" : {
-            "minLength" : 1,
-            "pattern" : "^(image/jpeg|image/png|application/pdf)$",
-            "type" : "string"
-          },
-          "docType" : {
-            "enum" : [ "AADHAAR", "PAN", "DRIVING_LICENSE", "VEHICLE_RC", "PHOTO", "POLICE_VERIFICATION" ],
-            "type" : "string"
-          }
-        },
-        "required" : [ "contentType", "docType" ],
-        "type" : "object"
-      },
       "UploadUrlResponse" : {
         "properties" : {
           "expiresAt" : {
@@ -4263,10 +4177,10 @@
           }
         }, {
           "in" : "query",
-          "name" : "kycStatus",
+          "name" : "approvalStatus",
           "required" : false,
           "schema" : {
-            "enum" : [ "NOT_STARTED", "SUBMITTED", "IN_REVIEW", "APPROVED", "REJECTED" ],
+            "enum" : [ "PENDING", "APPROVED", "REJECTED" ],
             "type" : "string"
           }
         }, {
@@ -4416,6 +4330,44 @@
         "tags" : [ "Admin · Dispatch" ]
       }
     },
+    "/api/v1/admin/partners/{partnerId}/approval" : {
+      "post" : {
+        "operationId" : "approval",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "partnerId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ApprovalRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminPartnerResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Approve or reject a rider; only approved riders can be scheduled or sign in",
+        "tags" : [ "Admin · Dispatch" ]
+      }
+    },
     "/api/v1/admin/partners/{partnerId}/bank-account" : {
       "put" : {
         "operationId" : "bankAccount",
@@ -4515,180 +4467,6 @@
           }
         },
         "tags" : [ "Earnings & payouts" ]
-      }
-    },
-    "/api/v1/admin/partners/{partnerId}/kyc/decision" : {
-      "post" : {
-        "operationId" : "kycDecision",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "partnerId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/KycDecisionRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "204" : {
-            "description" : "No Content"
-          }
-        },
-        "tags" : [ "Admin · Dispatch" ]
-      }
-    },
-    "/api/v1/admin/partners/{partnerId}/kyc/documents" : {
-      "get" : {
-        "operationId" : "kycDocuments",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "partnerId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/KycDocumentResponse"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "Admin · Dispatch" ]
-      },
-      "post" : {
-        "operationId" : "addKycDocument",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "partnerId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/KycDocumentRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/KycDocumentResponse"
-                }
-              }
-            },
-            "description" : "Created"
-          }
-        },
-        "tags" : [ "Admin · Dispatch" ]
-      }
-    },
-    "/api/v1/admin/partners/{partnerId}/kyc/documents/{documentId}/review" : {
-      "post" : {
-        "operationId" : "reviewDocument",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "partnerId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        }, {
-          "in" : "path",
-          "name" : "documentId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        }, {
-          "in" : "query",
-          "name" : "verified",
-          "required" : true,
-          "schema" : {
-            "type" : "boolean"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/KycDocumentResponse"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "Admin · Dispatch" ]
-      }
-    },
-    "/api/v1/admin/partners/{partnerId}/kyc/upload-url" : {
-      "post" : {
-        "operationId" : "kycUploadUrl",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "partnerId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/UploadUrlRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/UploadUrlResponse"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "Admin · Dispatch" ]
       }
     },
     "/api/v1/admin/partners/{partnerId}/shifts" : {
@@ -6454,33 +6232,6 @@
         "tags" : [ "Orders" ]
       }
     },
-    "/api/v1/orders/{orderId}/call-partner" : {
-      "post" : {
-        "operationId" : "callPartner",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "orderId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/CallResponse"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "Orders" ]
-      }
-    },
     "/api/v1/orders/{orderId}/handover-photo" : {
       "get" : {
         "operationId" : "handoverPhoto",
@@ -6763,34 +6514,6 @@
             "description" : "OK"
           }
         },
-        "tags" : [ "Partner app" ]
-      }
-    },
-    "/api/v1/partner/orders/{orderId}/call" : {
-      "post" : {
-        "operationId" : "callParent",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "orderId",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/CallResponse"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "summary" : "Call the parent through a masked number",
         "tags" : [ "Partner app" ]
       }
     },

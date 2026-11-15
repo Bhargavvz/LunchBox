@@ -133,8 +133,6 @@ export function createLunchBoxApi(options: ClientOptions) {
         unwrap(c.GET('/api/v1/orders/{orderId}/pickup-code', { params: { path: { orderId } } })),
       handoverPhoto: (orderId: string) =>
         unwrap(c.GET('/api/v1/orders/{orderId}/handover-photo', { params: { path: { orderId } } })),
-      callPartner: (orderId: string) =>
-        unwrap(c.POST('/api/v1/orders/{orderId}/call-partner', { params: { path: { orderId } } })),
       rate: (orderId: string, body: S['RateOrderRequest']) =>
         unwrap(c.POST('/api/v1/orders/{orderId}/rating', { params: { path: { orderId } }, body })),
     },
@@ -193,8 +191,6 @@ export function createLunchBoxApi(options: ClientOptions) {
             body,
           }),
         ),
-      callParent: (orderId: string) =>
-        unwrap(c.POST('/api/v1/partner/orders/{orderId}/call', { params: { path: { orderId } } })),
       reportIssue: (body: S['IssueRequest'], idempotencyKey: string) =>
         unwrap(c.POST('/api/v1/partner/issues', { params: { header: { 'Idempotency-Key': idempotencyKey } }, body })),
       sendLocations: (pings: S['PingInput'][]) =>
@@ -263,7 +259,7 @@ function createAdminApi(c: ReturnType<typeof createRawClient>, raw: (m: string, 
     autoAssign: (date?: string) => unwrap(c.POST('/api/v1/admin/jobs/auto-assign', { params: { query: { date } } })),
     routes: (date?: string) => unwrap(c.GET('/api/v1/admin/routes', { params: { query: { date } } })),
 
-    partners: (query: { q?: string; kycStatus?: string; page?: number; size?: number }) =>
+    partners: (query: { q?: string; approvalStatus?: string; page?: number; size?: number }) =>
       unwrap(c.GET('/api/v1/admin/partners', { params: { query: query as never } })),
     partner: (partnerId: string) =>
       unwrap(c.GET('/api/v1/admin/partners/{partnerId}', { params: { path: { partnerId } } })),
@@ -276,20 +272,9 @@ function createAdminApi(c: ReturnType<typeof createRawClient>, raw: (m: string, 
       unwrap(c.POST('/api/v1/admin/partners/{partnerId}/deactivate', { params: { path: { partnerId } } })),
     linkBankAccount: (partnerId: string, body: Schemas['BankAccountRequest']) =>
       unwrap(c.PUT('/api/v1/admin/partners/{partnerId}/bank-account', { params: { path: { partnerId } }, body })),
-    kycUploadUrl: (partnerId: string, body: Schemas['UploadUrlRequest']) =>
-      unwrap(c.POST('/api/v1/admin/partners/{partnerId}/kyc/upload-url', { params: { path: { partnerId } }, body })),
-    kycDocuments: (partnerId: string) =>
-      unwrap(c.GET('/api/v1/admin/partners/{partnerId}/kyc/documents', { params: { path: { partnerId } } })),
-    addKycDocument: (partnerId: string, body: Schemas['KycDocumentRequest']) =>
-      unwrap(c.POST('/api/v1/admin/partners/{partnerId}/kyc/documents', { params: { path: { partnerId } }, body })),
-    reviewKycDocument: (partnerId: string, documentId: string, verified: boolean) =>
-      unwrap(
-        c.POST('/api/v1/admin/partners/{partnerId}/kyc/documents/{documentId}/review', {
-          params: { path: { partnerId, documentId }, query: { verified } },
-        }),
-      ),
-    kycDecision: (partnerId: string, body: Schemas['KycDecisionRequest']) =>
-      unwrap(c.POST('/api/v1/admin/partners/{partnerId}/kyc/decision', { params: { path: { partnerId } }, body })),
+    /** Approve or reject a rider; only approved riders can be scheduled or sign in. */
+    decidePartner: (partnerId: string, body: Schemas['ApprovalRequest']) =>
+      unwrap(c.POST('/api/v1/admin/partners/{partnerId}/approval', { params: { path: { partnerId } }, body })),
     shifts: (partnerId: string, from: string, to: string) =>
       unwrap(c.GET('/api/v1/admin/partners/{partnerId}/shifts', { params: { path: { partnerId }, query: { from, to } } })),
     scheduleShift: (partnerId: string, body: Schemas['ShiftRequest']) =>

@@ -50,7 +50,7 @@ public final class TrackingDtos {
     }
 
     public record PartnerCard(String firstName, DeliveryPartner.VehicleType vehicleType, String vehicleNumber,
-                              BigDecimal rating, String photoUrl) {
+                              BigDecimal rating) {
     }
 
     public record LiveLocation(double lat, double lng, Double headingDeg, Double speedMps, Instant recordedAt) {

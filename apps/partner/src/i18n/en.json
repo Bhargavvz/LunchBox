@@ -64,8 +64,6 @@
   },
   "stop": {
     "arrived": "I have arrived",
-    "callParent": "Call parent",
-    "calling": "Your phone will ring first, then the parent",
     "instructions": "Instructions",
     "enterOtp": "Enter pickup code",
     "confirmOtp": "Confirm pickup",

@@ -64,7 +64,6 @@ public class S3StorageService implements StorageService {
     private String bucket(Bucket bucket) {
         return switch (bucket) {
             case HANDOVER -> config.handoverBucket();
-            case KYC -> config.kycBucket();
         };
     }
 

@@ -17,13 +17,12 @@ import {
   Timeline,
   isLive,
   useTheme,
-  useToast,
 } from '@lunchbox/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Camera, Clock3, Phone, Star } from 'lucide-react-native';
+import { Camera, Clock3, Star } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { Image, Linking, View, useWindowDimensions } from 'react-native';
+import { Linking, View, useWindowDimensions } from 'react-native';
 import { LiveMap } from '../../src/components/LiveMap';
 import { PickupCode } from '../../src/components/PickupCode';
 import { RateDelivery } from '../../src/components/RateDelivery';
@@ -36,15 +35,10 @@ export default function OrderTrackingScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { t } = useTranslation();
   const theme = useTheme();
-  const toast = useToast();
   const { height: screenHeight } = useWindowDimensions();
   const labels = useStatusLabels();
   const detail = useQuery({ queryKey: ['order', orderId], queryFn: () => api.orders.detail(orderId) });
   const { snapshot, position, etaSeconds } = useOrderTracking(orderId);
-  const call = useMutation({
-    mutationFn: () => api.orders.callPartner(orderId),
-    onSuccess: () => toast(t('track.calling')),
-  });
   const photo = useMutation({
     mutationFn: () => api.orders.handoverPhoto(orderId),
     onSuccess: (r) => void Linking.openURL(r.url),
@@ -119,12 +113,7 @@ export default function OrderTrackingScreen() {
         <Card tone="raised">
           <Text variant="overline" muted>{t('track.partner')}</Text>
           <Row gap={3}>
-            {snap.partner.photoUrl ? (
-              <Image source={{ uri: snap.partner.photoUrl }} accessibilityLabel={snap.partner.firstName}
-                     style={{ width: 52, height: 52, borderRadius: 20, backgroundColor: theme.colors.sunken }} />
-            ) : (
-              <Avatar name={snap.partner.firstName ?? ''} size={52} />
-            )}
+            <Avatar name={snap.partner.firstName ?? ''} size={52} />
             <View style={{ flex: 1, gap: 3 }}>
               <Text variant="heading" numberOfLines={1}>{snap.partner.firstName}</Text>
               <Text variant="caption" muted numberOfLines={1}>
@@ -139,11 +128,6 @@ export default function OrderTrackingScreen() {
               </Row>
             ) : null}
           </Row>
-          {live ? (
-            <Button title={t('track.callPartner')} variant="secondary" icon={Phone} loading={call.isPending}
-                    onPress={() => call.mutate()} accessibilityHint={t('track.callHint')} />
-          ) : null}
-          {call.error ? <Banner tone="danger">{errorMessage(call.error)}</Banner> : null}
         </Card>
       ) : null}
 

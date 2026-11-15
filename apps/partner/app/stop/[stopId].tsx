@@ -31,7 +31,6 @@ import {
   MessageSquareWarning,
   Navigation,
   Package,
-  Phone,
   ScanLine,
   School,
   TriangleAlert,
@@ -76,11 +75,6 @@ export default function StopScreen() {
       haptic.success();
       qc.setQueryData(['route'], data);
     },
-    onError: fail,
-  });
-  const call = useMutation({
-    mutationFn: (orderId: string) => api.partner.callParent(orderId),
-    onSuccess: () => toast(t('stop.calling'), 'info'),
     onError: fail,
   });
   const pickup = useMutation({
@@ -315,17 +309,6 @@ export default function StopScreen() {
             size="lg"
             onPress={() => void navigateTo(stop.location.lat, stop.location.lng)}
           />
-          {stop.pickup ? (
-            <Button
-              title={t('stop.callParent')}
-              variant="secondary"
-              icon={Phone}
-              size="lg"
-              loading={call.isPending}
-              onPress={() => call.mutate(stop.pickup!.orderId)}
-              accessibilityHint={stop.pickup.maskedPhone ?? undefined}
-            />
-          ) : null}
         </View>
       </Card>
 

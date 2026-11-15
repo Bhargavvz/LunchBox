@@ -180,9 +180,7 @@ public class TrackingService {
                 : Geo.toGeoPoint(schools.require(order.schoolId()).location());
         if (order.partnerId() != null && !order.status().isTerminal()) {
             var p = partners.require(order.partnerId());
-            String photo = p.photoKey() == null ? null
-                    : storage.presignDownload(StorageService.Bucket.KYC, p.photoKey(), Duration.ofMinutes(10));
-            card = new PartnerCard(p.firstName(), p.vehicleType(), p.vehicleNumber(), p.rating(), photo);
+            card = new PartnerCard(p.firstName(), p.vehicleType(), p.vehicleNumber(), p.rating());
             if (consent && OrderStatus.TRACKABLE.contains(order.status())) {
                 Optional<Fix> fix = store.last(order.partnerId());
                 if (fix.isPresent()) {

@@ -31,21 +31,13 @@ interface DeliveryPartnerRepository extends JpaRepository<DeliveryPartner, UUID>
 
     @Query("""
             select p from DeliveryPartner p where p.deletedAt is null
-            and (:kyc is null or p.kycStatus = :kyc)
+            and (:status is null or p.approvalStatus = :status)
             and (:q is null or lower(concat(p.firstName, ' ', coalesce(p.lastName, ''))) like lower(concat('%', cast(:q as string), '%'))
                  or lower(p.vehicleNumber) like lower(concat('%', cast(:q as string), '%')))
             """)
-    Page<DeliveryPartner> search(@Param("q") String q, @Param("kyc") DeliveryPartner.KycStatus kyc, Pageable pageable);
+    Page<DeliveryPartner> search(@Param("q") String q, @Param("status") DeliveryPartner.ApprovalStatus status, Pageable pageable);
 }
 
-interface KycDocumentRepository extends JpaRepository<KycDocument, UUID> {
-
-    List<KycDocument> findByPartnerIdOrderByCreatedAt(UUID partnerId);
-
-    List<KycDocument> findByStatus(KycDocument.Status status);
-
-    Optional<KycDocument> findByPartnerIdAndDocType(UUID partnerId, KycDocument.DocType type);
-}
 
 interface PartnerShiftRepository extends JpaRepository<PartnerShift, UUID> {
 

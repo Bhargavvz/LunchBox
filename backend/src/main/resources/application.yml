@@ -161,8 +161,6 @@ resilience4j:
       razorpay: { base-config: default }
       razorpayx: { base-config: default }
       msg91: { base-config: default }
-      exotel: { base-config: default }
-      idfy: { base-config: default }
       fcm: { base-config: default }
   circuitbreaker:
     configs:
@@ -178,8 +176,6 @@ resilience4j:
       razorpay: { base-config: default }
       razorpayx: { base-config: default }
       msg91: { base-config: default }
-      exotel: { base-config: default }
-      idfy: { base-config: default }
       fcm: { base-config: default }
 
 lunchbox:
@@ -198,7 +194,6 @@ lunchbox:
     endpoint: ${S3_ENDPOINT:}
     path-style: false
     handover-bucket: ${S3_HANDOVER_BUCKET}
-    kyc-bucket: ${S3_KYC_BUCKET}
     kms-key-id: ${S3_KMS_KEY_ID:}
     presign-ttl: 5m
     presign-endpoint: ${S3_PRESIGN_ENDPOINT:}
@@ -240,18 +235,6 @@ lunchbox:
         ORDER_DELIVERY_FAILED: ${MSG91_TPL_ORDER_DELIVERY_FAILED:}
         PARTNER_ARRIVING: ${MSG91_TPL_PARTNER_ARRIVING:}
         PICKUP_FAILED: ${MSG91_TPL_PICKUP_FAILED:}
-    exotel:
-      mode: ${EXOTEL_MODE:fake}
-      base-url: https://api.exotel.com/v1
-      sid: ${EXOTEL_SID:}
-      api-key: ${EXOTEL_API_KEY:}
-      api-token: ${EXOTEL_API_TOKEN:}
-      caller-id: ${EXOTEL_CALLER_ID:}
-    idfy:
-      mode: ${IDFY_MODE:fake}
-      base-url: https://eve.idfy.com/v3
-      account-id: ${IDFY_ACCOUNT_ID:}
-      api-key: ${IDFY_API_KEY:}
     fcm:
       mode: ${FCM_MODE:fake}
   routing:

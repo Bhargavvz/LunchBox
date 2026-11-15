@@ -6,82 +6,37 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Alert, Button, Card, CardTitle, Field, Input, PageHeader, Select, Textarea } from '@/components/ui/primitives';
+import { Alert, Button, Card, CardTitle, Field, Input, PageHeader, Textarea } from '@/components/ui/primitives';
 import { api, errorText } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
-const DOC_TYPES = ['AADHAAR', 'PAN', 'DRIVING_LICENSE', 'VEHICLE_RC', 'PHOTO', 'POLICE_VERIFICATION'] as const;
-
-function KycSection({ partnerId }: { partnerId: string }) {
+/** Operations' go/no-go on a rider. Check identity and police verification offline before approving. */
+function ApprovalSection({ partnerId, status }: { partnerId: string; status: string }) {
   const qc = useQueryClient();
-  const docs = useQuery({ queryKey: ['kyc', partnerId], queryFn: () => api.admin.kycDocuments(partnerId) });
-  const [docType, setDocType] = useState<(typeof DOC_TYPES)[number]>('AADHAAR');
-  const [number, setNumber] = useState('');
-  const [dob, setDob] = useState('');
-  const [file, setFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
-  const refresh = () => {
-    void qc.invalidateQueries({ queryKey: ['kyc', partnerId] });
-    void qc.invalidateQueries({ queryKey: ['partner', partnerId] });
-  };
-  const upload = useMutation({
-    mutationFn: async () => {
-      if (!file) throw new Error('Choose a file');
-      const contentType = file.type === 'application/pdf' ? 'application/pdf' : file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-      const target = await api.admin.kycUploadUrl(partnerId, { docType, contentType });
-      const put = await fetch(target.url, { method: 'PUT', headers: target.headers, body: file });
-      if (!put.ok) throw new Error(`Upload failed (${put.status})`);
-      await api.admin.addKycDocument(partnerId, { docType, s3Key: target.key, documentNumber: number || undefined, dateOfBirth: dob || undefined });
-    },
-    onSuccess: () => { setFile(null); setNumber(''); refresh(); },
-  });
-  const review = useMutation({
-    mutationFn: ({ id, ok }: { id: string; ok: boolean }) => api.admin.reviewKycDocument(partnerId, id, ok),
-    onSuccess: refresh,
-  });
   const decide = useMutation({
-    mutationFn: (approved: boolean) => api.admin.kycDecision(partnerId, { approved, notes: notes || undefined }),
-    onSuccess: refresh,
+    mutationFn: (approved: boolean) => api.admin.decidePartner(partnerId, { approved, notes: notes || undefined }),
+    onSuccess: () => {
+      setNotes('');
+      void qc.invalidateQueries({ queryKey: ['partner', partnerId] });
+    },
   });
-  const err = upload.error ?? review.error ?? decide.error;
   return (
     <Card className="space-y-4">
-      <CardTitle>KYC documents</CardTitle>
-      {err ? <Alert>{errorText(err)}</Alert> : null}
-      <table className="lb-table">
-        <thead><tr><th>Type</th><th>Number</th><th>Status</th><th>File</th><th /></tr></thead>
-        <tbody>
-          {docs.data?.map((d) => (
-            <tr key={d.id}>
-              <td>{d.docType}</td>
-              <td>{d.documentNumberMasked ?? '—'}</td>
-              <td><StatusBadge status={d.status} /></td>
-              <td><a className="text-primary underline" href={d.viewUrl} target="_blank" rel="noreferrer">View</a></td>
-              <td className="space-x-2 py-1">
-                <Button size="sm" variant="outline" onClick={() => review.mutate({ id: d.id, ok: true })}>Verified</Button>
-                <Button size="sm" variant="ghost" onClick={() => review.mutate({ id: d.id, ok: false })}>Reject</Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="grid gap-3 md:grid-cols-4">
-        <Field label="Document" htmlFor="doc-type">
-          <Select id="doc-type" value={docType} onChange={(e) => setDocType(e.target.value as (typeof DOC_TYPES)[number])}>
-            {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
-          </Select>
-        </Field>
-        <Field label="Number" htmlFor="doc-no"><Input id="doc-no" value={number} onChange={(e) => setNumber(e.target.value)} /></Field>
-        <Field label="Date of birth (licence)" htmlFor="doc-dob"><Input id="doc-dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} /></Field>
-        <Field label="File (JPEG, PNG or PDF)" htmlFor="doc-file">
-          <Input id="doc-file" type="file" accept="image/jpeg,image/png,application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        </Field>
-      </div>
-      <Button disabled={!file || upload.isPending} onClick={() => upload.mutate()}>Upload document</Button>
-      <Field label="Review notes" htmlFor="kyc-notes"><Textarea id="kyc-notes" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+      <CardTitle>Approval</CardTitle>
+      <p className="text-sm text-muted-foreground">
+        Only approved riders can be given shifts and sign in to the partner app. Check their ID, licence and police
+        verification in person before approving.
+      </p>
+      {decide.error ? <Alert>{errorText(decide.error)}</Alert> : null}
+      <Field label="Notes (what you checked)" htmlFor="approval-notes">
+        <Textarea id="approval-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+      </Field>
       <div className="flex gap-2">
-        <Button onClick={() => decide.mutate(true)} disabled={decide.isPending}>Approve partner</Button>
-        <Button variant="destructive" onClick={() => decide.mutate(false)} disabled={decide.isPending}>Reject</Button>
+        <Button onClick={() => decide.mutate(true)} disabled={decide.isPending || status === 'APPROVED'}>Approve rider</Button>
+        <Button variant="destructive" onClick={() => decide.mutate(false)} disabled={decide.isPending || status === 'REJECTED'}>
+          Reject
+        </Button>
       </div>
     </Card>
   );
@@ -189,13 +144,13 @@ function PartnerDetail() {
       />
       {p ? (
         <div className="mb-4 flex gap-3 text-sm">
-          <StatusBadge status={p.kycStatus} />
+          <StatusBadge status={p.approvalStatus} />
           <span>Payout account: {p.payoutAccountLinked ? 'linked' : 'not linked'}</span>
-          {p.kycNotes ? <span className="text-muted-foreground">Notes: {p.kycNotes}</span> : null}
+          {p.approvalNotes ? <span className="text-muted-foreground">Notes: {p.approvalNotes}</span> : null}
         </div>
       ) : null}
       <div className="space-y-6">
-        {can('SUPER_ADMIN', 'OPS_ADMIN') ? <KycSection partnerId={id} /> : null}
+        {p && can('SUPER_ADMIN', 'OPS_ADMIN') ? <ApprovalSection partnerId={id} status={p.approvalStatus} /> : null}
         <ShiftsSection partnerId={id} />
         <PayoutSection partnerId={id} />
       </div>

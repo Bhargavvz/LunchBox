@@ -119,8 +119,6 @@
     "title": "Live tracking",
     "eta": "Arriving in {{eta}}",
     "etaSchool": "Reaching school in {{eta}}",
-    "callPartner": "Call partner",
-    "calling": "Your phone will ring shortly",
     "consentOff": "Live location is off. Enable it under Account → Privacy.",
     "partner": "Your delivery partner",
     "handoverPhoto": "View handover photo",
@@ -135,7 +133,6 @@
       "CAR": "Car"
     },
     "ratingLabel": "Rated {{rating}} out of 5",
-    "callHint": "Connects you through a private number",
     "journey": "Journey",
     "recenter": "Follow partner"
   },

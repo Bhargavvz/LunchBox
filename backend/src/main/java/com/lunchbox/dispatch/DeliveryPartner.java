@@ -26,7 +26,8 @@ public class DeliveryPartner extends BaseEntity {
 
     public enum VehicleType { BICYCLE, SCOOTER, MOTORCYCLE, EV_SCOOTER, CAR }
 
-    public enum KycStatus { NOT_STARTED, SUBMITTED, IN_REVIEW, APPROVED, REJECTED }
+    /** Operations approves a rider before they can be scheduled or sign in (no document KYC). */
+    public enum ApprovalStatus { PENDING, APPROVED, REJECTED }
 
     @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
@@ -54,25 +55,22 @@ public class DeliveryPartner extends BaseEntity {
     private int serviceRadiusM;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "kyc_status", nullable = false)
-    private KycStatus kycStatus = KycStatus.NOT_STARTED;
+    @Column(name = "approval_status", nullable = false)
+    private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
-    @Column(name = "kyc_reviewed_by")
-    private UUID kycReviewedBy;
+    @Column(name = "approval_reviewed_by")
+    private UUID approvalReviewedBy;
 
-    @Column(name = "kyc_reviewed_at")
-    private Instant kycReviewedAt;
+    @Column(name = "approval_reviewed_at")
+    private Instant approvalReviewedAt;
 
-    @Column(name = "kyc_notes")
-    private String kycNotes;
+    @Column(name = "approval_notes")
+    private String approvalNotes;
 
     private BigDecimal rating;
 
     @Column(name = "rating_count", nullable = false)
     private int ratingCount;
-
-    @Column(name = "photo_key")
-    private String photoKey;
 
     @Column(name = "bank_account_name")
     private String bankAccountName;
@@ -111,25 +109,11 @@ public class DeliveryPartner extends BaseEntity {
         this.serviceRadiusM = serviceRadiusM;
     }
 
-    void kycSubmitted() {
-        if (kycStatus == KycStatus.NOT_STARTED || kycStatus == KycStatus.REJECTED) {
-            kycStatus = KycStatus.SUBMITTED;
-        }
-    }
-
-    void kycInReview() {
-        kycStatus = KycStatus.IN_REVIEW;
-    }
-
-    void kycDecision(boolean approved, UUID reviewer, String notes, Instant at) {
-        this.kycStatus = approved ? KycStatus.APPROVED : KycStatus.REJECTED;
-        this.kycReviewedBy = reviewer;
-        this.kycNotes = notes;
-        this.kycReviewedAt = at;
-    }
-
-    void setPhoto(String key) {
-        this.photoKey = key;
+    void decide(boolean approved, UUID reviewer, String notes, Instant at) {
+        this.approvalStatus = approved ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED;
+        this.approvalReviewedBy = reviewer;
+        this.approvalNotes = notes;
+        this.approvalReviewedAt = at;
     }
 
     void setBankAccount(String name, String number, String ifsc, String contactId, String fundAccountId) {
@@ -152,6 +136,6 @@ public class DeliveryPartner extends BaseEntity {
     }
 
     public boolean canWork() {
-        return active && deletedAt == null && kycStatus == KycStatus.APPROVED;
+        return active && deletedAt == null && approvalStatus == ApprovalStatus.APPROVED;
     }
 }

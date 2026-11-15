@@ -306,7 +306,7 @@ public class PartnerOperationsService {
                 AddressInfo a = addressMap.get(o.addressId());
                 ChildInfo c = childMap.get(o.childId());
                 ParentInfo parent = parentCache.computeIfAbsent(o.parentId(), users::requireParent);
-                pickup = new PickupStopDetails(o.id(), o.status(), parent.firstName(), Validation.maskPhone(parent.phone()),
+                pickup = new PickupStopDetails(o.id(), o.status(), parent.firstName(),
                         a == null ? null : a.singleLine(), a == null ? null : a.landmark(), a == null ? null : a.instructions(),
                         c == null ? null : c.firstName(), c == null ? null : c.className(),
                         o.pickupWindowStart(), o.pickupWindowEnd(), c == null ? null : c.boxCode());

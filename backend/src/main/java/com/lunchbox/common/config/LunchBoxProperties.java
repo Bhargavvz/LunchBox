@@ -24,7 +24,8 @@ public record LunchBoxProperties(
         Bootstrap bootstrap,
         @Valid Routing routing) {
 
-    public enum Mode { FAKE, LIVE }
+    /** FAKE: local sandbox (never in prod). LIVE: the real provider. OFF: the feature is switched off (prod-safe). */
+    public enum Mode { FAKE, LIVE, OFF }
 
     public record Security(
             List<String> corsAllowedOrigins,
@@ -42,7 +43,6 @@ public record LunchBoxProperties(
             String endpoint,
             boolean pathStyle,
             @NotBlank String handoverBucket,
-            @NotBlank String kycBucket,
             String kmsKeyId,
             @NotNull Duration presignTtl,
             /* Host put into pre-signed URLs when devices reach S3 by another name (the Android emulator uses
@@ -73,8 +73,6 @@ public record LunchBoxProperties(
             @NotNull Razorpay razorpay,
             @NotNull RazorpayX razorpayx,
             @NotNull Msg91 msg91,
-            @NotNull Exotel exotel,
-            @NotNull Idfy idfy,
             @NotNull Fcm fcm) {
     }
 
@@ -88,11 +86,7 @@ public record LunchBoxProperties(
     public record Msg91(Mode mode, String baseUrl, String authKey, Map<String, String> templateIds) {
     }
 
-    public record Exotel(Mode mode, String baseUrl, String sid, String apiKey, String apiToken, String callerId) {
-    }
 
-    public record Idfy(Mode mode, String baseUrl, String accountId, String apiKey) {
-    }
 
     public record Fcm(Mode mode) {
     }

@@ -166,28 +166,9 @@ async function main() {
     console.log('Created rider Ravi.');
   }
   const partnerId = partner.id ?? partner.partnerId;
-  if (partner.kycStatus !== 'APPROVED') {
-    // Approval needs verified Aadhaar, licence and photo. Upload a 1×1 PNG for each to the LocalStack bucket through
-    // the same pre-signed flow the admin uses, record it, and mark it verified. Numbers are obviously fake test values.
-    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
-    const docs = [['AADHAAR', '999999990019'], ['DRIVING_LICENSE', 'KA0320260000001'], ['PHOTO', '']];
-    const have = (await call('GET', `/api/v1/admin/partners/${partnerId}/kyc/documents`, admin)).body;
-    for (const [docType, documentNumber] of docs) {
-      let doc = have.find((d) => d.docType === docType);
-      if (!doc) {
-        const upload = (await call('POST', `/api/v1/admin/partners/${partnerId}/kyc/upload-url`, admin,
-          { docType, contentType: 'image/png' })).body;
-        const put = await fetch(upload.url, { method: 'PUT', headers: upload.headers, body: png });
-        if (!put.ok) throw new Error(`KYC upload to ${new URL(upload.url).host} failed: ${put.status}`);
-        doc = (await call('POST', `/api/v1/admin/partners/${partnerId}/kyc/documents`, admin,
-          { docType, s3Key: upload.key, ...(documentNumber ? { documentNumber } : {}) })).body;
-      }
-      if (doc.status !== 'VERIFIED') {
-        await call('POST', `/api/v1/admin/partners/${partnerId}/kyc/documents/${doc.id}/review?verified=true`, admin);
-      }
-    }
-    await call('POST', `/api/v1/admin/partners/${partnerId}/kyc/decision`, admin, { approved: true, notes: 'Local demo' });
-    console.log('Approved rider KYC.');
+  if (partner.approvalStatus !== 'APPROVED') {
+    await call('POST', `/api/v1/admin/partners/${partnerId}/approval`, admin, { approved: true, notes: 'Local demo' });
+    console.log('Approved rider.');
   }
   await call('POST', `/api/v1/admin/partners/${partnerId}/activate`, admin, undefined, { allow: [409, 422] });
   // The shift starts now and the rider clocks in straight away: a shift that is never started is (correctly) treated

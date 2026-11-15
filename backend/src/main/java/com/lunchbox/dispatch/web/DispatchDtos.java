@@ -3,7 +3,6 @@ package com.lunchbox.dispatch.web;
 import com.lunchbox.common.geo.GeoPoint;
 import com.lunchbox.common.web.Validation;
 import com.lunchbox.dispatch.DeliveryPartner;
-import com.lunchbox.dispatch.KycDocument;
 import com.lunchbox.dispatch.PartnerIssue;
 import com.lunchbox.dispatch.PartnerShift;
 import com.lunchbox.dispatch.Route;
@@ -59,8 +58,8 @@ public final class DispatchDtos {
             int capacity,
             GeoPoint homeZone,
             int serviceRadiusM,
-            DeliveryPartner.KycStatus kycStatus,
-            String kycNotes,
+            DeliveryPartner.ApprovalStatus approvalStatus,
+            String approvalNotes,
             BigDecimal rating,
             int ratingCount,
             boolean active,
@@ -74,26 +73,11 @@ public final class DispatchDtos {
             @NotBlank @Pattern(regexp = Validation.IFSC) String ifsc) {
     }
 
-    public record UploadUrlRequest(@NotNull KycDocument.DocType docType,
-                                   @NotBlank @Pattern(regexp = "^(image/jpeg|image/png|application/pdf)$") String contentType) {
-    }
-
     public record UploadUrlResponse(String url, String key, String method, java.util.Map<String, String> headers,
                                     Instant expiresAt) {
     }
 
-    public record KycDocumentRequest(
-            @NotNull KycDocument.DocType docType,
-            @NotBlank @Size(max = 300) String s3Key,
-            @Size(max = 40) @Pattern(regexp = "^[A-Za-z0-9 -]*$") String documentNumber,
-            @Past LocalDate dateOfBirth) {
-    }
-
-    public record KycDocumentResponse(UUID id, KycDocument.DocType docType, KycDocument.Status status,
-                                      String documentNumberMasked, String viewUrl, Instant createdAt) {
-    }
-
-    public record KycDecisionRequest(boolean approved, @Size(max = 500) String notes) {
+    public record ApprovalRequest(boolean approved, @Size(max = 500) String notes) {
     }
 
     public record ShiftRequest(@NotNull LocalDate date, @NotNull LocalTime plannedStart, @NotNull LocalTime plannedEnd) {
@@ -139,7 +123,6 @@ public final class DispatchDtos {
             UUID orderId,
             OrderStatus orderStatus,
             String parentFirstName,
-            String maskedPhone,
             String address,
             String landmark,
             String instructions,
@@ -196,6 +179,4 @@ public final class DispatchDtos {
                                @Valid GeoPoint location) {
     }
 
-    public record CallResponse(String status, String message) {
-    }
 }

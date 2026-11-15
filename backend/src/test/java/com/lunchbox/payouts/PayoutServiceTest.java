@@ -60,7 +60,7 @@ class PayoutServiceTest {
             Clock.fixed(Instant.parse("2026-10-19T03:00:00Z"), ZoneOffset.UTC));
 
     private final PartnerInfo partner = new PartnerInfo(UUID.randomUUID(), UUID.randomUUID(), "Ravi", null, null, null,
-            5, null, 5000, null, true, null, null, "fa_123");
+            5, null, 5000, null, true, null, "fa_123");
 
     @BeforeEach
     void setUp() {
@@ -201,6 +201,17 @@ class PayoutServiceTest {
             }
         }
         return p;
+    }
+
+    @Test
+    void switchedOffPayoutsCreateNothing() {
+        ReflectionTestUtils.setField(service, "payoutsOff", true);
+
+        service.scheduledRun();
+        assertThatThrownBy(() -> service.run(PERIOD_END)).isInstanceOf(ApiException.class);
+
+        verify(payouts, never()).save(any());
+        verify(gateway, never()).createPayout(anyString(), anyLong(), anyString(), anyString());
     }
 
     private Payout submitted() {

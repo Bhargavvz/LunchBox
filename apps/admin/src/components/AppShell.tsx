@@ -54,7 +54,7 @@ const WRITE: Role[] = ['SUPER_ADMIN', 'OPS_ADMIN'];
 const NAV: NavItem[] = [
   { href: '/dashboard/', label: 'Dashboard', icon: LayoutDashboard, roles: STAFF, group: 'Operations', keywords: 'today live map home' },
   { href: '/orders/', label: 'Orders', icon: ClipboardList, roles: STAFF, group: 'Operations', keywords: 'deliveries pickups assign cancel' },
-  { href: '/partners/', label: 'Partners', icon: Truck, roles: STAFF, group: 'Operations', keywords: 'riders drivers kyc' },
+  { href: '/partners/', label: 'Partners', icon: Truck, roles: STAFF, group: 'Operations', keywords: 'riders drivers approval' },
   { href: '/issues/', label: 'Issues & SOS', icon: LifeBuoy, roles: STAFF, group: 'Operations', keywords: 'problems emergency support' },
   { href: '/parents/', label: 'Parents & children', icon: Users, roles: STAFF, group: 'People', keywords: 'families students kids' },
   { href: '/schools/', label: 'Schools', icon: Building2, roles: STAFF, group: 'People', keywords: 'holidays timings' },

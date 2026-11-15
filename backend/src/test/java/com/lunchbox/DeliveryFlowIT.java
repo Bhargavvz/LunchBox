@@ -1,7 +1,6 @@
 package com.lunchbox;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.lunchbox.dispatch.KycService;
 import com.lunchbox.payments.FakePaymentGateway;
 import com.lunchbox.support.IntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,7 @@ import static org.awaitility.Awaitility.await;
 
 /**
  * End-to-end: school + plan setup → parent registers with consent → child, address, subscription paid →
- * partner onboarded with KYC → orders generated after cut-off → auto-assigned → route started → OTP pickup →
+ * partner approved by operations → orders generated after cut-off → auto-assigned → route started → OTP pickup →
  * geofenced photo handover → DELIVERED, with earnings written by the async pipeline.
  */
 class DeliveryFlowIT extends IntegrationTest {
@@ -33,9 +32,6 @@ class DeliveryFlowIT extends IntegrationTest {
 
     @Autowired
     JdbcTemplate jdbc;
-
-    @Autowired
-    KycService kyc;
 
     @Test
     void lunchboxGoesFromHomeToSchool() throws Exception {
@@ -94,22 +90,14 @@ class DeliveryFlowIT extends IntegrationTest {
         assertThat(sub.get("status").asText()).isEqualTo("ACTIVE");
         assertThat(sub.get("currentPeriodEnd").isNull()).isFalse();
 
-        // ---- Partner onboarding + KYC ----
+        // ---- Partner onboarding + approval ----
         JsonNode partner = post("/api/v1/admin/partners", admin, Map.of("phone", "+919800000002", "profile", Map.of(
                 "firstName", "Ravi", "vehicleType", "SCOOTER", "vehicleNumber", "KA01AB1234", "capacity", 8,
                 "homeZone", Map.of("lat", 12.9700, "lng", 77.5900), "serviceRadiusM", 6000)), 201);
         String partnerId = partner.get("id").asText();
-        List<String> docIds = new ArrayList<>();
-        for (String type : List.of("AADHAAR", "DRIVING_LICENSE", "PHOTO")) {
-            JsonNode doc = post("/api/v1/admin/partners/" + partnerId + "/kyc/documents", admin, Map.of(
-                    "docType", type, "s3Key", "kyc/" + partnerId + "/" + type.toLowerCase() + ".jpg",
-                    "documentNumber", type.equals("PHOTO") ? "" : "DOC" + type.hashCode()), 201);
-            docIds.add(doc.get("id").asText());
-        }
-        post("/api/v1/admin/partners/" + partnerId + "/kyc/documents/" + docIds.get(0) + "/review?verified=true", admin, null, 200);
-        post("/api/v1/admin/partners/" + partnerId + "/kyc/documents/" + docIds.get(2) + "/review?verified=true", admin, null, 200);
-        kyc.pollPending();
-        post("/api/v1/admin/partners/" + partnerId + "/kyc/decision", admin, Map.of("approved", true, "notes", "OK"), 204);
+        JsonNode approved = post("/api/v1/admin/partners/" + partnerId + "/approval", admin,
+                Map.of("approved", true, "notes", "Police verification seen"), 200);
+        assertThat(approved.get("approvalStatus").asText()).isEqualTo("APPROVED");
 
         String partnerToken = token("partner-uid", "+919800000002", null, false);
         JsonNode partnerMe = get200("/api/v1/auth/me", partnerToken);
@@ -131,9 +119,10 @@ class DeliveryFlowIT extends IntegrationTest {
         assertThat(route.get("stops")).hasSize(2);
         JsonNode pickupStop = route.get("stops").get(0);
         assertThat(pickupStop.get("type").asText()).isEqualTo("PICKUP");
-        // Child-safety: the partner sees only the parent's first name and a masked number.
+        // Child-safety: the partner sees the parent's first name and no phone number at all.
         assertThat(pickupStop.get("pickup").get("parentFirstName").asText()).isEqualTo("Asha");
-        assertThat(pickupStop.get("pickup").get("maskedPhone").asText()).contains("XX").doesNotContain("98000000");
+        assertThat(pickupStop.get("pickup").has("maskedPhone")).isFalse();
+        assertThat(pickupStop.toString()).doesNotContain("98000000");
         String orderId = pickupStop.get("pickup").get("orderId").asText();
 
         JsonNode today = get200("/api/v1/orders/today", parent);

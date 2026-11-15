@@ -15,8 +15,7 @@ lunchbox:
     qr-signing-key: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
     require-admin-mfa: true
   storage:
-    handover-bucket: test-handover
-    kyc-bucket: test-kyc
+    handover-bucket: test-handover
   bootstrap:
     super-admin-email: ""
   firebase:

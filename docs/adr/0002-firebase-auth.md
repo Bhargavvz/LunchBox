@@ -11,5 +11,5 @@ without waiting for token expiry.
 Admin SDK also provides claims management, user deletion (DPDP erasure) and emulator support.
 
 **Consequences.** Partners and staff are pre-provisioned and linked on their first verified sign-in, which is how
-"only KYC-approved partners can log in" is enforced. TOTP MFA requires upgrading the Firebase project to Identity
+"only approved partners can log in" is enforced. TOTP MFA requires upgrading the Firebase project to Identity
 Platform.

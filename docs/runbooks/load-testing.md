@@ -7,7 +7,7 @@ Run against **staging** sized like production (never production).
 ## Prepare data
 
 1. In staging, create test schools and a service area (admin console).
-2. Create N test partners (admin API `POST /api/v1/admin/partners`), approve their KYC with the fake KYC provider
+2. Create N test partners (admin API `POST /api/v1/admin/partners`), approve them (`POST /api/v1/admin/partners/{id}/approval`)
    (document numbers not starting with `FAIL` verify), schedule shifts for today.
 3. Register parents with Firebase test phone numbers (Firebase console → *Phone numbers for testing*) and create
    children, addresses and subscriptions (staging uses Razorpay test mode).

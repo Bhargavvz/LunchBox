@@ -7,7 +7,6 @@ import com.lunchbox.common.web.PageResponse;
 import com.lunchbox.dispatch.AssignmentService;
 import com.lunchbox.dispatch.DeliveryPartner;
 import com.lunchbox.dispatch.DispatchAdminService;
-import com.lunchbox.dispatch.KycService;
 import com.lunchbox.dispatch.PartnerService;
 import com.lunchbox.dispatch.ShiftService;
 import com.lunchbox.dispatch.web.DispatchDtos.AdminPartnerResponse;
@@ -17,15 +16,12 @@ import com.lunchbox.dispatch.web.DispatchDtos.AutoAssignResult;
 import com.lunchbox.dispatch.web.DispatchDtos.BankAccountRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.CreatePartnerRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.IssueResponse;
-import com.lunchbox.dispatch.web.DispatchDtos.KycDecisionRequest;
-import com.lunchbox.dispatch.web.DispatchDtos.KycDocumentRequest;
-import com.lunchbox.dispatch.web.DispatchDtos.KycDocumentResponse;
+import com.lunchbox.dispatch.web.DispatchDtos.ApprovalRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.PartnerProfileRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.ResolveIssueRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.ShiftRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.ShiftResponse;
-import com.lunchbox.dispatch.web.DispatchDtos.UploadUrlRequest;
-import com.lunchbox.dispatch.web.DispatchDtos.UploadUrlResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -54,16 +50,14 @@ import java.util.UUID;
 public class AdminDispatchController {
 
     private final PartnerService partners;
-    private final KycService kyc;
     private final ShiftService shifts;
     private final AssignmentService assignment;
     private final DispatchAdminService dispatch;
     private final Clock clock;
 
-    public AdminDispatchController(PartnerService partners, KycService kyc, ShiftService shifts,
+    public AdminDispatchController(PartnerService partners, ShiftService shifts,
                                    AssignmentService assignment, DispatchAdminService dispatch, Clock clock) {
         this.partners = partners;
-        this.kyc = kyc;
         this.shifts = shifts;
         this.assignment = assignment;
         this.dispatch = dispatch;
@@ -75,10 +69,10 @@ public class AdminDispatchController {
     @GetMapping("/partners")
     @PreAuthorize(Roles.ADMIN_READ)
     public PageResponse<AdminPartnerResponse> partners(@RequestParam(required = false) String q,
-                                                       @RequestParam(required = false) DeliveryPartner.KycStatus kycStatus,
+                                                       @RequestParam(required = false) DeliveryPartner.ApprovalStatus approvalStatus,
                                                        @RequestParam(required = false) Integer page,
                                                        @RequestParam(required = false) Integer size) {
-        return partners.search(q, kycStatus, page, size);
+        return partners.search(q, approvalStatus, page, size);
     }
 
     @GetMapping("/partners/{partnerId}")
@@ -118,40 +112,13 @@ public class AdminDispatchController {
         return partners.linkBankAccount(partnerId, request);
     }
 
-    // ---- KYC ----
+    // ---- Approval ----
 
-    @PostMapping("/partners/{partnerId}/kyc/upload-url")
-    @PreAuthorize(Roles.ADMIN_WRITE)
-    public UploadUrlResponse kycUploadUrl(@PathVariable UUID partnerId, @Valid @RequestBody UploadUrlRequest request) {
-        return kyc.uploadUrl(partnerId, request);
-    }
-
-    @PostMapping("/partners/{partnerId}/kyc/documents")
-    @PreAuthorize(Roles.ADMIN_WRITE)
-    @ResponseStatus(HttpStatus.CREATED)
-    public KycDocumentResponse addKycDocument(@PathVariable UUID partnerId, @Valid @RequestBody KycDocumentRequest request) {
-        return kyc.addDocument(partnerId, request);
-    }
-
-    @GetMapping("/partners/{partnerId}/kyc/documents")
-    @PreAuthorize(Roles.ADMIN_WRITE)
-    public List<KycDocumentResponse> kycDocuments(@PathVariable UUID partnerId) {
-        return kyc.documents(partnerId);
-    }
-
-    @PostMapping("/partners/{partnerId}/kyc/documents/{documentId}/review")
-    @PreAuthorize(Roles.ADMIN_WRITE)
-    public KycDocumentResponse reviewDocument(@PathVariable UUID partnerId, @PathVariable UUID documentId,
-                                              @RequestParam boolean verified) {
-        return kyc.manualReview(partnerId, documentId, verified);
-    }
-
-    @PostMapping("/partners/{partnerId}/kyc/decision")
-    @PreAuthorize(Roles.ADMIN_WRITE)
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void kycDecision(@PathVariable UUID partnerId, @Valid @RequestBody KycDecisionRequest request,
-                            @AuthenticationPrincipal CurrentUser user) {
-        kyc.decide(partnerId, request, user);
+    @PostMapping("/partners/{partnerId}/approval")
+    @Operation(summary = "Approve or reject a rider; only approved riders can be scheduled or sign in")
+    public AdminPartnerResponse approval(@PathVariable UUID partnerId, @Valid @RequestBody ApprovalRequest request,
+                                         @AuthenticationPrincipal CurrentUser user) {
+        return partners.decide(partnerId, request.approved(), request.notes(), user);
     }
 
     // ---- Shifts ----

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Data-retention policy (docs/security.md#retention). Location pings are dropped by partition in TrackingJobs;
- * handover photos and KYC documents expire through S3 lifecycle rules. This job handles the remaining tables.
+ * handover photos expire through S3 lifecycle rules. This job handles the remaining tables.
  */
 @Slf4j
 @Component

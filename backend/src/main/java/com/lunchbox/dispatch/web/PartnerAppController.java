@@ -6,8 +6,6 @@ import com.lunchbox.common.security.Roles;
 import com.lunchbox.dispatch.PartnerDirectory;
 import com.lunchbox.dispatch.PartnerOperationsService;
 import com.lunchbox.dispatch.ShiftService;
-import com.lunchbox.dispatch.calls.MaskedCallService;
-import com.lunchbox.dispatch.web.DispatchDtos.CallResponse;
 import com.lunchbox.dispatch.web.DispatchDtos.FailureRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.HandoverRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.IssueRequest;
@@ -48,15 +46,12 @@ public class PartnerAppController {
     private final PartnerOperationsService operations;
     private final ShiftService shifts;
     private final PartnerDirectory partners;
-    private final MaskedCallService calls;
     private final IdempotencyService idempotency;
 
-    public PartnerAppController(PartnerOperationsService operations, ShiftService shifts, PartnerDirectory partners,
-                                MaskedCallService calls, IdempotencyService idempotency) {
+    public PartnerAppController(PartnerOperationsService operations, ShiftService shifts, PartnerDirectory partners, IdempotencyService idempotency) {
         this.operations = operations;
         this.shifts = shifts;
         this.partners = partners;
-        this.calls = calls;
         this.idempotency = idempotency;
     }
 
@@ -133,12 +128,6 @@ public class PartnerAppController {
                 TodayRouteResponse.class, () -> operations.deliveryFailed(user.requireUserId(), orderId, request));
     }
 
-    @PostMapping("/orders/{orderId}/call")
-    @Operation(summary = "Call the parent through a masked number")
-    public CallResponse callParent(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID orderId) {
-        calls.partnerCallsParent(user.requireUserId(), orderId);
-        return new CallResponse("RINGING", "Your phone will ring first; then we connect you to the parent.");
-    }
 
     public record IssueCreatedResponse(UUID issueId) {
     }

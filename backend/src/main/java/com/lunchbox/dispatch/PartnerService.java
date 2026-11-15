@@ -3,6 +3,7 @@ package com.lunchbox.dispatch;
 import com.lunchbox.audit.AuditService;
 import com.lunchbox.common.error.Errors;
 import com.lunchbox.common.geo.Geo;
+import com.lunchbox.common.security.CurrentUser;
 import com.lunchbox.common.security.Role;
 import com.lunchbox.common.web.PageResponse;
 import com.lunchbox.common.web.Pagination;
@@ -31,9 +32,11 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
     private final UserDirectory users;
     private final PayoutAccountRegistrar payoutAccounts;
     private final AuditService audit;
+    private final java.time.Clock clock;
 
     public PartnerService(DeliveryPartnerRepository partners, UserDirectory users, PayoutAccountRegistrar payoutAccounts,
-                          AuditService audit) {
+                          AuditService audit, java.time.Clock clock) {
+        this.clock = clock;
         this.partners = partners;
         this.users = users;
         this.payoutAccounts = payoutAccounts;
@@ -89,7 +92,7 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
                 .map(PartnerService::info).toList();
     }
 
-    // ---- ActivationPolicy: only KYC-approved partners may sign in ----
+    // ---- ActivationPolicy: only approved partners may sign in ----
 
     @Override
     public boolean supports(Role role) {
@@ -105,8 +108,8 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
     // ---- Admin ----
 
     @Transactional(readOnly = true)
-    public PageResponse<AdminPartnerResponse> search(String q, DeliveryPartner.KycStatus kyc, Integer page, Integer size) {
-        return PageResponse.of(partners.search(q == null || q.isBlank() ? null : q.trim(), kyc,
+    public PageResponse<AdminPartnerResponse> search(String q, DeliveryPartner.ApprovalStatus status, Integer page, Integer size) {
+        return PageResponse.of(partners.search(q == null || q.isBlank() ? null : q.trim(), status,
                 Pagination.of(page, size, Sort.by("firstName"))), this::toAdmin);
     }
 
@@ -151,6 +154,18 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
         return toAdmin(partner);
     }
 
+    /** Operations' go/no-go on a rider; only approved riders can be scheduled or sign in. */
+    @Transactional
+    public AdminPartnerResponse decide(UUID partnerId, boolean approved, String notes, CurrentUser reviewer) {
+        DeliveryPartner partner = partners.findById(partnerId).orElseThrow(() -> Errors.notFound("Partner"));
+        String before = partner.getApprovalStatus().name();
+        partner.decide(approved, reviewer.userId(), notes == null ? null : notes.trim(), clock.instant());
+        audit.record(approved ? "partner.approved" : "partner.rejected", "Partner", partnerId,
+                Map.of("approvalStatus", before),
+                Map.of("approvalStatus", partner.getApprovalStatus().name(), "notes", notes == null ? "" : notes));
+        return toAdmin(partner);
+    }
+
     @Transactional
     public AdminPartnerResponse linkBankAccount(UUID partnerId, BankAccountRequest request) {
         DeliveryPartner partner = partners.findById(partnerId).orElseThrow(() -> Errors.notFound("Partner"));
@@ -180,15 +195,15 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
 
     static PartnerInfo info(DeliveryPartner p) {
         return new PartnerInfo(p.getId(), p.getUserId(), p.getFirstName(), p.getLastName(), p.getVehicleType(),
-                p.getVehicleNumber(), p.getCapacity(), p.getHomeZone(), p.getServiceRadiusM(), p.getKycStatus(),
-                p.isActive(), p.getRating(), p.getPhotoKey(), p.getPayoutFundAccountId());
+                p.getVehicleNumber(), p.getCapacity(), p.getHomeZone(), p.getServiceRadiusM(), p.getApprovalStatus(),
+                p.isActive(), p.getRating(), p.getPayoutFundAccountId());
     }
 
     private AdminPartnerResponse toAdmin(DeliveryPartner p) {
         String phone = users.findUser(p.getUserId()).map(UserDirectory.UserSummary::phone).orElse(null);
         return new AdminPartnerResponse(p.getId(), p.getUserId(), p.getFirstName(), p.getLastName(), phone,
                 p.getVehicleType(), p.getVehicleNumber(), p.getCapacity(), Geo.toGeoPoint(p.getHomeZone()),
-                p.getServiceRadiusM(), p.getKycStatus(), p.getKycNotes(), p.getRating(), p.getRatingCount(), p.isActive(),
+                p.getServiceRadiusM(), p.getApprovalStatus(), p.getApprovalNotes(), p.getRating(), p.getRatingCount(), p.isActive(),
                 p.getPayoutFundAccountId() != null, p.getCreatedAt());
     }
 

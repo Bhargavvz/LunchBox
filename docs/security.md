@@ -7,7 +7,7 @@ Baseline: OWASP ASVS Level 2. This document maps each requirement to its impleme
 | Actor | Method | Enforcement |
 |---|---|---|
 | Parent, partner | Firebase phone OTP | `Authenticator` verifies the ID token on every request (`FirebaseAuthenticationFilter`) and STOMP CONNECT (`StompAuthInterceptor`) |
-| Partner first sign-in | Phone must match a pre-provisioned, **KYC-approved** partner | `RegistrationService.me` + `PartnerService.checkMayActivate` |
+| Partner first sign-in | Phone must match a pre-provisioned partner **approved by operations** | `RegistrationService.me` + `PartnerService.checkMayActivate` |
 | Staff | Firebase email/password + **TOTP second factor** | `Authenticator.enforceStaffSession`: rejects tokens without `sign_in_second_factor` and sessions older than 12 h; admin UI also signs out after 30 min idle |
 
 Suspension takes effect within 30 s (principal cache TTL) and refresh tokens are revoked.
@@ -26,8 +26,9 @@ Suspension takes effect within 30 s (principal cache TTL) and refresh tokens are
 ## Data minimisation for partners (child safety)
 
 `PickupStopDetails` exposes only: parent first name, masked phone (`+91 98XXXXXX10`), address, landmark,
-instructions, child first name and class. No email, full phone, surname, roll number or allergy notes. Calls go
-through Exotel masking (`MaskedCallService`), only on the delivery day while the order is live, rate-limited.
+instructions, child first name and class. No email, phone number, surname, roll number or allergy notes. There
+is no in-app calling (ADR-0019): a rider who cannot reach a parent marks the pickup failed or raises an issue, and
+operations contacts the parent from the admin console.
 
 ## Verification
 
@@ -43,7 +44,7 @@ through Exotel masking (`MaskedCallService`), only on the delivery day while the
 |---|---|
 | TLS everywhere | ALB TLS 1.2/1.3 policy, HSTS; RDS `rds.force_ssl`; Redis in-transit encryption; AMQPS/STOMP-TLS to Amazon MQ |
 | Encryption at rest | KMS CMK for RDS, Redis, MQ, S3 (SSE-KMS, bucket keys), Secrets Manager |
-| Application-level PII encryption | AES-256-GCM (`PiiCipher`) for address lines/instructions, allergy notes, bank account numbers, KYC document numbers, OTPs |
+| Application-level PII encryption | AES-256-GCM (`PiiCipher`) for address lines/instructions, allergy notes, bank account numbers, OTPs |
 | Private objects | S3 public-access block, deny non-TLS, short-lived pre-signed URLs (5 min) |
 | Secrets | Secrets Manager → ECS task secrets; EAS secrets for mobile; GitHub OIDC for deploys (no static keys) |
 | Input validation | Jakarta Validation on every DTO and parameter; RFC 7807 errors that never leak internals |

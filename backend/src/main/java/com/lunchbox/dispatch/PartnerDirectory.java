@@ -18,7 +18,7 @@ public interface PartnerDirectory {
 
     Optional<PartnerInfo> findByUserId(UUID userId);
 
-    /** The working partner for this user (active and KYC-approved), or 403. */
+    /** The working partner for this user (active and approved by operations), or 403. */
     PartnerInfo requireWorkingPartner(UUID userId);
 
     Map<UUID, PartnerInfo> findAll(Collection<UUID> partnerIds);
@@ -35,10 +35,9 @@ public interface PartnerDirectory {
             int capacity,
             Point homeZone,
             int serviceRadiusM,
-            DeliveryPartner.KycStatus kycStatus,
+            DeliveryPartner.ApprovalStatus approvalStatus,
             boolean active,
             BigDecimal rating,
-            String photoKey,
             String payoutFundAccountId) {
 
         public String displayName() {

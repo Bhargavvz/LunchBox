@@ -16,7 +16,6 @@ lunchbox:
     secret-key: test
     path-style: true
     handover-bucket: lunchbox-local-handover
-    kyc-bucket: lunchbox-local-kyc
 
 management:
   tracing:
