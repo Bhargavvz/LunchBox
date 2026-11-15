@@ -1,5 +1,5 @@
 import { ApiError } from './errors';
-import { addDays, etaText, rupees, todayIst } from './format';
+import { addDays, etaText, rupees, todayIst, istTimeRange } from './format';
 
 describe('format', () => {
   it('formats paise as rupees', () => {
@@ -35,5 +35,14 @@ describe('ApiError', () => {
     expect(new ApiError(503, undefined).retryable).toBe(true);
     expect(new ApiError(429, undefined).retryable).toBe(true);
     expect(new ApiError(409, { code: 'request_in_progress' }).retryable).toBe(true);
+  });
+});
+
+describe('istTimeRange', () => {
+  it('drops the repeated am/pm when both ends share it', () => {
+    expect(istTimeRange('2026-11-16T04:30:00Z', '2026-11-16T05:15:00Z').text).toBe('10:00 – 10:45 am');
+  });
+  it('keeps both suffixes across noon', () => {
+    expect(istTimeRange('2026-11-16T06:15:00Z', '2026-11-16T06:45:00Z').text).toBe('11:45 am – 12:15 pm');
   });
 });

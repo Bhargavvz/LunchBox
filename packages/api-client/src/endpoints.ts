@@ -94,6 +94,18 @@ export function createLunchBoxApi(options: ClientOptions) {
             body,
           }),
         ),
+      /** Prepaid plans (ADR-0018): opens a Razorpay order for the next period. */
+      renew: (subscriptionId: string, idempotencyKey = newIdempotencyKey()) =>
+        unwrap(
+          c.POST('/api/v1/subscriptions/{subscriptionId}/renew', {
+            params: { path: { subscriptionId }, header: { 'Idempotency-Key': idempotencyKey } },
+          }),
+        ),
+      /** Local development only (fake Razorpay): pays a prepaid order. */
+      devSimulateOrderPayment: async (orderId: string) => {
+        const res = await raw('POST', '/api/v1/dev/payments/simulate-order-payment', { orderId });
+        return (await res.json()) as { razorpayPaymentId: string; razorpaySignature: string };
+      },
       updateSchedule: (subscriptionId: string, body: S['UpdateScheduleRequest']) =>
         unwrap(c.PUT('/api/v1/subscriptions/{subscriptionId}/schedule', { params: { path: { subscriptionId } }, body })),
       cancel: (subscriptionId: string, reason: string) =>

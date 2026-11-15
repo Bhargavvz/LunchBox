@@ -47,3 +47,4 @@ export interface Page<T> {
   totalElements: number;
   totalPages: number;
 }
+export type DropBox = Schemas['DropBox'];

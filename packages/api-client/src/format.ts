@@ -51,3 +51,16 @@ export function etaText(seconds: number | null | undefined): string {
   const minutes = Math.max(1, Math.round(seconds / 60));
   return minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`;
 }
+
+/**
+ * A pickup window as people say it: "10:00 – 10:45 am" when both ends fall in the same half of the day, otherwise
+ * "11:45 am – 12:15 pm". Returns the two IST times so callers can put them into their own sentence.
+ */
+export function istTimeRange(fromIso: string | null | undefined, toIso: string | null | undefined, locale = 'en-IN') {
+  const from = istTime(fromIso, locale);
+  const to = istTime(toIso, locale);
+  const a = from.match(/^(.*?)\s*(am|pm)$/i);
+  const b = to.match(/^(.*?)\s*(am|pm)$/i);
+  const shared = !!a && !!b && a[2]!.toLowerCase() === b[2]!.toLowerCase();
+  return { from: shared ? a![1]! : from, to, text: `${shared ? a![1] : from} – ${to}` };
+}
