@@ -25,10 +25,16 @@ import { useRouter } from 'expo-router';
 import { Check, ChevronRight, House, Navigation, Play, School, Siren, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
 import { api } from '../../src/lib/api';
-import { currentPosition, startRouteTracking, stopRouteTracking } from '../../src/lib/locationTask';
-import { navigateTo } from '../../src/lib/navigation';
+import {
+  LocationPermissionError,
+  currentPosition,
+  startRouteTracking,
+  stopRouteTracking,
+} from '../../src/lib/locationTask';
+import { RouteMap } from '../../src/components/RouteMap';
+import { navigateRoute, navigateTo } from '../../src/lib/navigation';
 import { useActionQueue } from '../../src/lib/offlineQueue';
 import { errorMessage } from '../../src/lib/queryClient';
 
@@ -234,6 +240,7 @@ export default function RouteScreen() {
   const activeStop = stops.find((s) => s.status === 'PENDING' || s.status === 'ARRIVED');
   const routeActive = route.data?.status === 'ACTIVE';
   const doneCount = stops.filter((s) => DONE.has(s.status)).length;
+  const remainingStops = stops.filter((s) => !DONE.has(s.status));
   const error = me.error ?? route.error ?? startShift.error ?? startRoute.error ?? endShift.error;
   const dateLine = new Intl.DateTimeFormat(i18n.language === 'hi' ? 'hi-IN' : 'en-IN', {
     weekday: 'long',
@@ -271,10 +278,17 @@ export default function RouteScreen() {
           </PressableScale>
         }
       />
-      {error ? (
+      {error instanceof LocationPermissionError ? (
+        <Banner tone="warning" title={t('route.locationNeededTitle')}>
+          {t('route.locationNeeded')}
+        </Banner>
+      ) : error ? (
         <Banner tone="danger" title={t('common.problem')}>
           {errorMessage(error)}
         </Banner>
+      ) : null}
+      {error instanceof LocationPermissionError && !error.canAskAgain ? (
+        <Button title={t('route.openSettings')} variant="outline" onPress={() => void Linking.openSettings()} />
       ) : null}
       {pending > 0 ? <Banner tone="warning">{t('profile.pendingSync', { count: pending })}</Banner> : null}
       {trackingWarning ? <Banner tone="warning">{t('route.trackingDenied')}</Banner> : null}
@@ -364,6 +378,28 @@ export default function RouteScreen() {
           ) : null}
         </Card>
       )}
+
+      {stops.length > 0 ? (
+        <View style={{ gap: 8 }}>
+          <SectionHeader title={t('route.map')} />
+          <RouteMap
+            stops={stops}
+            activeStopId={routeActive ? activeStop?.stopId : undefined}
+            onSelectStop={(s) => router.push(`/stop/${s.stopId}`)}
+            recenterLabel={t('route.recenter')}
+            accessibilityLabel={t('route.mapA11y', { count: stops.length })}
+          />
+          {routeActive && remainingStops.length > 1 ? (
+            <Button
+              title={t('route.navigateAll')}
+              variant="secondary"
+              icon={Navigation}
+              onPress={() => void navigateRoute(remainingStops.map((s) => s.location))}
+              testID="navigate-route"
+            />
+          ) : null}
+        </View>
+      ) : null}
 
       {routeActive && activeStop ? (
         <View style={{ gap: 8 }}>

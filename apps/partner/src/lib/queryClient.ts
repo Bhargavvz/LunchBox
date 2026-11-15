@@ -1,5 +1,6 @@
 import { ApiError } from '@lunchbox/api-client';
 import { QueryClient } from '@tanstack/react-query';
+import i18n from '../i18n';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,5 +13,7 @@ export const queryClient = new QueryClient({
 });
 
 export function errorMessage(e: unknown): string {
+  // Checked by name so this module does not load the background location task.
+  if (e instanceof Error && e.name === 'LocationPermissionError') return i18n.t('route.locationNeeded');
   return e instanceof Error ? e.message : 'Something went wrong.';
 }

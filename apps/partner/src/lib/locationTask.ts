@@ -87,7 +87,18 @@ export async function stopRouteTracking(): Promise<void> {
   lastSent = null;
 }
 
+/** The rider refused location access; `canAskAgain` false means only the system settings can grant it now. */
+export class LocationPermissionError extends Error {
+  constructor(readonly canAskAgain: boolean) {
+    super('Location permission is required');
+    this.name = 'LocationPermissionError';
+  }
+}
+
+/** Current position for shift start and arrivals; asks for foreground location first. */
 export async function currentPosition(): Promise<{ lat: number; lng: number }> {
+  const permission = await Location.requestForegroundPermissionsAsync();
+  if (permission.status !== 'granted') throw new LocationPermissionError(permission.canAskAgain);
   const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
   return { lat: pos.coords.latitude, lng: pos.coords.longitude };
 }
