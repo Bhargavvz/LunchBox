@@ -82,4 +82,32 @@ class AdminDataIT extends IntegrationTest {
         Long n = jdbc.queryForObject(sql, Long.class, args);
         return n == null ? 0 : n;
     }
+
+    @Test
+    void onlyASuperAdminCanDeleteAParentAccountOnRequest() throws Exception {
+        UUID superId = UUID.randomUUID();
+        UUID opsId = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO users (id, firebase_uid, role, email, display_name, status, preferred_language, created_at, updated_at)
+                VALUES (?, 'erase-super-uid', 'SUPER_ADMIN', 'erase-super@lunchbox.test', 'Super', 'ACTIVE', 'en', now(), now()),
+                       (?, 'erase-ops-uid', 'OPS_ADMIN', 'erase-ops@lunchbox.test', 'Ops', 'ACTIVE', 'en', now(), now())
+                """, superId, opsId);
+        UUID parentUser = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO users (id, firebase_uid, role, display_name, status, preferred_language, created_at, updated_at)
+                VALUES (?, NULL, 'PARENT', 'Asha Rao', 'ACTIVE', 'en', now(), now())
+                """, parentUser);
+        jdbc.update("INSERT INTO parents (id, user_id, first_name, last_name, created_at, updated_at) VALUES (?, ?, 'Asha', 'Rao', now(), now())",
+                UUID.randomUUID(), parentUser);
+        String ops = token("erase-ops-uid", null, "erase-ops@lunchbox.test", true);
+        String superAdmin = token("erase-super-uid", null, "erase-super@lunchbox.test", true);
+
+        post("/api/v1/admin/users/" + parentUser + "/erase", ops, null, 403);
+        post("/api/v1/admin/users/" + parentUser + "/erase", superAdmin, null, 204);
+
+        assertThat(jdbc.queryForObject("SELECT status FROM users WHERE id = ?", String.class, parentUser)).isEqualTo("DELETED");
+        assertThat(jdbc.queryForObject("SELECT display_name FROM users WHERE id = ?", String.class, parentUser)).isNotEqualTo("Asha Rao");
+        // Staff accounts are closed differently and cannot be erased this way.
+        post("/api/v1/admin/users/" + opsId + "/erase", superAdmin, null, 403);
+    }
 }

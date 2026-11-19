@@ -64,6 +64,11 @@ export function PartnerMarkers({ partners }: { partners: { partnerId: string; la
   );
 }
 
+/** A single fixed pin (e.g. a school gate). */
+export function Pin({ position, label }: { position: GeoPoint; label: string }) {
+  return <Marker position={{ lat: position.lat, lng: position.lng }} title={label} />;
+}
+
 /**
  * Polygon drawing without the deprecated Drawing Library: click to add vertices, drag vertices to adjust.
  *

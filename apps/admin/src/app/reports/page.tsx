@@ -2,7 +2,7 @@
 
 import { addDays, todayIst } from '@lunchbox/api-client';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, Download, Star, TrendingUp, TriangleAlert, Trophy } from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, Printer, Star, TrendingUp, TriangleAlert, Trophy } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import {
   Bar,
@@ -128,7 +128,9 @@ export default function ReportsPage() {
       <PageHeader eyebrow="Insights" title="Reports" description="Served from the read replica; figures can lag live data by a few seconds."
         actions={<>
           <Button variant="outline" onClick={() => void csv('/api/v1/admin/reports/on-time.csv', 'on-time')}><Download className="h-4 w-4" aria-hidden />On-time CSV</Button>
-          <Button variant="outline" onClick={() => void csv('/api/v1/admin/reports/partner-performance.csv', 'partners')}><Download className="h-4 w-4" aria-hidden />Partner CSV</Button>
+          <Button variant="outline" onClick={() => void csv('/api/v1/admin/reports/partner-performance.csv', 'partners')}><Download className="h-4 w-4" aria-hidden />Rider CSV</Button>
+          {/* The browser's print dialog saves the report, charts included, as a PDF ("Save as PDF"). */}
+          <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" aria-hidden />Save as PDF</Button>
         </>} />
 
       <div className="mb-6 flex flex-wrap items-end gap-3">

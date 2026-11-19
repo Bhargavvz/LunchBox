@@ -197,3 +197,11 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Printing (and "Save as PDF"): only the page content, on white, without the navigation or buttons. */
+@media print {
+  aside, header, nav, button, [role='radiogroup'] { display: none !important; }
+  body { background: #ffffff !important; color: #16201d !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  .recharts-wrapper { break-inside: avoid; }
+}

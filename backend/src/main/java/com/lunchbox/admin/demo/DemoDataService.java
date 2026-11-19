@@ -101,7 +101,7 @@ public class DemoDataService {
                 INSERT INTO plans (id, code, name, description, price_paise, billing_period, max_days_per_week, active,
                                    visibility, features, entitlements, created_at, updated_at)
                 VALUES (?, 'DEMO_MONTHLY', 'Demo · Monthly lunch', 'Demo plan for trying the admin panel', 249900, 'MONTHLY', 6,
-                        false, 'HIDDEN', '{"Pickup on school days","Live tracking"}', '{"live_tracking": true}', ?, ?)
+                        false, 'HIDDEN', '{"Pickup on school days","Photo at handover"}', '{"live_tracking": true}', ?, ?)
                 """, ts, ts);
         insert("coupons", """
                 INSERT INTO coupons (id, code, description, kind, amount, active, created_at, updated_at)

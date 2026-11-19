@@ -236,6 +236,8 @@ function createAdminApi(c: ReturnType<typeof createRawClient>, raw: (m: string, 
       unwrap(c.GET('/api/v1/admin/parents', { params: { query: { q, page, size } } })),
     children: (query: { schoolId?: string; q?: string; page?: number; size?: number }) =>
       unwrap(c.GET('/api/v1/admin/children', { params: { query } })),
+    /** A parent's deletion request received outside the app (same erasure as in the app). */
+    eraseUser: (userId: string) => unwrap(c.POST('/api/v1/admin/users/{userId}/erase', { params: { path: { userId } } })),
     setUserStatus: (userId: string, action: 'SUSPEND' | 'REACTIVATE') =>
       unwrap(c.POST('/api/v1/admin/users/{userId}/status', { params: { path: { userId } }, body: { action } })),
     staff: (q?: string, page = 0) => unwrap(c.GET('/api/v1/admin/staff', { params: { query: { q, page, size: 25 } } })),

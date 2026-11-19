@@ -6990,6 +6990,27 @@
         "tags" : [ "Tracking" ]
       }
     },
+    "/api/v1/admin/users/{userId}/erase" : {
+      "post" : {
+        "operationId" : "erase",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "summary" : "Delete a parent's account and personal data on their request",
+        "tags" : [ "Admin · Users" ]
+      }
+    },
     "/api/v1/admin/users/{userId}/status" : {
       "post" : {
         "operationId" : "changeStatus",

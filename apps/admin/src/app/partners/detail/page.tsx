@@ -1,12 +1,13 @@
 'use client';
 
-import { addDays, istDate, istTime, todayIst } from '@lunchbox/api-client';
+import { addDays, istDate, istTime, todayIst, type AdminPartner } from '@lunchbox/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Alert, Button, Card, CardTitle, Field, Input, PageHeader, Textarea } from '@/components/ui/primitives';
+import { PinPicker } from '@/components/maps';
+import { Alert, Button, Card, CardTitle, Field, Input, PageHeader, Select, Textarea } from '@/components/ui/primitives';
 import { api, errorText } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -119,6 +120,58 @@ function PayoutSection({ partnerId }: { partnerId: string }) {
   );
 }
 
+const VEHICLES = ['SCOOTER', 'EV_SCOOTER', 'MOTORCYCLE', 'BICYCLE', 'CAR'] as const;
+
+/** Name, vehicle, capacity, home zone, service radius and an optional service-area limit, all editable. */
+function ProfileSection({ partner, editable }: { partner: AdminPartner; editable: boolean }) {
+  const qc = useQueryClient();
+  const areas = useQuery({ queryKey: ['service-areas'], queryFn: api.admin.serviceAreas });
+  const [f, setF] = useState({
+    firstName: partner.firstName, lastName: partner.lastName ?? '', vehicleType: partner.vehicleType,
+    vehicleNumber: partner.vehicleNumber ?? '', capacity: partner.capacity, lat: partner.homeZone.lat, lng: partner.homeZone.lng,
+    serviceRadiusM: partner.serviceRadiusM, serviceAreaId: partner.serviceAreaId ?? '',
+  });
+  const save = useMutation({
+    mutationFn: () => api.admin.updatePartner(partner.id, {
+      firstName: f.firstName.trim(), lastName: f.lastName.trim() || undefined, vehicleType: f.vehicleType,
+      vehicleNumber: f.vehicleNumber.trim() || undefined, capacity: Number(f.capacity), homeZone: { lat: f.lat, lng: f.lng },
+      serviceRadiusM: Number(f.serviceRadiusM), serviceAreaId: f.serviceAreaId || undefined,
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['partner', partner.id] }),
+  });
+  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+  return (
+    <Card>
+      <CardTitle>Profile and work area</CardTitle>
+      <p className="mb-3 text-sm text-muted-foreground">The allocation engine offers this rider orders within the service radius of the home zone, and only inside the service area if one is chosen.</p>
+      <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+        {save.error ? <Alert>{errorText(save.error)}</Alert> : null}
+        {save.isSuccess ? <Alert tone="success">Saved.</Alert> : null}
+        <div className="grid gap-3 md:grid-cols-4">
+          <Field label="First name" htmlFor="pr-first"><Input id="pr-first" required disabled={!editable} value={f.firstName} onChange={set('firstName')} /></Field>
+          <Field label="Last name" htmlFor="pr-last"><Input id="pr-last" disabled={!editable} value={f.lastName} onChange={set('lastName')} /></Field>
+          <Field label="Vehicle" htmlFor="pr-veh">
+            <Select id="pr-veh" disabled={!editable} value={f.vehicleType} onChange={set('vehicleType')}>
+              {VEHICLES.map((v) => <option key={v} value={v}>{v.replace('_', ' ').toLowerCase()}</option>)}
+            </Select>
+          </Field>
+          <Field label="Vehicle number" htmlFor="pr-num"><Input id="pr-num" disabled={!editable} value={f.vehicleNumber} onChange={set('vehicleNumber')} placeholder="TS09AB1234" /></Field>
+          <Field label="Lunchboxes at once" htmlFor="pr-cap"><Input id="pr-cap" type="number" min={1} max={40} disabled={!editable} value={f.capacity} onChange={set('capacity')} /></Field>
+          <Field label="Service radius (m)" htmlFor="pr-rad"><Input id="pr-rad" type="number" min={500} max={30000} disabled={!editable} value={f.serviceRadiusM} onChange={set('serviceRadiusM')} /></Field>
+          <Field label="Limit to service area" htmlFor="pr-area" hint="Optional">
+            <Select id="pr-area" disabled={!editable} value={f.serviceAreaId} onChange={set('serviceAreaId')}>
+              <option value="">Anywhere in the radius</option>
+              {areas.data?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </Select>
+          </Field>
+        </div>
+        <PinPicker label="Home zone" height={240} value={{ lat: f.lat, lng: f.lng }} onChange={(pt) => editable && setF((cur) => ({ ...cur, lat: pt.lat, lng: pt.lng }))} />
+        {editable ? <Button type="submit" disabled={save.isPending}>Save profile</Button> : null}
+      </form>
+    </Card>
+  );
+}
+
 function PartnerDetail() {
   const id = useSearchParams().get('id') ?? '';
   const qc = useQueryClient();
@@ -151,6 +204,7 @@ function PartnerDetail() {
       ) : null}
       <div className="space-y-6">
         {p && can('SUPER_ADMIN', 'OPS_ADMIN') ? <ApprovalSection partnerId={id} status={p.approvalStatus} /> : null}
+        {p ? <ProfileSection key={p.id + p.capacity + p.serviceRadiusM} partner={p} editable={can('SUPER_ADMIN', 'OPS_ADMIN')} /> : null}
         <ShiftsSection partnerId={id} />
         <PayoutSection partnerId={id} />
       </div>

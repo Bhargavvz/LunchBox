@@ -2,83 +2,24 @@
 
 import { istDate, rupees, type PlanResponse } from '@lunchbox/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { ListChecks, Ticket } from 'lucide-react';
+import { useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Alert, Button, Card, CardTitle, EmptyState, Field, Input, PageHeader, Select } from '@/components/ui/primitives';
+import { Coupons, FeatureTypes, PlanEditor } from '@/components/plans';
+import { Alert, Badge, Button, Card, CardHeader, CardTitle, EmptyState, PageHeader, Select } from '@/components/ui/primitives';
 import { api, errorText } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-
-/** One feature per line; blank lines dropped; at most 8 (the server enforces the same). */
-const toFeatures = (text: string) => text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 8);
-
-function FeaturesEditor({ plan, onDone }: { plan: PlanResponse; onDone: () => void }) {
-  const qc = useQueryClient();
-  const [text, setText] = useState(plan.features.join('\n'));
-  const save = useMutation({
-    mutationFn: () => api.admin.updatePlan(plan.id, { name: plan.name, description: plan.description ?? undefined,
-      maxDaysPerWeek: plan.maxDaysPerWeek, active: plan.active, features: toFeatures(text) }),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['plans'] }); onDone(); },
-  });
-  return (
-    <div className="mt-3 space-y-2">
-      {save.error ? <Alert>{errorText(save.error)}</Alert> : null}
-      <textarea aria-label={`Features of ${plan.name}`} rows={4} value={text} onChange={(e) => setText(e.target.value)}
-                className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-      <div className="flex gap-2">
-        <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>Save features</Button>
-        <Button size="sm" variant="ghost" onClick={onDone}>Cancel</Button>
-      </div>
-    </div>
-  );
-}
-
-function PlanForm() {
-  const qc = useQueryClient();
-  const [f, setF] = useState({ code: '', name: '', description: '', price: '', billingPeriod: 'MONTHLY', maxDaysPerWeek: 5, features: '' });
-  const create = useMutation({
-    mutationFn: () => api.admin.createPlan({
-      code: f.code.toUpperCase(), name: f.name, description: f.description || undefined,
-      pricePaise: Math.round(Number(f.price) * 100), billingPeriod: f.billingPeriod as 'MONTHLY' | 'QUARTERLY',
-      maxDaysPerWeek: Number(f.maxDaysPerWeek), features: toFeatures(f.features),
-    }),
-    onSuccess: () => { setF({ ...f, code: '', name: '', price: '', features: '' }); void qc.invalidateQueries({ queryKey: ['plans'] }); },
-  });
-  return (
-    <form className="space-y-3" onSubmit={(e: FormEvent) => { e.preventDefault(); create.mutate(); }}>
-      <CardTitle>New plan</CardTitle>
-      <p className="text-xs text-muted-foreground">Prices are fixed once created at Razorpay; to change a price create a new plan and deactivate the old one.</p>
-      {create.error ? <Alert>{errorText(create.error)}</Alert> : null}
-      <div className="grid gap-3 md:grid-cols-3">
-        <Field label="Code" htmlFor="pl-code"><Input id="pl-code" required value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} placeholder="MONTHLY_5" /></Field>
-        <Field label="Name" htmlFor="pl-name"><Input id="pl-name" required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
-        <Field label="Price (₹)" htmlFor="pl-price"><Input id="pl-price" type="number" min={1} step="0.01" required value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} /></Field>
-        <Field label="Billing" htmlFor="pl-period">
-          <Select id="pl-period" value={f.billingPeriod} onChange={(e) => setF({ ...f, billingPeriod: e.target.value })}>
-            <option>MONTHLY</option><option>QUARTERLY</option>
-          </Select>
-        </Field>
-        <Field label="Max days/week" htmlFor="pl-days"><Input id="pl-days" type="number" min={1} max={6} value={f.maxDaysPerWeek} onChange={(e) => setF({ ...f, maxDaysPerWeek: Number(e.target.value) })} /></Field>
-        <Field label="Description" htmlFor="pl-desc"><Input id="pl-desc" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
-      </div>
-      <Field label="Features shown to parents (one per line, up to 8)" htmlFor="pl-features">
-        <textarea id="pl-features" rows={4} value={f.features} onChange={(e) => setF({ ...f, features: e.target.value })}
-                  placeholder={'Pickup on school days\nLive tracking\nPhoto at handover'}
-                  className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-      </Field>
-      <Button type="submit" disabled={create.isPending}>Create plan</Button>
-    </form>
-  );
-}
 
 export default function SubscriptionsPage() {
   const { can } = useAuth();
   const qc = useQueryClient();
   const [status, setStatus] = useState('');
   const plans = useQuery({ queryKey: ['plans'], queryFn: api.admin.plans });
-  const [editing, setEditing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<PlanResponse | 'new' | null>(null);
   const subs = useQuery({ queryKey: ['subscriptions', status], queryFn: () => api.admin.subscriptions(status || undefined) });
   const togglePlan = useMutation({
+    // Only name, days and active are sent: the server keeps every other setting as it is.
     mutationFn: (p: { id: string; name: string; description: string | null; maxDaysPerWeek: number; active: boolean }) =>
       api.admin.updatePlan(p.id, { name: p.name, description: p.description ?? undefined, maxDaysPerWeek: p.maxDaysPerWeek, active: !p.active }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['plans'] }),
@@ -90,7 +31,8 @@ export default function SubscriptionsPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Money" title="Plans & subscriptions" />
+      <PageHeader eyebrow="Money" title="Plans & subscriptions" description="Plans, their features and limits, coupons, and every family's subscription."
+        actions={can('SUPER_ADMIN') ? <Button onClick={() => setEditing('new')}>New plan</Button> : null} />
       {plans.error ?? subs.error ?? cancel.error ? <Alert>{errorText(plans.error ?? subs.error ?? cancel.error)}</Alert> : null}
       <div className="grid gap-4 md:grid-cols-3">
         {plans.data?.map((p) => (
@@ -100,21 +42,41 @@ export default function SubscriptionsPage() {
             <p className="text-sm text-muted-foreground">
               {p.billingPeriod === 'QUARTERLY' ? 'Every 3 months' : 'Every month'} · up to {p.maxDaysPerWeek} days a week
             </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {p.visibility === 'HIDDEN' ? <Badge>Hidden</Badge> : null}
+              {p.trialDays > 0 ? <Badge tone="success">{p.trialDays}-day trial</Badge> : null}
+              {p.durationPeriods ? <Badge tone="info">Runs {p.durationPeriods} period{p.durationPeriods === 1 ? '' : 's'}</Badge> : null}
+              <Badge tone="default">{p.liveSubscribers}{p.maxSubscribers ? ` / ${p.maxSubscribers}` : ''} subscribers</Badge>
+            </div>
             <p className="mt-1"><code className="rounded-md bg-muted px-1.5 py-0.5 text-[12px] text-muted-foreground">{p.code}</code></p>
-            {p.features.length > 0 ? (
-              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm">{p.features.map((x) => <li key={x}>{x}</li>)}</ul>
+            {p.features.length > 0 || p.featureList.length > 0 ? (
+              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm">
+                {p.features.map((x) => <li key={x}>{x}</li>)}
+                {p.featureList.map((x) => (
+                  <li key={x.key}>{x.label}: <b>{typeof x.value === 'boolean' ? (x.value ? 'yes' : 'no') : Array.isArray(x.value)
+                    ? (x.value as string[]).map((d) => d.slice(0, 3).charAt(0) + d.slice(1, 3).toLowerCase()).join(', ')
+                    : x.valueType === 'MONEY' ? rupees(Number(x.value)) : String(x.value)}</b></li>
+                ))}
+              </ul>
             ) : <p className="mt-2 text-xs text-muted-foreground">No features listed yet.</p>}
-            {editing === p.id ? <FeaturesEditor plan={p} onDone={() => setEditing(null)} /> : null}
-            {can('SUPER_ADMIN') && editing !== p.id ? (
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => togglePlan.mutate(p)}>{p.active ? 'Deactivate' : 'Activate'}</Button>
-                <Button size="sm" variant="ghost" onClick={() => setEditing(p.id)}>Edit features</Button>
+            {can('SUPER_ADMIN') ? (
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setEditing(p)}>Edit plan</Button>
+                <Button size="sm" variant="ghost" onClick={() => togglePlan.mutate(p)}>{p.active ? 'Stop selling' : 'Sell again'}</Button>
               </div>
             ) : null}
           </Card>
         ))}
       </div>
-      {can('SUPER_ADMIN') ? <Card className="mt-6"><PlanForm /></Card> : null}
+      {editing ? <PlanEditor plan={editing === 'new' ? null : editing} onClose={() => setEditing(null)} /> : null}
+      <Card className="mt-6">
+        <CardHeader icon={Ticket} title="Coupons" description="Discount codes parents enter at checkout. Each family can use a code once." />
+        <Coupons editable={can('SUPER_ADMIN')} plans={plans.data ?? []} />
+      </Card>
+      <Card className="mt-6">
+        <CardHeader icon={ListChecks} title="Plan features" description="The kinds of features a plan can have. Add new ones here without a release; built-in ones are enforced by LunchBox." />
+        <FeatureTypes editable={can('SUPER_ADMIN')} />
+      </Card>
       <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
         <CardTitle className="text-[24px]">Subscriptions</CardTitle>
         <Select aria-label="Filter by status" className="w-56" value={status} onChange={(e) => setStatus(e.target.value)}>

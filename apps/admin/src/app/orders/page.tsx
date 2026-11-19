@@ -4,6 +4,7 @@ import { istDateTime, istTime, istTimeRange, todayIst, type AdminOrder } from '@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
+import { DecisionList } from '@/components/allocation';
 import { AppShell } from '@/components/AppShell';
 import { DataTable } from '@/components/DataTable';
 import { StatusBadge, statusLabel } from '@/components/StatusBadge';
@@ -25,11 +26,17 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
     enabled: order.scheduledDate === todayIst(),
   });
   const partners = useQuery({ queryKey: ['partners-approved'], queryFn: () => api.admin.partners({ approvalStatus: 'APPROVED', size: 200 }) });
+  const decisions = useQuery({ queryKey: ['order-allocation', order.id], queryFn: () => api.admin.orderAllocation(order.id) });
+  const partnerName = (id: string | null | undefined) => {
+    const p = partners.data?.items.find((x) => x.id === id);
+    return p ? `${p.firstName} ${p.lastName ?? ''}`.trim() : null;
+  };
   const [partnerId, setPartnerId] = useState('');
   const [reason, setReason] = useState('');
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['admin-orders'] });
     void qc.invalidateQueries({ queryKey: ['admin-order', order.id] });
+    void qc.invalidateQueries({ queryKey: ['order-allocation', order.id] });
   };
   const assign = useMutation({ mutationFn: () => api.admin.assignOrder(order.id, partnerId, reason || undefined), onSuccess: refresh });
   const cancel = useMutation({ mutationFn: () => api.admin.cancelOrder(order.id, reason), onSuccess: refresh });
@@ -46,7 +53,7 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
             ['Status', <StatusBadge key="s" status={order.status} />],
             ['Pickup window', <span key="w" className="tabular">{istTimeRange(order.pickupWindowStart, order.pickupWindowEnd).text}</span>],
             ['Deadline', <span key="d" className="tabular">{istTime(order.deliveryDeadline)}</span>],
-            ['Partner', <span key="p" className={order.partnerId ? 'font-mono text-xs' : 'text-muted-foreground'}>{order.partnerId ?? 'Unassigned'}</span>],
+            ['Rider', <span key="p" className={order.partnerId ? 'font-medium' : 'text-destructive'}>{order.partnerId ? partnerName(order.partnerId) ?? order.partnerId.slice(-8) : 'No rider yet'}</span>],
           ].map(([k, v]) => (
             <div key={String(k)} className="bg-card px-3 py-2.5">
               <dt className="text-xs text-muted-foreground">{k}</dt>
@@ -71,9 +78,13 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
             {detail.isLoading ? <li className="text-muted-foreground">Loading…</li> : null}
           </ol>
         </section>
+        <section>
+          <h3 className="mb-3 text-[13px] font-semibold text-muted-foreground">Who, when and why</h3>
+          {decisions.data ? <DecisionList decisions={decisions.data} /> : <p className="text-sm text-muted-foreground">Loading…</p>}
+        </section>
         {can('SUPER_ADMIN', 'OPS_ADMIN') ? (
           <section className="space-y-3">
-            <Field label="Reason (required to cancel)" htmlFor="reason">
+            <Field label={order.status === 'ASSIGNED' ? 'Reason (required to move or cancel)' : 'Reason (required to cancel)'} htmlFor="reason">
               <Input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} />
             </Field>
             {canAssign ? (
@@ -92,7 +103,12 @@ function OrderDialog({ order, onClose }: { order: AdminOrder; onClose: () => voi
               </Field>
             ) : null}
             <div className="flex gap-2">
-              {canAssign ? <Button disabled={!partnerId || assign.isPending} onClick={() => assign.mutate()}>Assign</Button> : null}
+              {canAssign ? (
+                <Button disabled={!partnerId || assign.isPending || (order.status === 'ASSIGNED' && reason.trim().length < 3)}
+                        onClick={() => assign.mutate()}>
+                  {order.status === 'ASSIGNED' ? 'Move to this rider' : 'Assign'}
+                </Button>
+              ) : null}
               {canCancel ? (
                 <Button variant="destructive" disabled={reason.trim().length < 3 || cancel.isPending} onClick={() => cancel.mutate()}>
                   Cancel order
@@ -118,6 +134,8 @@ export default function OrdersPage() {
     queryFn: () => api.admin.orders({ date, status: status || undefined, page, size: 50 }),
     refetchInterval: 30_000,
   });
+  const partners = useQuery({ queryKey: ['partners-approved'], queryFn: () => api.admin.partners({ approvalStatus: 'APPROVED', size: 200 }) });
+  const riderName = useMemo(() => new Map((partners.data?.items ?? []).map((p) => [p.id, `${p.firstName} ${p.lastName ?? ''}`.trim()])), [partners.data]);
   const generate = useMutation({ mutationFn: () => api.admin.generateOrders(date), onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-orders'] }) });
   const autoAssign = useMutation({ mutationFn: () => api.admin.autoAssign(date), onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-orders'] }) });
 
@@ -128,10 +146,10 @@ export default function OrdersPage() {
     { header: 'Status', cell: ({ row }) => <StatusBadge status={row.original.status} /> },
     { header: 'Pickup', cell: ({ row }) => <span className="tabular whitespace-nowrap">{istTimeRange(row.original.pickupWindowStart, row.original.pickupWindowEnd).text}</span> },
     { header: 'Delivered', cell: ({ row }) => <span className="tabular">{istTime(row.original.deliveredAt)}</span> },
-    { header: 'Partner', cell: ({ row }) => (row.original.partnerId
-      ? <span className="font-mono text-xs">{row.original.partnerId.slice(0, 8)}</span>
-      : <span className="text-[13px] font-medium text-destructive">Unassigned</span>) },
-  ], []);
+    { header: 'Rider', cell: ({ row }) => (row.original.partnerId
+      ? <span>{riderName.get(row.original.partnerId) ?? row.original.partnerId.slice(-8)}</span>
+      : <span className="text-[13px] font-medium text-destructive">No rider yet</span>) },
+  ], [riderName]);
 
   async function exportCsv() {
     const blob = await api.admin.downloadCsv('/api/v1/admin/orders/export.csv', { date, status: status || undefined });
@@ -144,13 +162,13 @@ export default function OrdersPage() {
         actions={<>
           <Button variant="outline" onClick={() => void exportCsv()}>Export CSV</Button>
           {can('SUPER_ADMIN', 'OPS_ADMIN') ? <>
-            <Button variant="outline" disabled={generate.isPending} onClick={() => generate.mutate()}>Generate orders</Button>
-            <Button disabled={autoAssign.isPending} onClick={() => autoAssign.mutate()}>Auto-assign</Button>
+            <Button variant="outline" disabled={generate.isPending} onClick={() => generate.mutate()}>Create orders</Button>
+            <Button disabled={autoAssign.isPending} onClick={() => autoAssign.mutate()}>Allocate riders</Button>
           </> : null}
         </>} />
       {orders.error ? <Alert>{errorText(orders.error)}</Alert> : null}
-      {generate.data ? <Alert tone="success">Generated {generate.data.created} orders ({generate.data.skipped} skipped).</Alert> : null}
-      {autoAssign.data ? <Alert tone="success">Assigned {autoAssign.data.assigned} of {autoAssign.data.considered}; {autoAssign.data.unassigned} still unassigned.</Alert> : null}
+      {generate.data ? <Alert tone="success">Created {generate.data.created} orders ({generate.data.skipped} skipped: leave, holidays, closed schools or already created).</Alert> : null}
+      {autoAssign.data ? <Alert tone="success">Assigned {autoAssign.data.assigned} of {autoAssign.data.considered}; {autoAssign.data.unassigned} still without a rider. See Rider allocation for the reasons.</Alert> : null}
       <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border bg-card p-4">
         <Field label="Date" htmlFor="date"><Input id="date" type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(0); }} /></Field>
         <Field label="Status" htmlFor="status">

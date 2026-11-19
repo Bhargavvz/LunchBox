@@ -40,7 +40,7 @@ export default function PayoutsPage() {
           <tbody>
             {payouts.data?.items.map((p) => (
               <tr key={p.id}>
-                <td className="font-mono text-xs">{p.partnerId.slice(0, 8)}</td>
+                <td className="font-mono text-xs">{p.partnerId.slice(-8)}</td>
                 <td>{istDate(p.periodStart)} – {istDate(p.periodEnd)}</td>
                 <td className="font-semibold">{rupees(p.amountPaise)}</td>
                 <td><StatusBadge status={p.status} /></td>

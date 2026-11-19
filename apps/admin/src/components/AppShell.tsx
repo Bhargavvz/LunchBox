@@ -28,6 +28,9 @@ import {
   Wallet,
   X,
   type LucideIcon,
+  Baby,
+  Receipt,
+  Shuffle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -56,18 +59,21 @@ const NAV: NavItem[] = [
   { href: '/dashboard/', label: 'Dashboard', icon: LayoutDashboard, roles: STAFF, group: 'Operations', keywords: 'today live map home' },
   { href: '/live/', label: 'Live tracking', icon: Radar, roles: STAFF, group: 'Operations', keywords: 'map riders gps where online busy' },
   { href: '/orders/', label: 'Orders', icon: ClipboardList, roles: STAFF, group: 'Operations', keywords: 'deliveries pickups assign cancel' },
-  { href: '/partners/', label: 'Partners', icon: Truck, roles: STAFF, group: 'Operations', keywords: 'riders drivers approval' },
+  { href: '/allocation/', label: 'Rider allocation', icon: Shuffle, roles: STAFF, group: 'Operations', keywords: 'assign generate orders engine weights why decisions' },
+  { href: '/partners/', label: 'Riders', icon: Truck, roles: STAFF, group: 'Operations', keywords: 'partners drivers approval shifts' },
   { href: '/issues/', label: 'Issues & SOS', icon: LifeBuoy, roles: STAFF, group: 'Operations', keywords: 'problems emergency support' },
-  { href: '/parents/', label: 'Parents & children', icon: Users, roles: STAFF, group: 'People', keywords: 'families students kids' },
+  { href: '/parents/', label: 'Parents', icon: Users, roles: STAFF, group: 'People', keywords: 'families accounts' },
+  { href: '/children/', label: 'Children', icon: Baby, roles: STAFF, group: 'People', keywords: 'students kids class' },
   { href: '/schools/', label: 'Schools', icon: Building2, roles: STAFF, group: 'People', keywords: 'holidays timings' },
   { href: '/service-areas/', label: 'Service areas', icon: Map, roles: STAFF, group: 'People', keywords: 'zones polygons coverage' },
   { href: '/subscriptions/', label: 'Plans & subscriptions', icon: CreditCard, roles: STAFF, group: 'Money', keywords: 'pricing billing razorpay' },
+  { href: '/payments/', label: 'Payments', icon: Receipt, roles: STAFF, group: 'Money', keywords: 'razorpay upi card received failed' },
   { href: '/payouts/', label: 'Payouts', icon: Wallet, roles: STAFF, group: 'Money', keywords: 'earnings razorpayx transfers' },
   { href: '/reports/', label: 'Reports', icon: BarChart3, roles: STAFF, group: 'Insights', keywords: 'analytics charts export csv' },
   { href: '/notifications/', label: 'Broadcasts', icon: Bell, roles: WRITE, group: 'Insights', keywords: 'push sms announce' },
-  { href: '/audit/', label: 'Audit log', icon: FileClock, roles: STAFF, group: 'Admin', keywords: 'history changes who' },
+  { href: '/audit/', label: 'Logs', icon: FileClock, roles: STAFF, group: 'Admin', keywords: 'audit history changes who errors warnings' },
   { href: '/settings/', label: 'Settings', icon: Settings, roles: STAFF, group: 'Admin', keywords: 'configuration app settings' },
-  { href: '/staff/', label: 'Staff', icon: ShieldCheck, roles: ['SUPER_ADMIN'], group: 'Admin', keywords: 'team admins roles' },
+  { href: '/staff/', label: 'Staff & roles', icon: ShieldCheck, roles: ['SUPER_ADMIN'], group: 'Admin', keywords: 'team admins roles permissions' },
   { href: '/school/', label: "Today's deliveries", icon: School, roles: ['SCHOOL_ADMIN'], group: 'My school', keywords: 'receipt incoming' },
 ];
 

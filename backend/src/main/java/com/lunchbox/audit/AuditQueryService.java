@@ -113,7 +113,10 @@ public class AuditQueryService {
         return new AuditLogResponse(a.getId(), a.getActorUserId(),
                 a.getActorUserId() == null ? "System" : names.get(a.getActorUserId()), a.getActorRole(), a.getAction(),
                 a.getEntityType(), a.getEntityId(), parse(a.getBeforeState()), parse(a.getAfterState()), a.getIp(),
-                a.getUserAgent(), a.getRequestId(), a.getOccurredAt(), a.getSeverity(), a.getModule(), a.getSummary());
+                a.getUserAgent(), a.getRequestId(), a.getOccurredAt(), a.getSeverity(),
+                a.getModule() != null ? a.getModule() : AuditSummaries.module(a.getAction()),
+                // Entries written before summaries existed get theirs from the same wording now.
+                a.getSummary() != null ? a.getSummary() : AuditSummaries.describe(a.getAction(), a.getEntityType(), null, null));
     }
 
     private JsonNode parse(String json) {

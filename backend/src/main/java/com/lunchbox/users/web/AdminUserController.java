@@ -33,8 +33,10 @@ public class AdminUserController {
 
     private final StaffService staff;
     private final UserDirectory users;
+    private final com.lunchbox.users.AccountService accounts;
 
-    public AdminUserController(StaffService staff, UserDirectory users) {
+    public AdminUserController(StaffService staff, UserDirectory users, com.lunchbox.users.AccountService accounts) {
+        this.accounts = accounts;
         this.staff = staff;
         this.users = users;
     }
@@ -79,5 +81,17 @@ public class AdminUserController {
             case SUSPEND -> users.suspendUser(userId);
             case REACTIVATE -> users.reactivateUser(userId);
         }
+    }
+
+    /**
+     * Deletes a parent's account on their request when they cannot use the app (the same erasure as Account → Delete
+     * account in the app). Super admins only; logged.
+     */
+    @PostMapping("/users/{userId}/erase")
+    @PreAuthorize(Roles.SUPER_ADMIN)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @io.swagger.v3.oas.annotations.Operation(summary = "Delete a parent's account and personal data on their request")
+    public void erase(@PathVariable UUID userId) {
+        accounts.deleteAccount(userId);
     }
 }

@@ -27,6 +27,7 @@
   },
   "pnpm": {
     "overrides": {
+      "recharts>react-is": "19.1.0",
       "metro": "0.83.3",
       "metro-babel-transformer": "0.83.3",
       "metro-cache": "0.83.3",

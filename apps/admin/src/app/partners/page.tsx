@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Alert, Button, Dialog, DialogContent, DialogTrigger, Field, Input, PageHeader, Select } from '@/components/ui/primitives';
 import { api, errorText } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useDebounced } from '@/lib/useDebounced';
 
 const VEHICLES = ['BICYCLE', 'SCOOTER', 'MOTORCYCLE', 'EV_SCOOTER', 'CAR'] as const;
 
@@ -63,11 +64,12 @@ function CreatePartner() {
 export default function PartnersPage() {
   const { can } = useAuth();
   const [q, setQ] = useState('');
+  const search = useDebounced(q.trim(), 300);
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(0);
   const partners = useQuery({
-    queryKey: ['partners', q, status, page],
-    queryFn: () => api.admin.partners({ q: q || undefined, approvalStatus: status || undefined, page, size: 25 }),
+    queryKey: ['partners', search, status, page],
+    queryFn: () => api.admin.partners({ q: search || undefined, approvalStatus: status || undefined, page, size: 25 }),
   });
   const columns = useMemo<ColumnDef<AdminPartner, unknown>[]>(() => [
     { header: 'Name', cell: ({ row }) => <Link className="font-medium text-primary hover:underline" href={`/partners/detail/?id=${row.original.id}`}>{row.original.firstName} {row.original.lastName ?? ''}</Link> },
@@ -76,13 +78,13 @@ export default function PartnersPage() {
     { header: 'Capacity', accessorKey: 'capacity' },
     { header: 'Approval', cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} /> },
     { header: 'Rating', cell: ({ row }) => row.original.rating ?? '—' },
-    { header: 'Active', cell: ({ row }) => (row.original.active ? 'Yes' : 'No') },
+    { header: 'Status', cell: ({ row }) => <StatusBadge status={row.original.active ? 'ACTIVE' : 'INACTIVE'} /> },
   ], []);
   return (
     <AppShell>
-      <PageHeader eyebrow="Operations" title="Delivery partners" actions={can('SUPER_ADMIN', 'OPS_ADMIN') ? <CreatePartner /> : null} />
+      <PageHeader eyebrow="Operations" title="Riders" description="Delivery partners: approval, shifts, work area, earnings." actions={can('SUPER_ADMIN', 'OPS_ADMIN') ? <CreatePartner /> : null} />
       <div className="mb-4 flex flex-wrap gap-3">
-        <Field label="Search" htmlFor="q"><Input id="q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Name or vehicle" /></Field>
+        <Field label="Search" htmlFor="q"><Input id="q" type="search" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Name or vehicle" /></Field>
         <Field label="Approval" htmlFor="approval">
           <Select id="approval" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
             {['', 'PENDING', 'APPROVED', 'REJECTED'].map((s) => <option key={s} value={s}>{s || 'All'}</option>)}
@@ -92,7 +94,7 @@ export default function PartnersPage() {
       {partners.error ? <Alert>{errorText(partners.error)}</Alert> : null}
       <DataTable caption="Partners" columns={columns} data={partners.data?.items ?? []} page={page}
                  totalPages={partners.data?.totalPages ?? 0} totalElements={partners.data?.totalElements ?? 0}
-                 onPageChange={setPage} loading={partners.isLoading} />
+                 onPageChange={setPage} loading={partners.isLoading} emptyTitle={search || status ? 'No rider matches' : 'No riders yet'} />
     </AppShell>
   );
 }
