@@ -61,7 +61,9 @@ class DeliveryFlowIT extends IntegrationTest {
                         Map.of("lat", 13.05, "lng", 77.70), Map.of("lat", 13.05, "lng", 77.50))), 201);
 
         JsonNode plan = post("/api/v1/admin/plans", admin, Map.of("code", "MONTHLY_5", "name", "Monthly · 5 days",
-                "pricePaise", 249900, "billingPeriod", "MONTHLY", "maxDaysPerWeek", 5), 201);
+                "pricePaise", 249900, "billingPeriod", "MONTHLY", "maxDaysPerWeek", 5,
+                "features", List.of("Pickup on school days", " Live tracking ", "Live tracking")), 201);
+        assertThat(plan.get("features").toString()).isEqualTo("[\"Pickup on school days\",\"Live tracking\"]");
 
         // ---- Parent onboarding ----
         String parent = token("parent-uid", "+919800000001", null, false);
@@ -135,6 +137,23 @@ class DeliveryFlowIT extends IntegrationTest {
         // ---- Monday morning ----
         clock.set(Instant.parse("2026-10-19T03:30:00Z")); // 09:00 IST
         post("/api/v1/partner/shift/start", partnerToken, Map.of("location", Map.of("lat", 12.97, "lng", 77.59)), 200);
+
+        // Operations map: the rider on shift with phone, availability and the lunchbox they will handle next.
+        JsonNode fleet = get200("/api/v1/admin/tracking/partners", admin);
+        JsonNode rider = null;
+        for (JsonNode f : fleet) {
+            if (f.get("partnerId").asText().equals(partnerId)) {
+                rider = f;
+            }
+        }
+        assertThat(rider).isNotNull();
+        assertThat(rider.get("shiftStatus").asText()).isEqualTo("ACTIVE");
+        assertThat(rider.get("phone").asText()).startsWith("+91");
+        assertThat(rider.get("openOrders").asInt()).isEqualTo(1);
+        assertThat(rider.get("currentDelivery").get("status").asText()).isEqualTo("ASSIGNED");
+        assertThat(rider.get("currentDelivery").get("schoolName").asText()).isEqualTo("Delhi Public School");
+        call(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/admin/tracking/partners"),
+                parent, null, 403);
         JsonNode route = post("/api/v1/partner/route/start", partnerToken, null, 200);
         assertThat(route.get("stops")).hasSize(2);
         JsonNode pickupStop = route.get("stops").get(0);
@@ -154,6 +173,24 @@ class DeliveryFlowIT extends IntegrationTest {
                 "consents", List.of(Map.of("purpose", "ACCOUNT_AND_SERVICE", "granted", true))), 201);
         call(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/orders/" + orderId),
                 stranger, null, 404);
+
+        // The app can register the same push token twice at once; both succeed and one row remains. Signing in as
+        // someone else on the same phone moves the token to that user.
+        Map<String, String> device = Map.of("token", "fcm-race-token", "platform", "ANDROID", "app", "PARENT");
+        var devicePool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            var a1 = devicePool.submit(() -> post("/api/v1/devices", stranger, device, 204));
+            var a2 = devicePool.submit(() -> post("/api/v1/devices", stranger, device, 204));
+            a1.get();
+            a2.get();
+        } finally {
+            devicePool.shutdown();
+        }
+        post("/api/v1/devices", parent, device, 204);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM device_tokens WHERE token = 'fcm-race-token'", Integer.class))
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT u.firebase_uid FROM device_tokens d JOIN users u ON u.id = d.user_id"
+                + " WHERE d.token = 'fcm-race-token'", String.class)).isNotEqualTo("stranger-uid");
 
         // After the school's delivery deadline the parent is told the code expired instead of being shown a dead one.
         Instant morning = clock.instant();

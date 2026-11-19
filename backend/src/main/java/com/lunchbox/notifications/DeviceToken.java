@@ -47,12 +47,4 @@ public class DeviceToken extends BaseEntity {
         this.app = app;
         this.lastSeenAt = at;
     }
-
-    /** A token moves with the device: re-registering under another user (shared phone) re-binds it. */
-    void rebind(UUID userId, Platform platform, App app, Instant at) {
-        this.userId = userId;
-        this.platform = platform;
-        this.app = app;
-        this.lastSeenAt = at;
-    }
 }

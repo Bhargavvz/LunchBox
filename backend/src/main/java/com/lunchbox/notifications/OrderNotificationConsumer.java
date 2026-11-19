@@ -75,6 +75,7 @@ public class OrderNotificationConsumer {
         String child = children.require(e.childId()).firstName();
         Map<String, String> data = Map.of("orderId", e.orderId().toString(), "status", e.to().name());
         NotificationTemplate template = switch (e.to()) {
+            case ASSIGNED -> NotificationTemplate.ORDER_ASSIGNED;
             case PARTNER_EN_ROUTE -> NotificationTemplate.ORDER_EN_ROUTE;
             case PICKED_UP -> NotificationTemplate.ORDER_PICKED_UP;
             case AT_SCHOOL -> NotificationTemplate.ORDER_AT_SCHOOL;

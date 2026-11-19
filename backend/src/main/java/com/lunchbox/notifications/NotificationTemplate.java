@@ -6,6 +6,7 @@ package com.lunchbox.notifications;
  * safety-relevant updates when push is not possible.
  */
 public enum NotificationTemplate {
+    ORDER_ASSIGNED("order.assigned", null, false),
     ORDER_EN_ROUTE("order.en_route", null, true),
     PARTNER_ARRIVING("order.partner_arriving", "PARTNER_ARRIVING", true),
     ORDER_PICKED_UP("order.picked_up", "ORDER_PICKED_UP", true),

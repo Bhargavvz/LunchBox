@@ -936,6 +936,27 @@
         "required" : [ "addressId", "childId", "daysOfWeek", "planId", "startDate" ],
         "type" : "object"
       },
+      "CurrentDelivery" : {
+        "properties" : {
+          "deliveryDeadline" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "orderId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "schoolName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "SCHEDULED", "ASSIGNED", "REASSIGNED", "PARTNER_EN_ROUTE", "PICKED_UP", "IN_TRANSIT", "AT_SCHOOL", "DELIVERED", "CANCELLED", "PICKUP_FAILED", "DELIVERY_FAILED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "deliveryDeadline", "orderId", "schoolName", "status" ],
+        "type" : "object"
+      },
       "DailyEarning" : {
         "properties" : {
           "amountPaise" : {
@@ -1138,6 +1159,53 @@
           }
         },
         "required" : [ "count", "reason", "status" ],
+        "type" : "object"
+      },
+      "FleetPartnerResponse" : {
+        "properties" : {
+          "availability" : {
+            "enum" : [ "ONLINE", "BUSY", "OFFLINE" ],
+            "type" : "string"
+          },
+          "currentDelivery" : {
+            "$ref" : "#/components/schemas/CurrentDelivery"
+          },
+          "location" : {
+            "$ref" : "#/components/schemas/LiveLocation"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "openOrders" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "partnerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "plannedEnd" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "plannedStart" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "shiftStatus" : {
+            "type" : "string"
+          },
+          "vehicleNumber" : {
+            "type" : "string"
+          },
+          "vehicleType" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "availability", "currentDelivery", "location", "name", "openOrders", "partnerId", "phone", "plannedEnd", "plannedStart", "shiftStatus", "vehicleNumber", "vehicleType" ],
         "type" : "object"
       },
       "GenerationResult" : {
@@ -1526,6 +1594,9 @@
           "phone" : {
             "type" : "string"
           },
+          "photoUrl" : {
+            "type" : "string"
+          },
           "preferredLanguage" : {
             "type" : "string"
           },
@@ -1549,7 +1620,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "consents", "displayName", "email", "parent", "phone", "preferredLanguage", "registered", "role", "schoolId", "status", "userId" ],
+        "required" : [ "consents", "displayName", "email", "parent", "phone", "photoUrl", "preferredLanguage", "registered", "role", "schoolId", "status", "userId" ],
         "type" : "object"
       },
       "NotificationResponse" : {
@@ -2280,9 +2351,12 @@
           "subscriptionId" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "transactionId" : {
+            "type" : "string"
           }
         },
-        "required" : [ "amountPaise", "createdAt", "currency", "description", "failureReason", "id", "method", "paidAt", "status", "subscriptionId" ],
+        "required" : [ "amountPaise", "createdAt", "currency", "description", "failureReason", "id", "method", "paidAt", "status", "subscriptionId", "transactionId" ],
         "type" : "object"
       },
       "PayoutResponse" : {
@@ -2345,6 +2419,31 @@
           }
         },
         "required" : [ "created", "periodEnd", "totalPaise" ],
+        "type" : "object"
+      },
+      "PhotoUploadResponse" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "headers" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "method" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "expiresAt", "headers", "key", "method", "url" ],
         "type" : "object"
       },
       "PhotoUrlResponse" : {
@@ -2518,6 +2617,16 @@
             "minLength" : 0,
             "type" : "string"
           },
+          "features" : {
+            "items" : {
+              "maxLength" : 80,
+              "minLength" : 0,
+              "type" : "string"
+            },
+            "maxItems" : 8,
+            "minItems" : 0,
+            "type" : "array"
+          },
           "maxDaysPerWeek" : {
             "format" : "int32",
             "maximum" : 6,
@@ -2552,6 +2661,12 @@
           "description" : {
             "type" : "string"
           },
+          "features" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "id" : {
             "format" : "uuid",
             "type" : "string"
@@ -2568,7 +2683,7 @@
             "type" : "integer"
           }
         },
-        "required" : [ "active", "billingPeriod", "code", "description", "id", "maxDaysPerWeek", "name", "pricePaise" ],
+        "required" : [ "active", "billingPeriod", "code", "description", "features", "id", "maxDaysPerWeek", "name", "pricePaise" ],
         "type" : "object"
       },
       "PlanUpdateRequest" : {
@@ -2580,6 +2695,16 @@
             "maxLength" : 500,
             "minLength" : 0,
             "type" : "string"
+          },
+          "features" : {
+            "items" : {
+              "maxLength" : 80,
+              "minLength" : 0,
+              "type" : "string"
+            },
+            "maxItems" : 8,
+            "minItems" : 0,
+            "type" : "array"
           },
           "maxDaysPerWeek" : {
             "format" : "int32",
@@ -2988,6 +3113,17 @@
         "required" : [ "serviceable" ],
         "type" : "object"
       },
+      "SetPhotoRequest" : {
+        "properties" : {
+          "key" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "key" ],
+        "type" : "object"
+      },
       "SettingResponse" : {
         "properties" : {
           "description" : {
@@ -3301,6 +3437,12 @@
       },
       "UpdateProfileRequest" : {
         "properties" : {
+          "email" : {
+            "format" : "email",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
           "firstName" : {
             "maxLength" : 80,
             "minLength" : 1,
@@ -5580,6 +5722,28 @@
         "tags" : [ "Tracking" ]
       }
     },
+    "/api/v1/admin/tracking/partners" : {
+      "get" : {
+        "operationId" : "fleet",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/FleetPartnerResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Riders on shift today with location, availability (online/busy/offline) and current delivery",
+        "tags" : [ "Tracking" ]
+      }
+    },
     "/api/v1/admin/users/{userId}/status" : {
       "post" : {
         "operationId" : "changeStatus",
@@ -5970,7 +6134,7 @@
             "description" : "OK"
           }
         },
-        "summary" : "Update name or preferred language",
+        "summary" : "Update name, email or preferred language",
         "tags" : [ "Account" ]
       }
     },
@@ -6038,6 +6202,90 @@
           }
         },
         "summary" : "Download all personal data held about me (DPDP right to access)",
+        "tags" : [ "Account" ]
+      }
+    },
+    "/api/v1/me/phone" : {
+      "post" : {
+        "operationId" : "syncPhone",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Adopt the phone number just verified with an OTP (send a freshly refreshed ID token)",
+        "tags" : [ "Account" ]
+      }
+    },
+    "/api/v1/me/photo" : {
+      "delete" : {
+        "operationId" : "removePhoto",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Remove the profile photo (shows the default avatar)",
+        "tags" : [ "Account" ]
+      },
+      "put" : {
+        "operationId" : "setPhoto",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetPhotoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Use an uploaded photo as the profile photo",
+        "tags" : [ "Account" ]
+      }
+    },
+    "/api/v1/me/photo/upload-url" : {
+      "post" : {
+        "operationId" : "photoUploadUrl",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PhotoUploadResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Signed upload link for a new profile photo (JPEG, up to 2 MB)",
         "tags" : [ "Account" ]
       }
     },

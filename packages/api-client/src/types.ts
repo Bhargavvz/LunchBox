@@ -39,6 +39,7 @@ export type AdminPartner = Schemas['AdminPartnerResponse'];
 export type SchoolResponse = Schemas['SchoolResponse'];
 export type SchoolRequest = Schemas['SchoolRequest'];
 export type DashboardResponse = Schemas['DashboardResponse'];
+export type FleetPartner = Schemas['FleetPartnerResponse'];
 
 export interface Page<T> {
   items: T[];

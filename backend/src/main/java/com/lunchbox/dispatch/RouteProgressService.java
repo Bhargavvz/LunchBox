@@ -33,10 +33,12 @@ public class RouteProgressService implements DispatchTracking {
     private final OrderCommands orderCommands;
     private final OutboxPublisher outbox;
     private final Clock clock;
+    private final PartnerShiftRepository shifts;
 
     public RouteProgressService(RouteRepository routes, RouteStopRepository stops, DeliveryPartnerRepository partners,
                                 OrderQueries orderQueries, OrderCommands orderCommands, OutboxPublisher outbox,
-                                Clock clock) {
+                                Clock clock, PartnerShiftRepository shifts) {
+        this.shifts = shifts;
         this.routes = routes;
         this.stops = stops;
         this.partners = partners;
@@ -44,6 +46,15 @@ public class RouteProgressService implements DispatchTracking {
         this.orderCommands = orderCommands;
         this.outbox = outbox;
         this.clock = clock;
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<ShiftView> shiftsOn(LocalDate date) {
+        return shifts.findByShiftDate(date).stream()
+                .map(s -> new ShiftView(s.getPartnerId(), s.getStatus().name(), s.getPlannedStart(), s.getPlannedEnd(),
+                        s.getStartedAt()))
+                .toList();
     }
 
     /** Payload of {@code route.completed}; drives the distance earning. */

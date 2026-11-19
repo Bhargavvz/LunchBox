@@ -15,6 +15,11 @@ lunchbox:
     endpoint: ""
     path-style: false
 
+management:
+  tracing:
+    # No trace collector on the single server; set TRACING_ENABLED=true and OTLP_TRACES_ENDPOINT to send traces.
+    enabled: ${TRACING_ENABLED:false}
+
 springdoc:
   swagger-ui:
     enabled: false

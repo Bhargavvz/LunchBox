@@ -170,10 +170,8 @@ public class NotificationService implements PersonalDataContributor {
 
     @Transactional
     public void registerDevice(UUID userId, RegisterDeviceRequest request) {
-        Instant now = clock.instant();
-        tokens.findByToken(request.token()).ifPresentOrElse(
-                t -> t.rebind(userId, request.platform(), request.app(), now),
-                () -> tokens.save(new DeviceToken(userId, request.token(), request.platform(), request.app(), now)));
+        tokens.upsert(com.lunchbox.common.persistence.UuidV7.generate(), userId, request.token(),
+                request.platform().name(), request.app().name(), clock.instant());
     }
 
     @Transactional

@@ -3,6 +3,7 @@ package com.lunchbox.tracking;
 import com.lunchbox.common.security.CurrentUser;
 import com.lunchbox.common.security.LunchBoxAuthentication;
 import com.lunchbox.common.security.Roles;
+import com.lunchbox.tracking.TrackingDtos.FleetPartnerResponse;
 import com.lunchbox.tracking.TrackingDtos.IngestResult;
 import com.lunchbox.tracking.TrackingDtos.LivePartnerResponse;
 import com.lunchbox.tracking.TrackingDtos.PingBatchRequest;
@@ -35,9 +36,11 @@ import java.util.UUID;
 public class TrackingController {
 
     private final TrackingService tracking;
+    private final FleetService fleet;
 
-    public TrackingController(TrackingService tracking) {
+    public TrackingController(TrackingService tracking, FleetService fleet) {
         this.tracking = tracking;
+        this.fleet = fleet;
     }
 
     /** STOMP: partner app sends single fixes to /app/partner.location while the socket is up. */
@@ -70,6 +73,13 @@ public class TrackingController {
     @PreAuthorize(Roles.ADMIN_READ)
     public List<LivePartnerResponse> live() {
         return tracking.livePartners();
+    }
+
+    @GetMapping("/api/v1/admin/tracking/partners")
+    @PreAuthorize(Roles.ADMIN_READ)
+    @Operation(summary = "Riders on shift today with location, availability (online/busy/offline) and current delivery")
+    public List<FleetPartnerResponse> fleet() {
+        return fleet.today();
     }
 
     @GetMapping("/api/v1/admin/tracking/nearby")

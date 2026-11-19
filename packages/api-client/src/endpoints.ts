@@ -41,6 +41,11 @@ export function createLunchBoxApi(options: ClientOptions) {
       recordConsent: (body: S['RecordConsentRequest']) => unwrap(c.POST('/api/v1/me/consents', { body })),
       exportData: () => unwrap(c.GET('/api/v1/me/export')),
       deleteAccount: () => unwrap(c.DELETE('/api/v1/me')),
+      photoUploadUrl: () => unwrap(c.POST('/api/v1/me/photo/upload-url')),
+      setPhoto: (body: S['SetPhotoRequest']) => unwrap(c.PUT('/api/v1/me/photo', { body })),
+      removePhoto: () => unwrap(c.DELETE('/api/v1/me/photo')),
+      /** After the new number is verified with Firebase, adopts it from the refreshed ID token. */
+      syncPhone: () => unwrap(c.POST('/api/v1/me/phone')),
     },
 
     schools: {
@@ -299,6 +304,7 @@ function createAdminApi(c: ReturnType<typeof createRawClient>, raw: (m: string, 
 
     plans: () => unwrap(c.GET('/api/v1/admin/plans')),
     createPlan: (body: Schemas['PlanRequest']) => unwrap(c.POST('/api/v1/admin/plans', { body })),
+    fleet: () => unwrap(c.GET('/api/v1/admin/tracking/partners')),
     updatePlan: (planId: string, body: Schemas['PlanUpdateRequest']) =>
       unwrap(c.PUT('/api/v1/admin/plans/{planId}', { params: { path: { planId } }, body })),
     subscriptions: (status?: string, page = 0) =>

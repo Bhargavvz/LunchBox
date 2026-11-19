@@ -50,6 +50,10 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    /** Storage key of the profile photo (profiles/<userId>/...), or null for the default avatar. */
+    @Column(name = "photo_key")
+    private String photoKey;
+
     public static User registered(String firebaseUid, Role role, String phone, String email, String displayName,
                                   String language) {
         User u = new User();
@@ -91,6 +95,20 @@ public class User extends BaseEntity {
         }
     }
 
+    /** Empty clears the email; uniqueness is checked by the caller. */
+    public void changeEmail(String email) {
+        this.email = email == null || email.isBlank() ? null : email.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** The phone the identity provider verified (after an OTP for the new number). */
+    public void changePhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void setPhoto(String key) {
+        this.photoKey = key;
+    }
+
     public void changeRole(Role role, UUID schoolId) {
         this.role = role;
         this.schoolId = schoolId;
@@ -112,6 +130,7 @@ public class User extends BaseEntity {
         this.email = null;
         this.displayName = null;
         this.firebaseUid = null;
+        this.photoKey = null;
     }
 
     public boolean isDeleted() {

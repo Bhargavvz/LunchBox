@@ -6,7 +6,11 @@ import java.util.Optional;
 /** Private object storage with short-lived pre-signed URLs (Firebase Storage in production, LocalStack S3 locally). */
 public interface StorageService {
 
-    enum Bucket { HANDOVER }
+    /**
+     * HANDOVER: rider photos at school (90-day lifecycle on the handover/ prefix). PROFILE: parents' profile photos
+     * (profiles/ prefix, kept until replaced or the account is deleted). Both live in the configured bucket.
+     */
+    enum Bucket { HANDOVER, PROFILE }
 
     PresignedUpload presignUpload(Bucket bucket, String key, String contentType, long maxBytes);
 

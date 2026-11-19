@@ -7,8 +7,11 @@ export interface ClientOptions {
   baseUrl: string;
   /** Returns a fresh Firebase ID token, or null when signed out. */
   getToken: () => Promise<string | null>;
-  /** Called on 401 so the app can sign the user out. */
-  onUnauthorized?: () => void;
+  /**
+   * Called on 401 so the app can decide whether to sign the user out. `hadToken` is false for requests sent before
+   * sign-in finished (those 401s say nothing about the current session); `message` is the server's reason.
+   */
+  onUnauthorized?: (info: { hadToken: boolean; message?: string }) => void;
   /** "en" | "hi" — sent as Accept-Language. */
   getLanguage?: () => string;
   fetch?: typeof fetch;
@@ -31,8 +34,16 @@ export function createRawClient(options: ClientOptions) {
       if (lang) request.headers.set('Accept-Language', lang);
       return request;
     },
-    async onResponse({ response }) {
-      if (response.status === 401) options.onUnauthorized?.();
+    async onResponse({ request, response }) {
+      if (response.status === 401 && options.onUnauthorized) {
+        let message: string | undefined;
+        try {
+          message = ((await response.clone().json()) as { detail?: string }).detail;
+        } catch {
+          message = undefined;
+        }
+        options.onUnauthorized({ hadToken: request.headers.has('Authorization'), message });
+      }
       return response;
     },
   };

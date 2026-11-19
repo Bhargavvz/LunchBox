@@ -6,6 +6,7 @@ import com.lunchbox.common.error.Errors;
 import com.lunchbox.common.security.CurrentUser;
 import com.lunchbox.common.security.LunchBoxAuthentication;
 import com.lunchbox.users.UserStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -16,6 +17,7 @@ import java.time.Instant;
  * valid Firebase token, account not suspended, and for staff: MFA present and session younger than the max age.
  */
 @Component
+@Slf4j
 public class Authenticator {
 
     private final TokenVerifier verifier;
@@ -35,6 +37,8 @@ public class Authenticator {
         try {
             token = verifier.verify(bearerToken);
         } catch (TokenVerifier.InvalidTokenException e) {
+            // The reason only (expired, wrong project, revoked...), never the token.
+            log.info("Rejected Firebase ID token: {}", e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
             throw Errors.unauthorized("Your session is invalid or has expired. Please sign in again.");
         }
         PrincipalResolver.Resolved resolved = resolver.resolve(token);

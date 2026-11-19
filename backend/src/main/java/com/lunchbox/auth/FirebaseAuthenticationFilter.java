@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /** Authenticates {@code Authorization: Bearer <Firebase ID token>} on every API request. */
+@Slf4j
 public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String PREFIX = "Bearer ";
@@ -50,6 +52,7 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
                 MDC.put("userId", authentication.getPrincipal().userId().toString());
             }
         } catch (ApiException e) {
+            log.info("Refused {} {}: {} {}", request.getMethod(), request.getRequestURI(), e.getStatus().value(), e.getCode());
             SecurityContextHolder.clearContext();
             response.setStatus(e.getStatus().value());
             response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);

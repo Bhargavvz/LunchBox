@@ -31,10 +31,12 @@ public class RegistrationService {
     private final List<ActivationPolicy> activationPolicies;
     private final AuditService audit;
     private final Clock clock;
+    private final ProfilePhotoService photos;
 
     public RegistrationService(UserRepository users, ParentRepository parents, ConsentService consentService,
                                IdentityProvider identityProvider, List<ActivationPolicy> activationPolicies,
-                               AuditService audit, Clock clock) {
+                               AuditService audit, Clock clock, ProfilePhotoService photos) {
+        this.photos = photos;
         this.users = users;
         this.parents = parents;
         this.consentService = consentService;
@@ -57,7 +59,8 @@ public class RegistrationService {
         }
         Optional<User> provisioned = findProvisioned(caller, emailVerified);
         if (provisioned.isEmpty()) {
-            return new MeResponse(false, null, null, null, null, caller.phone(), caller.email(), null, "en", null, List.of());
+            return new MeResponse(false, null, null, null, null, caller.phone(), caller.email(), null, "en", null, List.of(),
+                    null);
         }
         User user = provisioned.get();
         activationPolicies.stream().filter(p -> p.supports(user.getRole())).forEach(p -> p.checkMayActivate(user.getId()));
@@ -117,7 +120,8 @@ public class RegistrationService {
                 ? parents.findByUserId(user.getId()).map(p -> new ParentProfileResponse(p.getId(), p.getFirstName(), p.getLastName())).orElse(null)
                 : null;
         return new MeResponse(true, user.getId(), user.getRole(), user.getStatus(), user.getDisplayName(), user.getPhone(),
-                user.getEmail(), user.getSchoolId(), user.getPreferredLanguage(), parent, consentService.list(user.getId()));
+                user.getEmail(), user.getSchoolId(), user.getPreferredLanguage(), parent, consentService.list(user.getId()),
+                photos.viewUrl(user.getPhotoKey()));
     }
 
     static void afterCommit(Runnable action) {

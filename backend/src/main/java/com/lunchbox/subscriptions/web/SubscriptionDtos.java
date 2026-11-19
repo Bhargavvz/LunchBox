@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Size;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -23,7 +24,8 @@ public final class SubscriptionDtos {
     }
 
     public record PlanResponse(UUID id, String code, String name, String description, long pricePaise,
-                               Plan.BillingPeriod billingPeriod, int maxDaysPerWeek, boolean active) {
+                               Plan.BillingPeriod billingPeriod, int maxDaysPerWeek, boolean active,
+                               List<String> features) {
     }
 
     public record PlanRequest(
@@ -32,14 +34,16 @@ public final class SubscriptionDtos {
             @Size(max = 500) String description,
             @Positive long pricePaise,
             @NotNull Plan.BillingPeriod billingPeriod,
-            @Min(1) @Max(6) int maxDaysPerWeek) {
+            @Min(1) @Max(6) int maxDaysPerWeek,
+            @Size(max = 8) List<@NotBlank @Size(max = 80) String> features) {
     }
 
     public record PlanUpdateRequest(
             @NotBlank @Size(max = 120) String name,
             @Size(max = 500) String description,
             @Min(1) @Max(6) int maxDaysPerWeek,
-            boolean active) {
+            boolean active,
+            @Size(max = 8) List<@NotBlank @Size(max = 80) String> features) {
     }
 
     public record CreateSubscriptionRequest(

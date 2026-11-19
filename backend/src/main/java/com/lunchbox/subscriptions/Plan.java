@@ -9,6 +9,11 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity
@@ -43,6 +48,11 @@ public class Plan extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** Short bullets shown on the plan card ("Pickup on school days", "Live tracking"). */
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "features", nullable = false)
+    private List<String> features = new ArrayList<>();
+
     Plan(String code, String name, String description, long pricePaise, BillingPeriod billingPeriod, int maxDaysPerWeek) {
         this.code = code;
         this.name = name;
@@ -54,6 +64,10 @@ public class Plan extends BaseEntity {
 
     void linkProviderPlan(String providerPlanId) {
         this.razorpayPlanId = providerPlanId;
+    }
+
+    void describe(List<String> features) {
+        this.features = features == null ? new ArrayList<>() : new ArrayList<>(features);
     }
 
     void update(String name, String description, int maxDaysPerWeek, boolean active) {

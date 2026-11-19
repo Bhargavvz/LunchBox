@@ -18,6 +18,13 @@ public interface DispatchTracking {
     /** Geofence: partner entered a school; lunchboxes in transit to it move to AT_SCHOOL. */
     void arrivedAtSchool(UUID partnerId, UUID schoolId);
 
+    /** Every shift on the date (any status), for the operations map. */
+    List<ShiftView> shiftsOn(java.time.LocalDate date);
+
+    record ShiftView(UUID partnerId, String status, java.time.Instant plannedStart, java.time.Instant plannedEnd,
+                     java.time.Instant startedAt) {
+    }
+
     record ActiveRoute(UUID partnerId, UUID routeId, List<StopPoint> openStops) {
     }
 

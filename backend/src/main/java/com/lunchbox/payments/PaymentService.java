@@ -34,7 +34,9 @@ public class PaymentService implements PaymentRecorder, PersonalDataContributor 
 
     public record PaymentResponse(UUID id, UUID subscriptionId, String description, long amountPaise, String currency,
                                   Payment.Status status, String method, String failureReason, Instant paidAt,
-                                  Instant createdAt) {
+                                  Instant createdAt,
+                                  /* Razorpay payment id (pay_...), shown to parents as the transaction ID. */
+                                  String transactionId) {
     }
 
     public record InvoiceResponse(String invoiceNumber, UUID paymentId, String providerPaymentId, Instant issuedAt,
@@ -128,6 +130,7 @@ public class PaymentService implements PaymentRecorder, PersonalDataContributor 
 
     static PaymentResponse toResponse(Payment p) {
         return new PaymentResponse(p.getId(), p.getSubscriptionId(), p.getDescription(), p.getAmountPaise(),
-                p.getCurrency(), p.getStatus(), p.getMethod(), p.getFailureReason(), p.getPaidAt(), p.getCreatedAt());
+                p.getCurrency(), p.getStatus(), p.getMethod(), p.getFailureReason(), p.getPaidAt(), p.getCreatedAt(),
+                p.getRazorpayPaymentId());
     }
 }

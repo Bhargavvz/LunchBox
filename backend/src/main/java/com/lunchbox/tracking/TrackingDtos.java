@@ -67,6 +67,17 @@ public final class TrackingDtos {
             GeoPoint destination) {
     }
 
+    /** One rider on shift today, for the operations map. Phone is shown to staff only. */
+    public record FleetPartnerResponse(UUID partnerId, String name, String phone, String vehicleType, String vehicleNumber,
+                                       FleetService.Availability availability, String shiftStatus,
+                                       Instant plannedStart, Instant plannedEnd, LiveLocation location,
+                                       int openOrders, CurrentDelivery currentDelivery) {
+    }
+
+    public record CurrentDelivery(UUID orderId, com.lunchbox.orders.OrderStatus status, String schoolName,
+                                  Instant deliveryDeadline) {
+    }
+
     public record LivePartnerResponse(UUID partnerId, String name, double lat, double lng, Double headingDeg,
                                       Double speedMps, Instant recordedAt, int activeOrders) {
     }

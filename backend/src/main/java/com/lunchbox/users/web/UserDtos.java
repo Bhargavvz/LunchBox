@@ -34,10 +34,19 @@ public final class UserDtos {
             @NotEmpty List<@Valid ConsentInput> consents) {
     }
 
+    /** Null leaves a field unchanged; an empty email removes it. */
     public record UpdateProfileRequest(
             @Size(min = 1, max = 80) String firstName,
             @Size(max = 80) String lastName,
-            @Pattern(regexp = LANGUAGE_PATTERN) String preferredLanguage) {
+            @Pattern(regexp = LANGUAGE_PATTERN) String preferredLanguage,
+            @Email @Size(max = 254) String email) {
+    }
+
+    public record PhotoUploadResponse(String url, String key, String method, Map<String, String> headers,
+                                      Instant expiresAt) {
+    }
+
+    public record SetPhotoRequest(@NotBlank @Size(max = 300) String key) {
     }
 
     public record RecordConsentRequest(
@@ -64,7 +73,9 @@ public final class UserDtos {
             UUID schoolId,
             String preferredLanguage,
             ParentProfileResponse parent,
-            List<ConsentResponse> consents) {
+            List<ConsentResponse> consents,
+            /* Short-lived signed link to the profile photo; null shows the default avatar. */
+            String photoUrl) {
     }
 
     public record DataExportResponse(Instant generatedAt, UUID userId, Map<String, Object> sections) {

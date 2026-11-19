@@ -42,6 +42,20 @@ interface DeviceTokenRepository extends JpaRepository<DeviceToken, UUID> {
 
     Optional<DeviceToken> findByToken(String token);
 
+    /**
+     * Registers or re-binds a push token in one statement. The app can send the same token twice at once (start-up
+     * and permission grant), and a find-then-insert raced into a duplicate-key 409.
+     */
+    @Modifying
+    @Query(value = """
+            INSERT INTO device_tokens (id, user_id, token, platform, app, last_seen_at, created_at, updated_at)
+            VALUES (:id, :userId, :token, :platform, :app, :now, :now, :now)
+            ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, platform = EXCLUDED.platform,
+                app = EXCLUDED.app, last_seen_at = EXCLUDED.last_seen_at, updated_at = EXCLUDED.updated_at
+            """, nativeQuery = true)
+    void upsert(@Param("id") UUID id, @Param("userId") UUID userId, @Param("token") String token,
+                @Param("platform") String platform, @Param("app") String app, @Param("now") Instant now);
+
     @Modifying
     @Query("delete from DeviceToken d where d.token in :tokens")
     void deleteByTokenIn(@Param("tokens") Collection<String> tokens);
