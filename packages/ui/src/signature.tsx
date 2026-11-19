@@ -13,7 +13,7 @@ const SIZES = {
 
 /**
  * The box mark: the code a family writes on their child's lunchbox lid (two letters, two digits), shown the way a
- * dabbawala paints it: ink on a mango lid, letters and numbers split by a stroke. The same mark appears in the parent
+ * dabbawala paints it: charcoal on a turmeric lid, letters and numbers split by a stroke. The same mark appears in the parent
  * app, at pickup and at the school gate, so a box is matched by sight and never swapped.
  */
 export function BoxMark({ code, size = 'md', testID }: { code: string; size?: keyof typeof SIZES; testID?: string }) {

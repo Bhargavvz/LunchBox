@@ -1,9 +1,10 @@
 import { AlertCircle, CheckCircle2, ChevronRight, Info, TriangleAlert, type LucideIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
   Easing,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -49,16 +50,16 @@ export type TextTone = 'default' | 'muted' | 'faint' | 'primary' | 'success' | '
 function variantStyle(t: Theme, variant: TextVariant): TextStyle {
   const f = t.fonts;
   switch (variant) {
-    // Baloo 2 and Mukta both carry tall Devanagari ascenders, so line heights sit near 1.3 (display) and 1.5 (text)
-    // to keep Hindi matras from clipping.
+    // Khand is condensed and tall: display sizes run large with a hair of tracking and tight leading; Hind text
+    // keeps ~1.5 leading so Hindi matras never clip.
     case 'display':
-      return { fontFamily: f.displayBold, fontSize: t.font.display, lineHeight: 42, letterSpacing: -0.4 };
+      return { fontFamily: f.displayBold, fontSize: t.font.display, lineHeight: 44, letterSpacing: 0.2 };
     case 'title':
-      return { fontFamily: f.display, fontSize: t.font.xxl, lineHeight: 36, letterSpacing: -0.2 };
+      return { fontFamily: f.displayBold, fontSize: t.font.xxl, lineHeight: 36, letterSpacing: 0.2 };
     case 'heading':
-      return { fontFamily: f.display, fontSize: 20, lineHeight: 28 };
+      return { fontFamily: f.display, fontSize: 23, lineHeight: 28, letterSpacing: 0.2 };
     case 'subheading':
-      return { fontFamily: f.semibold, fontSize: t.font.md + 1, lineHeight: 24 };
+      return { fontFamily: f.semibold, fontSize: t.font.md + 1, lineHeight: 25 };
     case 'bodyStrong':
       return { fontFamily: f.semibold, fontSize: t.font.md + 1, lineHeight: 25 };
     case 'label':
@@ -67,12 +68,12 @@ function variantStyle(t: Theme, variant: TextVariant): TextStyle {
       return { fontFamily: f.medium, fontSize: 14, lineHeight: 20 };
     case 'overline':
       // A quiet sentence-case label, not a tracked all-caps eyebrow.
-      return { fontFamily: f.semibold, fontSize: 13.5, lineHeight: 19 };
+      return { fontFamily: f.medium, fontSize: 14, lineHeight: 20 };
     case 'numeral':
-      return { fontFamily: f.display, fontSize: 24, lineHeight: 30 };
+      return { fontFamily: f.displayBold, fontSize: 28, lineHeight: 32, letterSpacing: 0.3 };
     case 'figure':
-      // The one hero number per view (an ETA, a total).
-      return { fontFamily: f.displayBold, fontSize: 48, lineHeight: 56, letterSpacing: -0.8 };
+      // The one hero number per view (an ETA, a total), set like a painted signboard figure.
+      return { fontFamily: f.displayBold, fontSize: 60, lineHeight: 62, letterSpacing: 0.4 };
     default:
       return { fontFamily: f.regular, fontSize: t.font.md + 1, lineHeight: 25 };
   }
@@ -186,6 +187,12 @@ export function Divider({ inset = 0 }: { inset?: number }) {
  * Page container. Tab screens pass `safeTop` (they have no navigation header); `footer` pins the primary action
  * above the home indicator so it is always reachable with a thumb.
  */
+/**
+ * Optional decoration drawn behind every Screen's content (the parent app's school doodles). Apps that do not provide
+ * one keep the plain background.
+ */
+export const ScreenBackdrop = createContext<ReactNode>(null);
+
 export function Screen({
   children,
   scroll = true,
@@ -211,6 +218,7 @@ export function Screen({
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const backdrop = useContext(ScreenBackdrop);
   const pad = padded ? t.spacing(5) : 0;
   const content: ViewStyle = {
     paddingHorizontal: pad,
@@ -237,6 +245,11 @@ export function Screen({
   );
   const page = (
     <View style={{ flex: 1, backgroundColor: t.colors.background }} testID={testID}>
+      {backdrop ? (
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          {backdrop}
+        </View>
+      ) : null}
       {body}
       {/* Screens without a header scroll under a transparent status bar; this strip keeps the clock readable. */}
       {safeTop ? (
@@ -270,7 +283,10 @@ export function Screen({
   );
 }
 
-/** Large in-page title used by tab screens, with an optional eyebrow line and trailing action. */
+/**
+ * In-page title for tab screens: a quiet line above (the date, a count) and the title in the Khand display face at
+ * `title` size, so a greeting with a long Indian name still fits on one line on a 360dp phone.
+ */
 export function PageTitle({ eyebrow, title, trailing, subtitle }: {
   eyebrow?: string;
   title: string;
@@ -278,11 +294,13 @@ export function PageTitle({ eyebrow, title, trailing, subtitle }: {
   trailing?: ReactNode;
 }) {
   return (
-    <Row justify="space-between" align="flex-end" style={{ marginBottom: 4 }}>
-      <View style={{ flex: 1, gap: 2 }}>
+    <Row justify="space-between" align="center" gap={3} style={{ marginBottom: 2 }}>
+      <View style={{ flex: 1, gap: 0 }}>
         {eyebrow ? <Text variant="overline" tone="muted">{eyebrow}</Text> : null}
-        <Text variant="title">{title}</Text>
-        {subtitle ? <Text muted>{subtitle}</Text> : null}
+        <Text variant="title" accessibilityRole="header" numberOfLines={2}>
+          {title}
+        </Text>
+        {subtitle ? <Text muted style={{ marginTop: 2 }}>{subtitle}</Text> : null}
       </View>
       {trailing}
     </Row>
@@ -291,8 +309,8 @@ export function PageTitle({ eyebrow, title, trailing, subtitle }: {
 
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
-    <Row justify="space-between" style={{ marginTop: 8, marginBottom: -4 }}>
-      <Text variant="label" tone="muted" accessibilityRole="header">{title}</Text>
+    <Row justify="space-between" style={{ marginTop: 10, marginBottom: -2 }}>
+      <Text variant="heading" accessibilityRole="header" style={{ fontSize: 20, lineHeight: 24 }}>{title}</Text>
       {action}
     </Row>
   );
@@ -359,7 +377,8 @@ function cardColours(t: Theme, tone: CardTone): { bg: string; border: string } {
   const c = t.colors;
   switch (tone) {
     case 'sunken':
-      return { bg: c.sunken, border: 'transparent' };
+      // A pale chalk tray for secondary summaries; on the steel background a grey inset read as disabled.
+      return { bg: c.primarySoft, border: 'transparent' };
     case 'primary':
       return { bg: c.primarySoft, border: 'transparent' };
     case 'accent':
@@ -373,8 +392,8 @@ function cardColours(t: Theme, tone: CardTone): { bg: string; border: string } {
     case 'brand':
       return { bg: c.primary, border: 'transparent' };
     default:
-      // White on paper separates on its own in light mode; dark mode gets a hairline because its surfaces are close.
-      return { bg: c.surface, border: t.dark ? c.border : 'transparent' };
+      // A steel tray: white on steel with a crisp hairline instead of a grey drop shadow.
+      return { bg: c.surface, border: c.border };
   }
 }
 
@@ -407,10 +426,11 @@ export function Card({
     backgroundColor: bg,
     borderRadius: t.radius.lg,
     padding: t.spacing(padding),
-    borderWidth: selected ? 2 : StyleSheet.hairlineWidth,
+    borderWidth: selected ? 2 : 1,
     borderColor: selected ? t.colors.primary : border,
     gap: t.spacing(gap),
-    ...(tone === 'raised' || tone === 'plain' ? elevation(t, tone === 'raised' ? 2 : 1) : {}),
+    // Only "raised" lifts off the page; everything else sits flat on the steel.
+    ...(tone === 'raised' ? elevation(t, 2) : {}),
   };
   if (onPress) {
     return (
@@ -480,8 +500,12 @@ export function Button({
   const fg = flat ? t.colors.textMuted : colours.fg;
   const border = flat ? t.colors.sunken : colours.border;
   const inactive = disabled || loading;
-  const height = { sm: 38, md: 50, lg: 58 }[size];
-  const fontSize = { sm: t.font.sm, md: t.font.md, lg: t.font.lg }[size];
+  const height = { sm: 40, md: 52, lg: 60 }[size];
+  const fontSize = { sm: 17, md: 20, lg: 22 }[size];
+  // Filled buttons carry a darker bottom lip, like the rim of a tiffin lid, so they read as pressable.
+  const lip = !flat && ['primary', 'accent', 'success', 'danger'].includes(variant)
+    ? { primary: t.colors.primaryPressed, accent: t.dark ? '#C98F2E' : '#C9871F', success: t.colors.onSuccessSoft, danger: t.colors.onDangerSoft }[
+      variant as 'primary' | 'accent' | 'success' | 'danger'] : null;
   return (
     <PressableScale
       testID={testID}
@@ -497,8 +521,9 @@ export function Button({
         minHeight: height,
         borderRadius: size === 'sm' ? t.radius.sm : t.radius.md,
         backgroundColor: bg,
-        borderWidth: variant === 'outline' ? 1 : 0,
+        borderWidth: variant === 'outline' ? 1.5 : 0,
         borderColor: border,
+        ...(lip ? { borderBottomWidth: 3, borderBottomColor: lip } : {}),
         opacity: disabled && !loading && !flat ? 0.5 : 1,
         alignItems: 'center',
         justifyContent: 'center',
@@ -513,8 +538,8 @@ export function Button({
       ) : (
         <>
           {icon ? <Icon as={icon} size={size === 'sm' ? 16 : 19} color={fg} strokeWidth={2} /> : null}
-          <RNText style={{ color: fg, fontSize: fontSize + 1, fontFamily: t.fonts.bold, includeFontPadding: false,
-                    flexShrink: 1 }}
+          <RNText style={{ color: fg, fontSize, fontFamily: t.fonts.display, letterSpacing: 0.3, includeFontPadding: false,
+                    flexShrink: 1, paddingTop: 2 }}
                   numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.5}>
             {title}
           </RNText>
@@ -858,8 +883,8 @@ export function ListGroup({ children }: { children: ReactNode }) {
   const t = useTheme();
   const items = (Array.isArray(children) ? children : [children]).flat().filter(Boolean);
   return (
-    <View style={{ backgroundColor: t.colors.surface, borderRadius: t.radius.lg, borderWidth: t.dark ? StyleSheet.hairlineWidth : 0,
-      borderColor: t.colors.border, overflow: 'hidden', ...elevation(t, 1) }}>
+    <View style={{ backgroundColor: t.colors.surface, borderRadius: t.radius.lg, borderWidth: 1,
+      borderColor: t.colors.border, overflow: 'hidden' }}>
       {items.map((child, i) => (
         <View key={i}>
           {i > 0 ? <Divider inset={t.spacing(14)} /> : null}
@@ -1066,22 +1091,36 @@ export function Loading({ label = 'Loading', cards = 3, safeTop }: { label?: str
   );
 }
 
+/**
+ * An empty state is an invitation to act, not a dead end: the art sits on a soft chalk "plate", the title says what
+ * is missing, and the action (when there is one) says how to fill it. Drawn as an open tray with a dashed rim so it
+ * never reads as a disabled grey box; `bare` drops the tray when the state already sits inside a card.
+ */
 export function EmptyState({
   title,
   message,
   action,
   art,
+  bare = false,
 }: {
   title: string;
   message?: string;
   action?: ReactNode;
   art?: ReactNode;
+  bare?: boolean;
 }) {
   const t = useTheme();
   return (
-    <View style={{ alignItems: 'center', paddingVertical: t.spacing(10), paddingHorizontal: t.spacing(6), gap: t.spacing(3) }}>
-      {art}
-      <Text variant="heading" center>{title}</Text>
+    <View style={[{ alignItems: 'center', paddingVertical: t.spacing(8), paddingHorizontal: t.spacing(6), gap: t.spacing(3) },
+      bare ? null : { borderRadius: t.radius.lg, borderWidth: 1.5, borderStyle: 'dashed', borderColor: t.colors.borderStrong,
+        backgroundColor: t.colors.surface }]}>
+      {art ? (
+        <View style={{ width: 132, height: 132, borderRadius: 66, backgroundColor: t.colors.primarySoft, alignItems: 'center',
+          justifyContent: 'center', marginBottom: t.spacing(1) }}>
+          {art}
+        </View>
+      ) : null}
+      <Text variant="heading" center accessibilityRole="header">{title}</Text>
       {message ? <Text muted center style={{ maxWidth: 300 }}>{message}</Text> : null}
       {action ? <View style={{ marginTop: t.spacing(2), alignSelf: 'stretch' }}>{action}</View> : null}
     </View>
@@ -1101,8 +1140,17 @@ const AVATAR_TONES: [keyof ThemeColors, keyof ThemeColors][] = [
 ];
 
 /** Initials on a tint picked deterministically from the name, so a child keeps "their" colour everywhere. */
-export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
+/** Initials on a colour picked from the name; shows the photo instead when `uri` is set (and falls back if it fails). */
+export function Avatar({ name, size = 44, uri }: { name: string; size?: number; uri?: string | null }) {
   const t = useTheme();
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [uri]);
+  if (uri && !failed) {
+    return (
+      <Image source={{ uri }} accessibilityIgnoresInvertColors onError={() => setFailed(true)}
+             style={{ width: size, height: size, borderRadius: size / 2.6, backgroundColor: t.colors.sunken }} />
+    );
+  }
   const initials = name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '·';
   let hash = 0;
   for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;

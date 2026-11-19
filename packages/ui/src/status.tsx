@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Animated, Easing, Text as RNText, View } from 'react-native';
 import { Text, LiveDot } from './components';
 import { useTheme } from './theme';
@@ -91,23 +91,19 @@ export function StatusPill({ status, labels = defaultStatusLabels }: { status: O
   );
 }
 
-const PROGRESS: Record<OrderStatusName, number> = {
-  SCHEDULED: 0,
-  REASSIGNED: 0,
-  ASSIGNED: 0.04,
-  PARTNER_EN_ROUTE: 0.18,
-  PICKUP_FAILED: 0.18,
-  PICKED_UP: 0.5,
-  IN_TRANSIT: 0.72,
-  DELIVERY_FAILED: 0.72,
-  AT_SCHOOL: 0.93,
-  DELIVERED: 1,
-  CANCELLED: 0,
-};
+
+/** Which tiffin tier the lunchbox is in: 0 home, 1 on the road, 2 school. */
+function tierOf(status: OrderStatusName): number {
+  if (['PICKED_UP', 'IN_TRANSIT', 'DELIVERY_FAILED'].includes(status)) return 1;
+  if (['AT_SCHOOL', 'DELIVERED'].includes(status)) return 2;
+  return 0;
+}
 
 /**
- * Home → road → school rail. The filled stretch eases to the current stage; a pulse sits at its tip while the
- * lunchbox is moving, and turns red where a problem stopped it.
+ * The LunchBox signature: the journey drawn as a tiffin laid on its side. Three tiers (home, road, school) are
+ * held together by steel clamps; tiers already passed are chalk green, the tier the lunchbox is in now is turmeric
+ * and breathes gently while it moves, a problem turns its tier chilli red, and the rest stay plain steel.
+ * The name and signature are kept from the earlier rail so every screen that shows a journey gets the tiers.
  */
 export function JourneyRail({
   status,
@@ -118,53 +114,75 @@ export function JourneyRail({
 }) {
   const t = useTheme();
   const tone = statusTone(status);
-  const target = PROGRESS[status];
-  const progress = useRef(new Animated.Value(0)).current;
-  const [width, setWidth] = useState(0);
+  const current = tierOf(status);
+  const breathe = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(progress, { toValue: target, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
-  }, [target, progress]);
-  const fill = tone === 'problem' ? t.colors.danger : tone === 'off' ? t.colors.borderStrong : tone === 'done' ? t.colors.success : t.colors.primary;
-  const reached = (at: number) => target >= at && tone !== 'off';
-  const node = (at: number) => (
-    <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 3, borderColor: reached(at) ? fill : t.colors.border,
-      backgroundColor: reached(at) ? t.colors.surface : t.colors.sunken }} />
-  );
+    if (tone !== 'active') return;
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(breathe, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      Animated.timing(breathe, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [tone, breathe]);
+  const names = [labels.home, labels.road, labels.school];
+  const state = (i: number): 'done' | 'now' | 'problem' | 'next' => {
+    if (tone === 'off') return 'next';
+    if (tone === 'done') return 'done';
+    if (i < current) return 'done';
+    if (i === current) return tone === 'problem' ? 'problem' : status === 'SCHEDULED' || status === 'REASSIGNED' ? 'next' : 'now';
+    return 'next';
+  };
+  const colours = {
+    done: { bg: t.colors.primary, fg: t.colors.onPrimary, rim: t.colors.primaryPressed },
+    now: { bg: t.colors.accent, fg: t.colors.onAccent, rim: t.dark ? '#C98F2E' : '#C9871F' },
+    problem: { bg: t.colors.danger, fg: t.colors.onDanger, rim: t.colors.onDangerSoft },
+    next: { bg: t.colors.sunken, fg: t.colors.textMuted, rim: t.colors.border },
+  };
+  const spoken = names.map((n, i) => `${n}: ${{ done: 'done', now: 'now', problem: 'problem', next: 'next' }[state(i)]}`).join(', ');
   return (
-    <View accessible accessibilityLabel={`${labels.home}, ${labels.road}, ${labels.school}`} style={{ gap: 8 }}>
-      <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height: 14, justifyContent: 'center' }}>
-        <View style={{ position: 'absolute', left: 7, right: 7, height: 4, borderRadius: 2, backgroundColor: t.colors.sunken }} />
-        <Animated.View
-          style={{
-            position: 'absolute',
-            left: 7,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: fill,
-            width: progress.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(0, width - 14)] }),
-          }}
-        />
-        {tone === 'active' && width > 0 ? (
-          <Animated.View
-            style={{
-              position: 'absolute',
-              top: -5,
-              left: progress.interpolate({ inputRange: [0, 1], outputRange: [7 - 12, width - 7 - 12] }),
-            }}
-          >
-            <LiveDot size={10} />
-          </Animated.View>
-        ) : null}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {node(0.04)}
-          {node(0.5)}
-          {node(1)}
-        </View>
+    <View accessible accessibilityLabel={spoken} style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {names.map((name, i) => {
+          const st = state(i);
+          const c = colours[st];
+          const tier = (
+            <View style={{ height: 34, borderRadius: 12, backgroundColor: c.bg, borderBottomWidth: 3, borderBottomColor: c.rim,
+              alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+              {/* The painted lid stripe every steel tier has. */}
+              <View style={{ width: 18, height: 4, borderRadius: 2, backgroundColor: c.fg, opacity: st === 'next' ? 0.35 : 0.85 }} />
+            </View>
+          );
+          return (
+            <View key={name} style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+              {i > 0 ? (
+                // Steel clamp joining two tiers; it takes the colour of the tier it leads into once that tier is reached.
+                <View style={{ width: 8, height: 6, marginHorizontal: -1, borderRadius: 2,
+                  backgroundColor: st === 'next' ? t.colors.borderStrong : colours[st].rim }} />
+              ) : null}
+              <View style={{ flex: 1 }}>
+                {st === 'now' ? (
+                  <Animated.View style={{ transform: [{ scale: breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }] }}>
+                    {tier}
+                  </Animated.View>
+                ) : tier}
+              </View>
+            </View>
+          );
+        })}
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text variant="caption" tone={reached(0.04) ? 'default' : 'muted'}>{labels.home}</Text>
-        <Text variant="caption" tone={reached(0.5) ? 'default' : 'muted'}>{labels.road}</Text>
-        <Text variant="caption" tone={reached(1) ? 'default' : 'muted'}>{labels.school}</Text>
+      <View style={{ flexDirection: 'row' }}>
+        {names.map((name, i) => {
+          const st = state(i);
+          return (
+            <Text key={name} variant="caption" numberOfLines={1}
+                  tone={st === 'next' ? 'muted' : st === 'problem' ? 'danger' : 'default'}
+                  style={{ flex: 1, textAlign: i === 0 ? 'left' : i === 2 ? 'right' : 'center',
+                    fontFamily: st === 'now' ? t.fonts.bold : t.fonts.medium }}>
+              {name}
+            </Text>
+          );
+        })}
       </View>
     </View>
   );

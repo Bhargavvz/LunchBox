@@ -15,7 +15,7 @@ export interface TabBarProps {
   };
 }
 
-/** Bottom tabs: an ink tab-mark over the active item and a mango count badge. Docked, never floating. */
+/** Bottom tabs: the active icon sits on a chalk-green pill, with a turmeric count badge. Docked, never floating. */
 export function TabBar({ state, descriptors, navigation, icons }: TabBarProps & { icons: Record<string, LucideIcon> }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -55,10 +55,10 @@ export function TabBar({ state, descriptors, navigation, icons }: TabBarProps & 
             testID={`tab-${route.name}`}
             style={{ flex: 1, alignItems: 'center' }}
           >
-            {/* Active tab: a short ink bar on the top edge, like the tab of a school file divider. */}
-            <View style={{ width: 28, height: 3, borderRadius: 2, marginBottom: 6,
-              backgroundColor: focused ? t.colors.primary : 'transparent' }} />
-            <View style={{ height: 26, alignItems: 'center', justifyContent: 'center' }}>
+            {/* Active tab: the icon sits on a soft chalk-green lid, a pill the width of a tiffin. Keyed on focus so
+                Android redraws it: recolouring a transparent rounded view in place drops its corner radius. */}
+            <View key={focused ? 'on' : 'off'} style={{ height: 32, width: 58, marginTop: 8, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: focused ? t.colors.primarySoft : 'transparent' }}>
               {glyph ? (
                 <Icon as={glyph} size={23} color={focused ? t.colors.primary : t.colors.textMuted}
                       strokeWidth={focused ? 2.3 : 1.8} />

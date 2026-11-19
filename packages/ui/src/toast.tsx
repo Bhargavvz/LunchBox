@@ -57,7 +57,7 @@ function ToastView({ toast, onDone }: { toast: ToastMessage; onDone: () => void 
   }, [y, onDone, t.motion.base]);
   const glyph: LucideIcon = { success: CheckCircle2, info: Info, danger: CircleAlert }[toast.tone];
   // The toast is always a dark capsule, so its icon colours are fixed light tints that read on it.
-  const tint = { success: '#4FD1A0', info: '#8FA5FF', danger: '#FF7A86' }[toast.tone];
+  const tint = { success: '#6FD48F', info: '#7FD3BE', danger: '#FF8A78' }[toast.tone];
   return (
     <Animated.View
       pointerEvents="none"
