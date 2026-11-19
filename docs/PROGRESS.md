@@ -13,6 +13,16 @@ _Last updated: 2026-11-20_
   schema dropped and rebuilt by Flyway (15 migrations, default settings and plan feature types), Redis flushed,
   RabbitMQ queues purged. Only the bootstrap super admin exists; Firebase sign-in accounts remain and register as new
   users. Schools, plans, service areas and riders need to be set up again (or load demo data from Settings).
+- Release APKs tested on the emulator against the live server. Parent: sign-in, resend, registration, consent,
+  Today, school search, map, address search, photo picker, delete account. Rider: sign-in shows "not registered"
+  (no riders in the fresh data). Two fixes, rebuilt (APK + Play bundle for both apps):
+  - R8 had removed classes Expo loads by name (`RNHeadlessAppLoader`, the task service, location task consumers).
+    Background tasks failed with `ClassNotFoundException`, so both apps now keep them. Verified: the classes are in
+    the new APK and the task service starts cleanly.
+  - Address search no longer titles areas with Google Plus Codes (unit-tested; not re-run on the live server, so as
+    not to add a test parent to the fresh data).
+- **Not verified:** rider screens behind sign-in on a release build (route, map, camera, background tracking) need a
+  rider set up by operations.
 
 ## 2026-11-20 — production readiness round: OTP, allocation engine, plans, calendar, tracking, admin, Play Store
 
