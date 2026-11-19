@@ -44,61 +44,41 @@ function stopTitle(stop: StopView): string {
   return stop.type === 'PICKUP' ? (stop.pickup?.parentFirstName ?? '') : (stop.drop?.schoolName ?? '');
 }
 
-/** Numbered node on the route rail: a check when done, a cross when it failed, a pulse on the current stop. */
+/**
+ * The stop's tier on the route rail, drawn like a tiffin tier with a darker rim: chalk with a tick when done, chilli
+ * with a cross when it failed, turmeric for the stop the rider should go to now, steel with its number for later ones.
+ */
 function Node({ stop, current }: { stop: StopView; current: boolean }) {
   const theme = useTheme();
   const c = theme.colors;
-  if (stop.status === 'COMPLETED') {
-    return (
-      <View
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 15,
-          backgroundColor: c.primary,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Check size={16} color={c.onPrimary} strokeWidth={3} />
-      </View>
-    );
-  }
-  if (stop.status === 'FAILED' || stop.status === 'SKIPPED') {
-    return (
-      <View
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 15,
-          backgroundColor: c.dangerSoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <X size={16} color={c.onDangerSoft} strokeWidth={3} />
-      </View>
-    );
-  }
+  const done = stop.status === 'COMPLETED';
+  const failed = stop.status === 'FAILED' || stop.status === 'SKIPPED';
+  const fill = done ? c.primary : failed ? c.danger : current ? c.accent : c.surface;
   return (
     <View
       style={{
-        width: 30,
+        width: 36,
         height: 30,
-        borderRadius: 15,
-        borderWidth: 2,
-        borderColor: current ? c.primary : c.borderStrong,
-        backgroundColor: current ? c.primarySoft : c.surface,
+        borderRadius: 10,
+        backgroundColor: fill,
+        borderWidth: done || failed || current ? 0 : 1.5,
+        borderColor: c.borderStrong,
+        borderBottomWidth: 3,
+        borderBottomColor: done || failed || current ? 'rgba(0,0,0,0.18)' : c.borderStrong,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Text
-        variant="label"
-        style={{ color: current ? c.onPrimarySoft : c.textMuted, fontVariant: ['tabular-nums'] }}
-      >
-        {stop.sequence}
-      </Text>
+      {done ? <Check size={16} color={c.onPrimary} strokeWidth={3} /> : null}
+      {failed ? <X size={16} color={c.onDanger} strokeWidth={3} /> : null}
+      {!done && !failed ? (
+        <Text
+          variant="numeral"
+          style={{ fontSize: 17, lineHeight: 20, color: current ? c.onAccent : c.textMuted, fontVariant: ['tabular-nums'] }}
+        >
+          {stop.sequence}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -116,15 +96,15 @@ function StopRow({ stop, current, last }: { stop: StopView; current: boolean; la
       : '';
   return (
     <Row align="stretch" gap={3}>
-      <View style={{ alignItems: 'center', width: 30 }}>
+      <View style={{ alignItems: 'center', width: 36 }}>
         <Node stop={stop} current={current} />
         {!last ? (
           <View
             style={{
               flex: 1,
-              width: 2,
+              width: 4,
               marginVertical: 4,
-              borderRadius: 1,
+              borderRadius: 2,
               backgroundColor: done ? theme.colors.primary : theme.colors.border,
             }}
           />
@@ -143,8 +123,8 @@ function StopRow({ stop, current, last }: { stop: StopView; current: boolean; la
               padding: 14,
               borderRadius: theme.radius.lg,
               backgroundColor: theme.colors.surface,
-              borderWidth: current ? 2 : 0,
-              borderColor: theme.colors.primary,
+              borderWidth: current ? 2 : 1,
+              borderColor: current ? theme.colors.accent : theme.colors.border,
               opacity: done ? 0.62 : 1,
               gap: 6,
             }}
@@ -294,13 +274,11 @@ export default function RouteScreen() {
       {trackingWarning ? <Banner tone="warning">{t('route.trackingDenied')}</Banner> : null}
 
       {!shift ? (
-        <Card tone="sunken">
-          <EmptyState
-            art={<TiffinArt size={80} mood="muted" />}
-            title={t('shift.none')}
-            message={t('shift.noneHint')}
-          />
-        </Card>
+        <EmptyState
+          art={<TiffinArt size={70} mood="muted" />}
+          title={t('shift.none')}
+          message={t('shift.noneHint')}
+        />
       ) : (
         <Card tone="brand" gap={4}>
           <Row justify="space-between">

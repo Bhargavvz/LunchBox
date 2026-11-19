@@ -201,7 +201,10 @@
       "handover": "हैंडओवर",
       "deliveryFailed": "डिलीवरी समस्या",
       "issue": "समस्या रिपोर्ट"
-    }
+    },
+    "ratingNew": "नए",
+    "ratingOutOf": "5 में से",
+    "ratingNone": "अभी कोई रेटिंग नहीं"
   },
   "notApproved": {
     "title": "खाता सक्रिय नहीं",

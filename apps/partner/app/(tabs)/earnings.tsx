@@ -176,7 +176,8 @@ export default function EarningsScreen() {
             </Row>
           </Card>
 
-          {data.days.length > 0 ? <DailyChart days={data.days} locale={locale} /> : null}
+          {/* Bars only mean something once there is money in the range; before that the empty state below says it. */}
+          {data.days.some((d) => d.amountPaise !== 0) ? <DailyChart days={data.days} locale={locale} /> : null}
 
           {data.entries.length > 0 ? (
             <View style={{ gap: 8 }}>

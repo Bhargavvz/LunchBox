@@ -17,10 +17,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: isProd ? 'LunchBox Partner' : `LunchBox Partner (${env})`,
   slug: 'lunchbox-partner',
+  owner: 'bhargavvzz',
   scheme: 'lunchboxpartner',
   version: '0.1.0',
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
+  icon: './assets/icon.png',
   runtimeVersion: { policy: 'appVersion' },
   updates: { url: process.env.EAS_UPDATE_URL },
   ios: {
@@ -37,6 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
+    adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#16201D' },
     package: isProd ? 'in.lunchbox.partner' : `in.lunchbox.partner.${env}`,
     googleServicesFile: ifPresent(process.env.GOOGLE_SERVICES_JSON ?? './google-services.json'),
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } },
@@ -66,6 +69,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ['expo-camera', { cameraPermission: 'The camera scans pickup QR codes and takes handover photos.' }],
     '@react-native-firebase/app',
     '@react-native-firebase/auth',
+    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 180, resizeMode: 'contain', backgroundColor: '#16201D',
+      dark: { image: './assets/splash-icon.png', backgroundColor: '#0E1513' } }],
     ['expo-build-properties', { ios: { useFrameworks: 'static' }, android: { minSdkVersion: 24 } }],
   ],
   experiments: { typedRoutes: true },
@@ -73,6 +78,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     appEnv: env,
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8080',
     wsUrl: process.env.EXPO_PUBLIC_WS_URL ?? 'ws://10.0.2.2:8080/ws',
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    eas: { projectId: process.env.EAS_PROJECT_ID ?? '5db5ec21-1d2f-488d-91e3-a9124ce1e3e9' },
   },
 });

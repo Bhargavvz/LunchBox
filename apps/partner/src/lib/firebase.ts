@@ -15,6 +15,13 @@ if (__DEV__ && !emulatorHost && process.env.EXPO_PUBLIC_FIREBASE_TEST_NUMBERS_ON
   auth().settings.appVerificationDisabledForTesting = true;
 }
 
+// Builds installed outside Google Play (development clients, EAS preview APKs, emulators) cannot pass Play Integrity
+// ("Invalid app info in play_integrity_token"). They verify with Firebase's reCAPTCHA page instead, which works for
+// real numbers. Play Store builds leave this off and use Play Integrity.
+if (!emulatorHost && process.env.EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA === 'true') {
+  auth().settings.forceRecaptchaFlowForTesting = true;
+}
+
 export async function idToken(force = false): Promise<string | null> {
   const user = auth().currentUser;
   return user ? user.getIdToken(force) : null;

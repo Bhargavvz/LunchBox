@@ -201,7 +201,10 @@
       "handover": "Handover",
       "deliveryFailed": "Delivery problem",
       "issue": "Issue report"
-    }
+    },
+    "ratingNew": "New",
+    "ratingOutOf": "out of 5",
+    "ratingNone": "No ratings yet"
   },
   "notApproved": {
     "title": "Account not active",

@@ -55,9 +55,12 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </Row>
-        <Row justify="space-between" style={{ borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 14 }}>
+        <Row justify="space-between" align="flex-start"
+             style={{ borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 14 }}>
           <View style={{ flex: 1 }}>
-            <Stat label={t('profile.rating')} value={p?.rating ? Number(p.rating).toFixed(1) : '—'} />
+            {/* A new rider has no rating yet: say so rather than show a bare dash. */}
+            <Stat label={t('profile.rating')} value={p?.rating ? Number(p.rating).toFixed(1) : t('profile.ratingNew')}
+                  hint={p?.rating ? t('profile.ratingOutOf') : t('profile.ratingNone')} />
           </View>
           <View style={{ flex: 1 }}>
             <Stat label={t('profile.capacity')} value={String(p?.capacity ?? '—')} hint={t('profile.capacityHint')} />

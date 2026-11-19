@@ -1,7 +1,7 @@
 import '../src/lib/locationTask';
 import '../src/i18n';
-import { Baloo2_600SemiBold, Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
-import { Mukta_400Regular, Mukta_500Medium, Mukta_600SemiBold, Mukta_700Bold } from '@expo-google-fonts/mukta';
+import { Hind_400Regular, Hind_500Medium, Hind_600SemiBold, Hind_700Bold } from '@expo-google-fonts/hind';
+import { Khand_600SemiBold, Khand_700Bold } from '@expo-google-fonts/khand';
 import { Loading, ThemeProvider, ToastProvider, useTheme } from '@lunchbox/ui';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
@@ -77,12 +77,12 @@ function Navigator() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Baloo2_600SemiBold,
-    Baloo2_800ExtraBold,
-    Mukta_400Regular,
-    Mukta_500Medium,
-    Mukta_600SemiBold,
-    Mukta_700Bold,
+    Khand_600SemiBold,
+    Khand_700Bold,
+    Hind_400Regular,
+    Hind_500Medium,
+    Hind_600SemiBold,
+    Hind_700Bold,
   });
   // Fonts ship inside the binary, so this resolves within a frame or two; a load failure falls back to system type.
   if (!fontsLoaded && !fontError) return null;
