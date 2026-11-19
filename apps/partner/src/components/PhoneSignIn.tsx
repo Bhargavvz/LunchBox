@@ -1,31 +1,48 @@
-import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
-import { Banner, Button, OtpInput, Row, Screen, Text, TextField, TiffinArt, Wordmark, useTheme } from '@lunchbox/ui';
+import {
+  Banner, Button, OtpInput, Row, Screen, Text, TextField, TiffinArt, Wordmark, formatCountdown, useOtpSignIn, useTheme, useToast,
+  type OtpProblem,
+} from '@lunchbox/ui';
 import { ArrowRight, Pencil } from 'lucide-react-native';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { startPhoneSignIn } from '../lib/firebase';
 
-const RESEND_AFTER_S = 30;
-
-/** Maps Firebase Auth error codes to sentences a parent can act on; anything unexpected keeps Firebase's text. */
-function authError(e: unknown, t: (k: string) => string): string {
-  const code = (e as { code?: string } | null)?.code ?? '';
-  switch (code) {
-    case 'auth/invalid-verification-code':
-      return t('auth.errors.wrongCode');
-    case 'auth/code-expired':
-    case 'auth/session-expired':
+/** Turns a sign-in problem into a sentence the user can act on. Unknown provider errors get a plain retry message. */
+export function authError(problem: OtpProblem, t: (k: string, o?: Record<string, unknown>) => string): string {
+  switch (problem.kind) {
+    case 'cooldown':
+      return t('auth.errors.cooldown', { seconds: problem.seconds });
+    case 'limit':
+      return t('auth.errors.limit', { minutes: Math.max(1, Math.ceil(problem.seconds / 60)) });
+    case 'expired':
       return t('auth.errors.expired');
-    case 'auth/too-many-requests':
-      return t('auth.errors.tooMany');
-    case 'auth/network-request-failed':
-      return t('auth.errors.network');
-    case 'auth/invalid-phone-number':
-      return t('auth.invalidPhone');
-    default:
-      return e instanceof Error ? e.message : String(e);
+    case 'attempts':
+      return t('auth.errors.attempts');
+    case 'provider':
+      switch (problem.code) {
+        case 'auth/invalid-verification-code':
+          return t('auth.errors.wrongCode');
+        case 'auth/code-expired':
+        case 'auth/session-expired':
+          return t('auth.errors.expired');
+        case 'auth/too-many-requests':
+          return t('auth.errors.tooMany');
+        case 'auth/quota-exceeded':
+          return t('auth.errors.quota');
+        case 'auth/network-request-failed':
+          return t('auth.errors.network');
+        case 'auth/invalid-phone-number':
+          return t('auth.invalidPhone');
+        case 'auth/app-not-authorized':
+        case 'auth/captcha-check-failed':
+        case 'auth/missing-client-identifier':
+        case 'auth/web-context-cancelled':
+          return t('auth.errors.device');
+        default:
+          return t('auth.errors.generic');
+      }
   }
 }
 
@@ -37,56 +54,35 @@ export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; not
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const toast = useToast();
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
-  const [confirmation, setConfirmation] = useState<FirebaseAuthTypes.ConfirmationResult | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [resendIn, setResendIn] = useState(0);
-  const verifying = useRef(false);
+  const [invalid, setInvalid] = useState(false);
+  const otp = useOtpSignIn(startPhoneSignIn);
 
   const digits = phone.replace(/\D/g, '').slice(-10);
   const validPhone = /^[6-9]\d{9}$/.test(digits);
   const pretty = `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
-
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    const timer = setTimeout(() => setResendIn((s) => s - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [resendIn]);
+  const error = invalid ? t('auth.invalidPhone') : otp.problem ? authError(otp.problem, t) : null;
 
   async function send() {
     if (!validPhone) {
-      setError(t('auth.invalidPhone'));
+      setInvalid(true);
       return;
     }
-    setBusy(true);
-    setError(null);
-    try {
-      setConfirmation(await startPhoneSignIn(`+91${digits}`));
+    setInvalid(false);
+    if (await otp.send(`+91${digits}`)) setCode('');
+  }
+
+  async function resend() {
+    if (await otp.resend()) {
       setCode('');
-      setResendIn(RESEND_AFTER_S);
-    } catch (e) {
-      setError(authError(e, t));
-    } finally {
-      setBusy(false);
+      toast(t('auth.resent', { phone: pretty }));
     }
   }
 
   async function verify(value = code) {
-    if (!confirmation || verifying.current || value.length !== 6) return;
-    verifying.current = true;
-    setBusy(true);
-    setError(null);
-    try {
-      await confirmation.confirm(value.trim());
-    } catch (e) {
-      setError(authError(e, t));
-      setCode('');
-    } finally {
-      verifying.current = false;
-      setBusy(false);
-    }
+    if (!(await otp.verify(value))) setCode('');
   }
 
   return (
@@ -114,7 +110,7 @@ export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; not
 
       <View style={{ paddingHorizontal: 24, paddingTop: 28, gap: 18 }}>
         {notice}
-        {!confirmation ? (
+        {!otp.codeSent ? (
           <>
             <View style={{ gap: 4 }}>
               <Text variant="heading">{t('auth.phoneTitle')}</Text>
@@ -129,7 +125,8 @@ export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; not
               value={phone}
               onChangeText={(v) => {
                 setPhone(v);
-                if (error) setError(null);
+                setInvalid(false);
+                if (otp.problem) otp.clearProblem();
               }}
               onSubmitEditing={send}
               returnKeyType="next"
@@ -137,7 +134,7 @@ export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; not
               error={error ?? undefined}
               testID="phone-input"
             />
-            <Button title={t('auth.sendCode')} trailingIcon={ArrowRight} size="lg" onPress={send} loading={busy}
+            <Button title={t('auth.sendCode')} trailingIcon={ArrowRight} size="lg" onPress={send} loading={otp.busy}
                     disabled={!validPhone} testID="send-code" />
           </>
         ) : (
@@ -146,7 +143,7 @@ export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; not
               <Text variant="heading">{t('auth.codeTitle')}</Text>
               <Row gap={2} wrap>
                 <Text muted>{t('auth.codeSentTo')}</Text>
-                <Pressable onPress={() => { setConfirmation(null); setCode(''); setError(null); }} accessibilityRole="button"
+                <Pressable onPress={() => { otp.changeNumber(); setCode(''); }} accessibilityRole="button"
                            accessibilityLabel={t('auth.changeNumber')} hitSlop={8}>
                   <Row gap={1}>
                     <Text variant="bodyStrong" style={{ fontVariant: ['tabular-nums'] }}>{pretty}</Text>
@@ -160,21 +157,27 @@ export function PhoneSignIn({ tagline, notice, eyebrow }: { tagline: string; not
               value={code}
               onChange={(v) => {
                 setCode(v);
-                if (error) setError(null);
-                if (v.length === 6) void verify(v);
+                if (otp.problem) otp.clearProblem();
+                if (v.length === 6 && otp.codeUsable) void verify(v);
               }}
               error={!!error}
               autoFocus
               testID="otp-input"
             />
             {error ? <Banner tone="danger">{error}</Banner> : null}
-            <Button title={t('auth.verify')} size="lg" onPress={() => void verify()} loading={busy}
-                    disabled={code.length !== 6} testID="verify-code" />
+            {otp.codeUsable ? (
+              <Text variant="caption" muted center testID="otp-expiry">
+                {t('auth.expiresIn', { time: formatCountdown(otp.expiresIn) })}
+              </Text>
+            ) : null}
+            <Button title={t('auth.verify')} size="lg" onPress={() => void verify()} loading={otp.busy}
+                    disabled={code.length !== 6 || !otp.codeUsable} testID="verify-code" />
             <Button
-              title={resendIn > 0 ? t('auth.resendIn', { seconds: resendIn }) : t('auth.resend')}
-              variant="ghost"
-              onPress={send}
-              disabled={busy || resendIn > 0}
+              title={otp.resendWait > 0 ? t('auth.resendIn', { time: formatCountdown(otp.resendWait) }) : t('auth.resend')}
+              variant={otp.codeUsable ? 'ghost' : 'outline'}
+              onPress={() => void resend()}
+              disabled={otp.busy || otp.resendWait > 0}
+              testID="resend-code"
             />
           </>
         )}

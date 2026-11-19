@@ -1,7 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Avatar, Banner, Button, Card, OtpInput, Row, Screen, SectionHeader, Text, TextField, useTheme, useToast } from '@lunchbox/ui';
+import {
+  Avatar, Banner, Button, Card, OtpInput, Row, Screen, SectionHeader, Text, TextField, formatCountdown, useOtpSignIn, useTheme,
+  useToast,
+} from '@lunchbox/ui';
 import { Camera, ImageIcon, Phone, Trash2 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
@@ -161,45 +164,48 @@ function PhoneChange({ current, onChanged }: { current?: string | null; onChange
   const [step, setStep] = useState<'idle' | 'number' | 'code'>('idle');
   const [number, setNumber] = useState('');
   const [code, setCode] = useState('');
-  const [verificationId, setVerificationId] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The code goes to the new number; it is confirmed against the verification Firebase returned for it.
+  const start = useCallback(async (phone: string, resend: boolean) => {
+    const verificationId = await startPhoneChange(phone, resend);
+    return { confirm: (value: string) => confirmPhoneChange(verificationId, value) };
+  }, []);
+  const otp = useOtpSignIn(start);
   const e164 = `+91${number.replace(/\D/g, '')}`;
   const valid = /^\+91[6-9]\d{9}$/.test(e164);
+  const shown = error ?? (otp.problem ? authError(otp.problem, t) : null);
 
   async function send() {
     setError(null);
     if (!valid) return setError(t('auth.invalidPhone'));
     if (e164 === current) return setError(t('profile.samePhone'));
-    setBusy(true);
-    try {
-      setVerificationId(await startPhoneChange(e164));
-      setStep('code');
-    } catch (e) {
-      setError(authError(e, t));
-    } finally {
-      setBusy(false);
-    }
+    if (await otp.send(e164)) setStep('code');
   }
 
   async function confirm() {
-    if (!verificationId || code.length !== 6) return;
+    if (code.length !== 6) return;
     setError(null);
-    setBusy(true);
+    if (!(await otp.verify(code))) {
+      setCode('');
+      return;
+    }
     try {
-      await confirmPhoneChange(verificationId, code);
       await api.account.syncPhone();
       await onChanged();
       setStep('idle');
       setNumber('');
       setCode('');
+      otp.changeNumber();
     } catch (e) {
-      const firebaseCode = (e as { code?: string } | null)?.code ?? '';
-      setError(firebaseCode === 'auth/credential-already-in-use' ? t('profile.phoneInUse')
-        : firebaseCode.startsWith('auth/') ? authError(e, t) : errorMessage(e));
-    } finally {
-      setBusy(false);
+      setError(errorMessage(e));
     }
+  }
+
+  function cancel() {
+    setStep('idle');
+    setCode('');
+    setError(null);
+    otp.changeNumber();
   }
 
   return (
@@ -209,25 +215,36 @@ function PhoneChange({ current, onChanged }: { current?: string | null; onChange
         <Text variant="label" style={{ flex: 1, fontVariant: ['tabular-nums'] }}>{formatPhone(current)}</Text>
         {step === 'idle' ? <Button title={t('profile.changePhone')} variant="ghost" size="sm" inline onPress={() => setStep('number')} /> : null}
       </Row>
-      {error ? <Banner tone="danger">{error}</Banner> : null}
+      {shown ? <Banner tone="danger">{shown}</Banner> : null}
       {step === 'number' ? (
         <>
           <TextField label={t('profile.newPhone')} prefix="+91" keyboardType="phone-pad" maxLength={10} value={number}
                      onChangeText={setNumber} hint={t('profile.newPhoneHint')} autoFocus />
           <Row gap={2}>
-            <View style={{ flex: 1 }}><Button title={t('common.cancel')} variant="outline" onPress={() => setStep('idle')} /></View>
-            <View style={{ flex: 1 }}><Button title={t('auth.sendCode')} onPress={() => void send()} loading={busy} disabled={!valid} /></View>
+            <View style={{ flex: 1 }}><Button title={t('common.cancel')} variant="outline" onPress={cancel} /></View>
+            <View style={{ flex: 1 }}><Button title={t('auth.sendCode')} onPress={() => void send()} loading={otp.busy} disabled={!valid} /></View>
           </Row>
         </>
       ) : null}
       {step === 'code' ? (
         <>
           <Text variant="caption" muted>{t('profile.codeSent', { phone: formatPhone(e164) })}</Text>
-          <OtpInput value={code} onChange={setCode} label={t('profile.enterCode')} autoFocus />
+          <OtpInput value={code} onChange={(v) => { setCode(v); if (otp.problem) otp.clearProblem(); }} label={t('profile.enterCode')} autoFocus />
+          {otp.codeUsable ? (
+            <Text variant="caption" muted>{t('auth.expiresIn', { time: formatCountdown(otp.expiresIn) })}</Text>
+          ) : null}
           <Row gap={2}>
-            <View style={{ flex: 1 }}><Button title={t('common.cancel')} variant="outline" onPress={() => setStep('idle')} /></View>
-            <View style={{ flex: 1 }}><Button title={t('profile.confirmPhone')} onPress={() => void confirm()} loading={busy} disabled={code.length !== 6} /></View>
+            <View style={{ flex: 1 }}><Button title={t('common.cancel')} variant="outline" onPress={cancel} /></View>
+            <View style={{ flex: 1 }}><Button title={t('profile.confirmPhone')} onPress={() => void confirm()} loading={otp.busy}
+                                              disabled={code.length !== 6 || !otp.codeUsable} /></View>
           </Row>
+          <Button
+            title={otp.resendWait > 0 ? t('auth.resendIn', { time: formatCountdown(otp.resendWait) }) : t('auth.resend')}
+            variant="ghost"
+            size="sm"
+            onPress={() => void otp.resend().then((ok) => { if (ok) setCode(''); })}
+            disabled={otp.busy || otp.resendWait > 0}
+          />
         </>
       ) : null}
     </Card>

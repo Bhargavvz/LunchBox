@@ -14,14 +14,22 @@
     "codeTitle": "Enter the 6-digit code",
     "codeSentTo": "Sent to",
     "changeNumber": "Change number",
-    "resendIn": "Resend code in {{seconds}}s",
+    "resendIn": "Resend code in {{time}}",
     "legal": "Use the number registered with LunchBox operations.",
     "errors": {
       "wrongCode": "That code doesn't match. Check the SMS and try again.",
       "expired": "This code has expired. Ask for a new one.",
       "tooMany": "Too many attempts. Please wait a few minutes and try again.",
-      "network": "No internet connection. Check your network and try again."
-    }
+      "network": "No internet connection. Check your network and try again.",
+      "cooldown": "Wait {{seconds}} seconds before asking for another code.",
+      "limit": "You have asked for several codes. Try again in {{minutes}} minutes.",
+      "attempts": "Too many wrong codes. Ask for a new code.",
+      "quota": "SMS sign-in is busy right now. Try again in a few minutes.",
+      "device": "We couldn't confirm this device. Try again, or update the app.",
+      "generic": "We couldn't send the code. Try again."
+    },
+    "expiresIn": "Code valid for {{time}}",
+    "resent": "New code sent to {{phone}}"
   },
   "tabs": {
     "route": "Route",

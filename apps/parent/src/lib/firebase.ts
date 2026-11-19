@@ -28,8 +28,12 @@ export async function idToken(force = false): Promise<string | null> {
   return user ? user.getIdToken(force) : null;
 }
 
-export async function startPhoneSignIn(phoneE164: string): Promise<FirebaseAuthTypes.ConfirmationResult> {
-  return auth().signInWithPhoneNumber(phoneE164);
+/**
+ * Sends the sign-in SMS. `resend` must be true for "Resend code": on Android, Firebase otherwise treats a second request
+ * for the same number as the one already in progress and sends no new SMS (why "Resend" used to do nothing).
+ */
+export function startPhoneSignIn(phoneE164: string, resend = false): Promise<FirebaseAuthTypes.ConfirmationResult> {
+  return auth().signInWithPhoneNumber(phoneE164, resend);
 }
 
 export async function signOut(): Promise<void> {
@@ -44,8 +48,8 @@ export { auth };
  * Changing the sign-in number: Firebase texts a code to the new number, and the account is moved to it only once that
  * code is confirmed. The backend then adopts the number from the refreshed (verified) token, never from a form.
  */
-export async function startPhoneChange(phoneE164: string): Promise<string> {
-  const snapshot = await auth().verifyPhoneNumber(phoneE164);
+export async function startPhoneChange(phoneE164: string, resend = false): Promise<string> {
+  const snapshot = await auth().verifyPhoneNumber(phoneE164, resend);
   return snapshot.verificationId;
 }
 
