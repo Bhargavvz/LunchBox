@@ -61,7 +61,7 @@ export default function IssuesPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-[15px] font-semibold">{i.type === 'SOS' ? 'SOS' : statusLabel(i.type)}</h2>
+                    <h2 className="font-display text-[19px] font-semibold leading-tight">{i.type === 'SOS' ? 'SOS' : statusLabel(i.type)}</h2>
                     <StatusBadge status={i.status} />
                     <span className="text-xs text-muted-foreground">{istDateTime(i.createdAt)}</span>
                   </div>

@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState, type FormEvent } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { DataTable } from '@/components/DataTable';
-import { MapFrame, PolygonEditor } from '@/components/maps';
+import { MapFrame, PolygonEditor, PinPicker } from '@/components/maps';
 import { Alert, Button, Dialog, DialogContent, Field, Input, PageHeader } from '@/components/ui/primitives';
 import { api, errorText } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -69,8 +69,6 @@ function SchoolForm({ school, onDone }: { school: SchoolResponse | null; onDone:
         <Field label="City" htmlFor="s-city"><Input id="s-city" required value={f.city} onChange={set('city')} /></Field>
         <Field label="PIN code" htmlFor="s-pin"><Input id="s-pin" required value={f.pincode} onChange={set('pincode')} /></Field>
         <Field label="Geofence radius (m) if no polygon" htmlFor="s-radius"><Input id="s-radius" type="number" value={f.geofenceRadiusM} onChange={set('geofenceRadiusM')} /></Field>
-        <Field label="Latitude" htmlFor="s-lat"><Input id="s-lat" type="number" step="0.000001" value={f.lat} onChange={set('lat')} /></Field>
-        <Field label="Longitude" htmlFor="s-lng"><Input id="s-lng" type="number" step="0.000001" value={f.lng} onChange={set('lng')} /></Field>
         <Field label="Delivery window opens (IST)" htmlFor="s-ws"><Input id="s-ws" type="time" value={f.deliveryWindowStart} onChange={set('deliveryWindowStart')} /></Field>
         <Field label="Delivery window closes (IST)" htmlFor="s-we"><Input id="s-we" type="time" value={f.deliveryWindowEnd} onChange={set('deliveryWindowEnd')} /></Field>
         <Field label="Lunch time (IST)" htmlFor="s-lunch"><Input id="s-lunch" type="time" value={f.lunchTime} onChange={set('lunchTime')} /></Field>
@@ -87,6 +85,11 @@ function SchoolForm({ school, onDone }: { school: SchoolResponse | null; onDone:
           ))}
         </div>
       </fieldset>
+      <div>
+        <p className="mb-1 text-sm font-medium">School gate (where riders hand over)</p>
+        <PinPicker label="School gate location" height={260} value={{ lat: Number(f.lat), lng: Number(f.lng) }}
+                   onChange={(p) => setF((cur) => ({ ...cur, lat: p.lat, lng: p.lng }))} />
+      </div>
       <Field label="Handover instructions for partners" htmlFor="s-hand"><Input id="s-hand" value={f.handoverInstructions} onChange={set('handoverInstructions')} /></Field>
       <div>
         <p className="mb-1 text-sm font-medium">Geofence polygon (click map to add points; optional)</p>

@@ -32,6 +32,13 @@ export default {
         success: { DEFAULT: hsl('success'), soft: hsl('success-soft'), 'soft-foreground': hsl('success-soft-foreground') },
         card: { DEFAULT: hsl('card'), foreground: hsl('card-foreground') },
         popover: { DEFAULT: hsl('popover'), foreground: hsl('popover-foreground') },
+        board: {
+          DEFAULT: hsl('board'),
+          raised: hsl('board-raised'),
+          foreground: hsl('board-foreground'),
+          muted: hsl('board-muted'),
+          line: hsl('board-line'),
+        },
         sidebar: {
           DEFAULT: hsl('sidebar'),
           foreground: hsl('sidebar-foreground'),

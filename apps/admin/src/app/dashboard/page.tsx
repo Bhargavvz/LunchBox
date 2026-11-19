@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { MapFrame, PartnerMarkers } from '@/components/maps';
-import { Alert, Badge, Card, CardHeader, EmptyState, PageHeader, Skeleton } from '@/components/ui/primitives';
+import { Alert, Badge, Card, CardHeader, EmptyState, PageHeader, Skeleton, buttonVariants } from '@/components/ui/primitives';
 import { api, errorText, realtime } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -44,7 +44,7 @@ function longDate(iso: string): string {
   return new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
 }
 
-/** A KPI tile: label, a sans value, and one line of context. Colour only appears when the number needs action. */
+/** A KPI tile: label, a Khand figure, and one line of context. Colour only appears when the number needs action. */
 function Kpi({ label, value, context, icon: Glyph, tone = 'neutral', href }: {
   label: string;
   value: string | number;
@@ -54,71 +54,79 @@ function Kpi({ label, value, context, icon: Glyph, tone = 'neutral', href }: {
   href?: string;
 }) {
   const body = (
-    <Card className={cn('relative h-full p-4 transition-shadow', href && 'hover:shadow-warm-lg',
-      tone === 'attention' && 'border-destructive/30 bg-destructive-soft/40')}>
+    <Card className={cn('relative h-full p-4 transition-colors', href && 'hover:border-primary/40',
+      tone === 'attention' && 'border-destructive/35 bg-destructive-soft/50')}>
       <div className="flex items-center justify-between">
-        <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
-        <Glyph className={cn('h-4 w-4', tone === 'attention' ? 'text-destructive' : 'text-muted-foreground/70')} aria-hidden />
+        <p className="text-[13.5px] font-medium text-muted-foreground">{label}</p>
+        <span className={cn('grid h-7 w-7 place-items-center rounded-lg',
+          tone === 'attention' ? 'bg-destructive-soft text-destructive' : 'bg-secondary text-secondary-foreground')}>
+          <Glyph className="h-4 w-4" aria-hidden />
+        </span>
       </div>
-      <p className={cn('tabular mt-2 text-[28px] font-semibold leading-none tracking-tight', tone === 'attention' && 'text-destructive')}>{value}</p>
-      {context ? <p className="mt-2 text-xs text-muted-foreground">{context}</p> : null}
+      <p className={cn('tabular mt-1.5 font-display text-[42px] font-bold leading-none', tone === 'attention' && 'text-destructive')}>{value}</p>
+      {context ? <p className="mt-1.5 text-[13px] text-muted-foreground">{context}</p> : null}
       {href ? <ArrowUpRight className="absolute bottom-3.5 right-3.5 h-3.5 w-3.5 text-muted-foreground/60" aria-hidden /> : null}
     </Card>
   );
-  return href ? <Link href={href} className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{body}</Link> : body;
+  return href ? <Link href={href} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{body}</Link> : body;
 }
 
 const SEGMENTS = [
-  { key: 'waiting', label: 'Waiting for pickup', color: 'var(--chart-waiting)', icon: Clock3 },
-  { key: 'moving', label: 'On the road', color: 'var(--chart-moving)', icon: Bike },
-  { key: 'done', label: 'Delivered', color: 'var(--chart-done)', icon: CircleCheck },
-  { key: 'problem', label: 'Failed', color: 'var(--chart-problem)', icon: CircleAlert },
+  { key: 'waiting', label: 'Waiting for pickup', color: 'var(--board-waiting)', icon: Clock3 },
+  { key: 'moving', label: 'On the road', color: 'var(--board-moving)', icon: Bike },
+  { key: 'done', label: 'Delivered', color: 'var(--board-done)', icon: CircleCheck },
+  { key: 'problem', label: 'Failed', color: 'var(--board-problem)', icon: CircleAlert },
 ] as const;
 
-/** Where every lunchbox is right now, as one stacked bar in pipeline order (waiting → moving → done → problem). */
-function Pipeline({ d }: { d: DashboardResponse }) {
+/**
+ * Where every lunchbox is right now, drawn as a tiffin laid on its side: one tier per stage in pipeline order
+ * (waiting, on the road, delivered, failed), each as wide as its share of the day and joined to the next by a clamp.
+ * Each tier also carries its icon and count, so colour is never the only cue.
+ */
+function TiffinPipeline({ d }: { d: DashboardResponse }) {
   const counts = { waiting: sum(d, WAITING), moving: sum(d, MOVING), done: d.ordersByStatus['DELIVERED'] ?? 0, problem: sum(d, PROBLEM) };
   const total = counts.waiting + counts.moving + counts.done + counts.problem;
   const cancelled = d.ordersByStatus['CANCELLED'] ?? 0;
   const [hover, setHover] = useState<(typeof SEGMENTS)[number]['key'] | null>(null);
+  const shown = total > 0 ? SEGMENTS.filter((x) => counts[x.key] > 0) : [];
 
   return (
     <div>
-      <div className="relative">
-        <div className="flex h-3.5 w-full gap-[2px] overflow-hidden rounded-full bg-muted" role="img"
-             aria-label={SEGMENTS.map((s) => `${s.label}: ${counts[s.key]}`).join(', ')}>
-          {total > 0 ? SEGMENTS.filter((s) => counts[s.key] > 0).map((s) => (
+      <div className="flex h-14 w-full items-center" role="img"
+           aria-label={SEGMENTS.map((x) => `${x.label}: ${counts[x.key]}`).join(', ')}>
+        {total === 0 ? (
+          <div className="flex h-full flex-1 items-center justify-center rounded-[14px] border border-dashed border-board-line text-[14px] text-board-muted">
+            No lunchboxes on today&apos;s run yet
+          </div>
+        ) : shown.map((x, i) => (
+          <div key={x.key} className="flex h-full items-center" style={{ flexGrow: counts[x.key], flexBasis: 0, minWidth: 64 }}>
+            {i > 0 ? <span aria-hidden className="h-2.5 w-2 shrink-0 bg-board-line" /> : null}
             <div
-              key={s.key}
-              onMouseEnter={() => setHover(s.key)}
+              onMouseEnter={() => setHover(x.key)}
               onMouseLeave={() => setHover(null)}
-              className={cn('h-full transition-opacity first:rounded-l-full last:rounded-r-full', hover && hover !== s.key && 'opacity-40')}
-              style={{ flexGrow: counts[s.key], flexBasis: 0, backgroundColor: s.color, minWidth: 6 }}
-            />
-          )) : null}
-        </div>
-      </div>
-      <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
-        {SEGMENTS.map((s) => (
-          <li key={s.key}
-              onMouseEnter={() => setHover(s.key)}
-              onMouseLeave={() => setHover(null)}
-              className={cn('rounded-lg transition-opacity', hover && hover !== s.key && 'opacity-50')}>
-            <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
-              <span className="h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: s.color }} aria-hidden />
-              <s.icon className="h-3.5 w-3.5" aria-hidden />
-              {s.label}
+              className={cn('rim flex h-full flex-1 items-center gap-2 rounded-[14px] px-3 text-[hsl(36_91%_9%)] transition-opacity',
+                hover && hover !== x.key && 'opacity-45')}
+              style={{ backgroundColor: x.color }}
+            >
+              <x.icon className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="tabular font-display text-[24px] font-bold leading-none">{counts[x.key]}</span>
             </div>
-            <p className="tabular mt-1 pl-[18px] text-lg font-semibold">
-              {counts[s.key]}
-              {total > 0 && hover === s.key ? (
-                <span className="ml-1.5 text-xs font-medium text-muted-foreground">of {total}</span>
-              ) : null}
-            </p>
+          </div>
+        ))}
+      </div>
+      <ul className="mt-4 flex flex-wrap gap-x-7 gap-y-2">
+        {SEGMENTS.map((x) => (
+          <li key={x.key}
+              onMouseEnter={() => setHover(x.key)}
+              onMouseLeave={() => setHover(null)}
+              className={cn('flex items-center gap-2 text-[13.5px] text-board-muted transition-opacity', hover && hover !== x.key && 'opacity-50')}>
+            <span className="h-3 w-4 rounded-[4px]" style={{ backgroundColor: x.color }} aria-hidden />
+            <span>{x.label}</span>
+            <span className="tabular font-semibold text-board-foreground">{counts[x.key]}</span>
           </li>
         ))}
       </ul>
-      {cancelled > 0 ? <p className="mt-3 text-xs text-muted-foreground">{cancelled} cancelled today (leave days, holidays or admin) are not in the bar.</p> : null}
+      {cancelled > 0 ? <p className="mt-3 text-[13px] text-board-muted">{cancelled} cancelled today (leave days, holidays or admin) are not counted here.</p> : null}
     </div>
   );
 }
@@ -176,36 +184,40 @@ export default function DashboardPage() {
         title={firstName ? `${greeting()}, ${firstName}` : greeting()}
         description="Every lunchbox on today's run, live."
         actions={
-          <Link href="/orders/" className="inline-flex h-9 items-center gap-1.5 rounded-lg border bg-card px-3.5 text-sm font-medium shadow-warm transition-colors hover:bg-muted">
-            Open orders <ArrowUpRight className="h-4 w-4" aria-hidden />
+          <Link href="/orders/" className={buttonVariants({ variant: 'outline' })}>
+            Open orders <ArrowUpRight aria-hidden />
           </Link>
         }
       />
       {dash.error ? <div className="mb-5"><Alert title="Couldn't load today's numbers">{errorText(dash.error)}</Alert></div> : null}
 
       <section aria-label="Today at a glance" className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
-        <Card className="paper-grain relative overflow-hidden p-6">
-          <div className="flex flex-wrap items-start justify-between gap-6">
+        {/* The one bold surface in the console: today's run, chalked up on the staff-room board. */}
+        <div className="chalk-dust relative overflow-hidden rounded-3xl bg-board p-6 text-board-foreground md:p-8">
+          <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
-              <p className="text-[13px] font-medium text-muted-foreground">Pickups today</p>
+              <p className="text-[14px] font-medium text-board-muted">Pickups today</p>
               {d ? (
-                <p className="tabular mt-2 text-[56px] font-semibold leading-none tracking-[-0.03em]">{d.total.toLocaleString('en-IN')}</p>
-              ) : <Skeleton className="mt-3 h-12 w-28" />}
-              <p className="mt-3 text-sm text-muted-foreground">
-                {d ? <><span className="font-semibold text-foreground">{d.delivered}</span> delivered · <span className="font-semibold text-foreground">{inTransit}</span> on the road</> : ' '}
+                <p className="tabular mt-1 font-display text-[96px] font-bold leading-[0.85]">{d.total.toLocaleString('en-IN')}</p>
+              ) : <Skeleton className="mt-3 h-20 w-32 bg-board-raised" />}
+              <p className="mt-3 text-[15px] text-board-muted">
+                {d ? <><span className="font-semibold text-board-foreground">{d.delivered}</span> delivered · <span className="font-semibold text-board-foreground">{inTransit}</span> on the road</> : ' '}
               </p>
             </div>
-            <div className="min-w-[180px] rounded-xl border bg-background/60 p-4">
-              <p className="text-[13px] font-medium text-muted-foreground">On-time</p>
-              <p className="tabular mt-1 text-[28px] font-semibold leading-none">{d ? `${d.onTimeRate}%` : '—'}</p>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-                <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${d ? Math.min(100, d.onTimeRate) : 0}%`, backgroundColor: 'var(--chart-done)' }} />
+            <div className="min-w-[200px] rounded-2xl border border-board-line bg-board-raised/60 p-4">
+              <p className="text-[14px] font-medium text-board-muted">On time</p>
+              {/* Before anything is delivered there is no rate yet; 0 % would read as a failure. */}
+              <p className="tabular mt-1 font-display text-[52px] font-bold leading-none">{d && d.delivered > 0 ? `${d.onTimeRate}%` : '—'}</p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-board-line" aria-hidden>
+                <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${d ? Math.min(100, d.onTimeRate) : 0}%`, backgroundColor: 'var(--board-done)' }} />
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">{d ? `${d.onTime} of ${d.delivered} before the bell` : ' '}</p>
+              <p className="mt-2 text-[13px] text-board-muted">
+                {d ? (d.delivered > 0 ? `${d.onTime} of ${d.delivered} before the lunch bell` : 'Nothing delivered yet') : ' '}
+              </p>
             </div>
           </div>
-          <div className="mt-7">{d ? <Pipeline d={d} /> : <Skeleton className="h-3.5 w-full rounded-full" />}</div>
-        </Card>
+          <div className="mt-8">{d ? <TiffinPipeline d={d} /> : <Skeleton className="h-14 w-full rounded-[14px] bg-board-raised" />}</div>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Kpi label="Unassigned" icon={UserRoundX} value={d?.unassigned ?? '—'} href="/orders/"
@@ -228,7 +240,7 @@ export default function DashboardPage() {
             title="Live partners"
             description={partners.length === 1 ? '1 partner sharing location' : `${partners.length} partners sharing location`}
             actions={
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
                 <span className="relative h-2 w-2 rounded-full bg-primary">
                   <span className="absolute inset-0 rounded-full bg-primary animate-pulse-ring" aria-hidden />
                 </span>

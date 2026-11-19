@@ -31,11 +31,11 @@ export function DataTable<T>({
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel(), manualPagination: true, pageCount: totalPages });
   const showSkeleton = loading && data.length === 0;
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-warm">
+    <div className="overflow-hidden rounded-2xl border bg-card">
       <div className="max-h-[70vh] overflow-auto">
         <table className="w-full border-separate border-spacing-0 text-sm">
           <caption className="sr-only">{caption}</caption>
-          <thead className="sticky top-0 z-10 bg-card/95 text-left backdrop-blur">
+          <thead className="sticky top-0 z-10 bg-muted/90 text-left backdrop-blur">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => (
@@ -59,7 +59,7 @@ export function DataTable<T>({
                   </tr>
                 ))
               : table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="group transition-colors hover:bg-muted/45">
+                  <tr key={row.id} className="group transition-colors hover:bg-secondary/40">
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="border-b border-border/70 px-4 py-3 align-middle group-last:border-b-0">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

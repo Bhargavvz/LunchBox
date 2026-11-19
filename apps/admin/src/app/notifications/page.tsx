@@ -47,7 +47,7 @@ export default function BroadcastPage() {
           <Button type="submit" disabled={send.isPending}>Send broadcast</Button>
         </form>
       </Card>
-      <h2 className="mb-2 mt-8 font-semibold">Recent</h2>
+      <h2 className="mb-2 mt-8 font-display text-[24px] font-semibold leading-tight">Recent</h2>
       <ul className="space-y-2">
         {recent.data?.map((b) => (
           <li key={b.id} className="rounded border bg-card p-3 text-sm">

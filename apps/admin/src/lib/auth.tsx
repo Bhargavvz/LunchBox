@@ -14,7 +14,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { api } from './api';
+import { api, takeSignOutReason } from './api';
 import { firebaseAuth } from './firebase';
 
 export type Role = 'SUPER_ADMIN' | 'OPS_ADMIN' | 'SUPPORT' | 'SCHOOL_ADMIN';
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback(async (user: User | null) => {
     if (!user) {
-      setState((s) => (s.kind === 'mfaChallenge' ? s : { kind: 'signedOut' }));
+      setState((s) => (s.kind === 'mfaChallenge' ? s : { kind: 'signedOut', error: takeSignOutReason() }));
       return;
     }
     try {

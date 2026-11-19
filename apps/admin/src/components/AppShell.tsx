@@ -11,6 +11,7 @@ import {
   CreditCard,
   FileClock,
   LayoutDashboard,
+  Radar,
   LifeBuoy,
   LogOut,
   Map,
@@ -53,6 +54,7 @@ const WRITE: Role[] = ['SUPER_ADMIN', 'OPS_ADMIN'];
 
 const NAV: NavItem[] = [
   { href: '/dashboard/', label: 'Dashboard', icon: LayoutDashboard, roles: STAFF, group: 'Operations', keywords: 'today live map home' },
+  { href: '/live/', label: 'Live tracking', icon: Radar, roles: STAFF, group: 'Operations', keywords: 'map riders gps where online busy' },
   { href: '/orders/', label: 'Orders', icon: ClipboardList, roles: STAFF, group: 'Operations', keywords: 'deliveries pickups assign cancel' },
   { href: '/partners/', label: 'Partners', icon: Truck, roles: STAFF, group: 'Operations', keywords: 'riders drivers approval' },
   { href: '/issues/', label: 'Issues & SOS', icon: LifeBuoy, roles: STAFF, group: 'Operations', keywords: 'problems emergency support' },
@@ -118,10 +120,10 @@ function SidebarNav({ items, pathname, openIssues, onNavigate }: {
   }, [items]);
 
   return (
-    <div className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
+    <div className="flex-1 space-y-4 overflow-y-auto px-3 pb-4">
       {groups.map((g) => (
         <div key={g.name}>
-          <p className="mb-1.5 px-3 text-[12.5px] font-semibold text-sidebar-muted/80">{g.name}</p>
+          <p className="mb-1 px-3 font-display text-[15px] font-semibold tracking-[0.01em] text-sidebar-muted">{g.name}</p>
           <ul className="space-y-0.5">
             {g.items.map((n) => {
               const active = pathname.startsWith(n.href);
@@ -133,15 +135,16 @@ function SidebarNav({ items, pathname, openIssues, onNavigate }: {
                     onClick={onNavigate}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                      // The active page sits on a chalk "lid" pill, the same mark as the apps' tab bar.
+                      'group relative flex items-center gap-3 rounded-[11px] px-3 py-[7px] text-[14.5px] transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       active
-                        ? 'bg-sidebar-active font-semibold text-sidebar-foreground'
-                        : 'text-sidebar-muted hover:bg-sidebar-active/60 hover:text-sidebar-foreground',
+                        ? 'bg-sidebar-active font-semibold text-secondary-foreground'
+                        : 'text-sidebar-muted hover:bg-card hover:text-sidebar-foreground',
                     )}
                   >
-                    {active ? <span aria-hidden className="absolute -left-3 top-1.5 h-[calc(100%-12px)] w-[3px] rounded-r-full bg-accent" /> : null}
-                    <n.icon className={cn('h-[17px] w-[17px] shrink-0', active ? 'text-accent' : 'opacity-80 group-hover:opacity-100')} aria-hidden />
+                    <n.icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-primary' : 'opacity-80 group-hover:opacity-100')}
+                            strokeWidth={active ? 2.3 : 1.9} aria-hidden />
                     <span className="flex-1 truncate">{n.label}</span>
                     {badge ? (
                       <span className="tabular rounded-full px-1.5 text-[11px] font-bold leading-[18px] text-white"
@@ -163,29 +166,26 @@ function SidebarNav({ items, pathname, openIssues, onNavigate }: {
 
 function Sidebar({ children, onSearch }: { children: ReactNode; onSearch: () => void }) {
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-2.5 px-5 pb-5 pt-6">
-        <BrandMark className="h-8 w-8" />
+    <div className="flex h-full flex-col border-r bg-sidebar text-sidebar-foreground">
+      <div className="flex items-center gap-3 px-5 pb-4 pt-5">
+        <BrandMark className="h-10 w-10" />
         <div className="leading-none">
-          <p className="font-display text-[19px] font-semibold tracking-tight">LunchBox</p>
-          <p className="mt-1 text-[11px] font-medium tracking-wide text-sidebar-muted">Operations console</p>
+          <p className="font-display text-[25px] font-bold leading-none">LunchBox</p>
+          <p className="mt-1 text-[12.5px] font-medium text-sidebar-muted">Operations console</p>
         </div>
       </div>
       <div className="px-3 pb-4">
         <button
           type="button"
           onClick={onSearch}
-          className="flex w-full items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-[13px] text-sidebar-muted transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex w-full items-center gap-2.5 rounded-[11px] border bg-card px-3 py-2 text-left text-[13.5px] text-muted-foreground transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Search className="h-4 w-4" aria-hidden />
           <span className="flex-1">Search or jump to…</span>
-          <Kbd className="border-white/15 bg-white/10 text-sidebar-muted shadow-none">⌘K</Kbd>
+          <Kbd>⌘K</Kbd>
         </button>
       </div>
       {children}
-      <div className="paper-grain border-t border-white/10 px-5 py-4 text-[11px] leading-relaxed text-sidebar-muted">
-        From home to school —<br />fresh meals, brighter futures.
-      </div>
     </div>
   );
 }
@@ -335,7 +335,7 @@ export function AppShell({ children, roles = STAFF }: { children: ReactNode; rol
   if (state.kind !== 'ready') {
     return (
       <div className="flex min-h-screen">
-        <div className="hidden w-64 shrink-0 bg-sidebar md:block" aria-hidden />
+        <div className="hidden w-64 shrink-0 border-r bg-sidebar md:block" aria-hidden />
         <div className="flex-1 p-8" role="status" aria-label="Loading">
           <Skeleton className="mb-3 h-4 w-28" />
           <Skeleton className="mb-8 h-8 w-64" />
@@ -358,7 +358,7 @@ export function AppShell({ children, roles = STAFF }: { children: ReactNode; rol
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-muted">
             <ShieldCheck className="h-6 w-6 text-muted-foreground" aria-hidden />
           </div>
-          <h1 className="font-display text-2xl font-semibold">You do not have access to this page.</h1>
+          <h1 className="font-display text-[30px] font-bold leading-tight">You do not have access to this page.</h1>
           <p className="mt-2 text-sm text-muted-foreground">Your role is {ROLE_LABEL[me.role].toLowerCase()}. Ask a super admin if you need it.</p>
           {items[0] ? <Link href={items[0].href} className="mt-5 inline-block text-sm font-semibold text-primary underline-offset-4 hover:underline">Back to {items[0].label}</Link> : null}
         </div>
@@ -386,7 +386,7 @@ export function AppShell({ children, roles = STAFF }: { children: ReactNode; rol
             <nav aria-label="Main" className="h-full">
               <Sidebar onSearch={() => { setDrawerOpen(false); setPaletteOpen(true); }}>{nav}</Sidebar>
             </nav>
-            <DialogPrimitive.Close className="absolute right-3 top-6 rounded-md p-1.5 text-sidebar-muted hover:text-sidebar-foreground" aria-label="Close navigation">
+            <DialogPrimitive.Close className="absolute right-3 top-7 rounded-md p-1.5 text-sidebar-muted hover:bg-card hover:text-sidebar-foreground" aria-label="Close navigation">
               <X className="h-5 w-5" />
             </DialogPrimitive.Close>
           </DialogPrimitive.Content>

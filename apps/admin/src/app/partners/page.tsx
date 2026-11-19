@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { DataTable } from '@/components/DataTable';
+import { PinPicker } from '@/components/maps';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Alert, Button, Dialog, DialogContent, DialogTrigger, Field, Input, PageHeader, Select } from '@/components/ui/primitives';
 import { api, errorText } from '@/lib/api';
@@ -46,8 +47,11 @@ function CreatePartner() {
             <Field label="Vehicle number" htmlFor="p-vno"><Input id="p-vno" value={f.vehicleNumber} onChange={set('vehicleNumber')} placeholder="KA01AB1234" /></Field>
             <Field label="Capacity (lunchboxes)" htmlFor="p-cap"><Input id="p-cap" type="number" min={1} max={40} value={f.capacity} onChange={set('capacity')} /></Field>
             <Field label="Service radius (m)" htmlFor="p-radius"><Input id="p-radius" type="number" min={500} max={30000} value={f.serviceRadiusM} onChange={set('serviceRadiusM')} /></Field>
-            <Field label="Home zone latitude" htmlFor="p-lat"><Input id="p-lat" type="number" step="0.000001" value={f.lat} onChange={set('lat')} /></Field>
-            <Field label="Home zone longitude" htmlFor="p-lng"><Input id="p-lng" type="number" step="0.000001" value={f.lng} onChange={set('lng')} /></Field>
+          </div>
+          <div>
+            <p className="mb-1 text-sm font-medium">Home zone (where the rider usually starts)</p>
+            <PinPicker label="Rider home zone" height={220} value={{ lat: f.lat, lng: f.lng }}
+                       onChange={(p) => setF((cur) => ({ ...cur, lat: p.lat, lng: p.lng }))} />
           </div>
           <Button type="submit" disabled={create.isPending}>Create</Button>
         </form>

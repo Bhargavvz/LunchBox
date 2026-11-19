@@ -151,7 +151,7 @@ export default function OrdersPage() {
       {orders.error ? <Alert>{errorText(orders.error)}</Alert> : null}
       {generate.data ? <Alert tone="success">Generated {generate.data.created} orders ({generate.data.skipped} skipped).</Alert> : null}
       {autoAssign.data ? <Alert tone="success">Assigned {autoAssign.data.assigned} of {autoAssign.data.considered}; {autoAssign.data.unassigned} still unassigned.</Alert> : null}
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4 shadow-warm">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border bg-card p-4">
         <Field label="Date" htmlFor="date"><Input id="date" type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(0); }} /></Field>
         <Field label="Status" htmlFor="status">
           <Select id="status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>

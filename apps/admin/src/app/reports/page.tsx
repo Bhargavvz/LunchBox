@@ -59,7 +59,7 @@ function Summary({ label, value, context, loading }: { label: string; value: str
   return (
     <Card className="p-4">
       <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
-      {loading ? <Skeleton className="mt-2 h-8 w-20" /> : <p className="tabular mt-1.5 text-[28px] font-semibold leading-none tracking-tight">{value}</p>}
+      {loading ? <Skeleton className="mt-2 h-8 w-20" /> : <p className="tabular mt-1.5 font-display text-[40px] font-bold leading-none">{value}</p>}
       {context ? <p className="mt-2 text-xs text-muted-foreground">{context}</p> : null}
     </Card>
   );
@@ -85,6 +85,8 @@ export default function ReportsPage() {
     return { delivered, onTimeCount, failed, rate: delivered > 0 ? Math.round((onTimeCount / delivered) * 1000) / 10 : null };
   }, [rows]);
   const latest = rows.length > 0 ? rows[rows.length - 1]! : null;
+  // A range of school days with nothing delivered or failed has rows, but nothing to plot.
+  const hasDeliveries = rows.some((r) => r.delivered + r.failed > 0);
 
   const failureRows = useMemo(() => (failures.data ?? []).slice(0, 8).map((f) => ({
     ...f,
@@ -159,7 +161,7 @@ export default function ReportsPage() {
           <CardHeader icon={TrendingUp} title="On-time delivery rate"
                       description={latest ? `Latest day: ${latest.onTimeRate}% on ${shortDate(latest.date)}` : 'Share of deliveries before the deadline'} />
           <div className="h-64" role="img" aria-label="Line chart of daily on-time delivery rate">
-            {rows.length === 0 && !loading ? <EmptyState icon={TrendingUp} title="No deliveries in this range" /> : (
+            {!hasDeliveries && !loading ? <EmptyState icon={TrendingUp} title="No deliveries in this range" description="The rate appears once lunchboxes are handed over." /> : (
               <ResponsiveContainer>
                 <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: -18 }}>
                   <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
@@ -199,7 +201,7 @@ export default function ReportsPage() {
         <Card className="lg:col-span-2">
           <CardHeader title="Daily volume" description="Delivered and failed per school day" />
           <div className="h-64" role="img" aria-label="Stacked bar chart of delivered and failed orders per day">
-            {rows.length === 0 && !loading ? <EmptyState title="No deliveries in this range" /> : (
+            {!hasDeliveries && !loading ? <EmptyState title="No deliveries in this range" description="Each school day shows its delivered and failed lunchboxes here." /> : (
               <ResponsiveContainer>
                 <BarChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: -18 }} barCategoryGap="25%">
                   <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
@@ -219,7 +221,7 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-xl border bg-card shadow-warm">
+      <div className="mt-4 overflow-hidden rounded-2xl border bg-card">
         <div className="px-5 pt-5"><CardHeader title="Partner performance" description="Partners with five or more deliveries are eligible for the top on-time badge" /></div>
         <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-0 text-sm">

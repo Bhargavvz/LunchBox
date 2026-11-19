@@ -3,97 +3,114 @@
 @tailwind utilities;
 
 /*
- * "Ink & Mango" tokens (ADR-0016), shared with the mobile apps (packages/ui/src/tokens.ts) as HSL channels for
- * Tailwind. Notebook-paper surfaces, royal-ink primary, mango accent (fills only, never text on paper), leaf for done,
- * sindoor for danger and teal for information. Text pairs meet WCAG 2.1 AA in both modes.
+ * "Chalk & Turmeric" tokens (ADR-0022), the same palette as the mobile apps (packages/ui/src/tokens.ts) as HSL
+ * channels for Tailwind. Steel background, white cards with a hairline, chalk-green primary, turmeric for the one
+ * thing that needs attention (always a fill under dark text), sprout for done, chilli for problems, uniform blue for
+ * information. The "board" colours are the dark chalkboard used once per screen: the dashboard's today panel and the
+ * sign-in hero. Text pairs meet WCAG 2.1 AA in both modes.
  */
 @layer base {
   :root {
-    --background: 216 22% 95%;
-    --foreground: 223 38% 13%;
+    --background: 150 9% 96%;
+    --foreground: 162 19% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 223 38% 13%;
+    --card-foreground: 162 19% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 223 38% 13%;
-    --primary: 230 70% 46%;
+    --popover-foreground: 162 19% 11%;
+    --primary: 170 46% 21%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 228 86% 94%;
-    --secondary-foreground: 230 72% 36%;
-    --muted: 216 24% 92%;
-    --muted-foreground: 222 18% 37%;
-    --accent: 39 100% 56%;
-    --accent-foreground: 40 75% 6%;
-    --accent-soft: 42 100% 91%;
-    --accent-soft-foreground: 37 100% 24%;
-    --success: 159 75% 29%;
-    --success-soft: 150 48% 91%;
-    --success-soft-foreground: 159 78% 20%;
-    --destructive: 353 67% 49%;
+    --secondary: 160 27% 89%;
+    --secondary-foreground: 171 48% 16%;
+    --muted: 156 11% 91%;
+    --muted-foreground: 155 7% 36%;
+    --accent: 36 88% 59%;
+    --accent-foreground: 36 91% 9%;
+    --accent-soft: 39 90% 92%;
+    --accent-soft-foreground: 37 91% 22%;
+    --success: 139 51% 37%;
+    --success-soft: 136 42% 91%;
+    --success-soft-foreground: 139 53% 24%;
+    --destructive: 8 63% 48%;
     --destructive-foreground: 0 0% 100%;
-    --destructive-soft: 353 81% 94%;
-    --destructive-soft-foreground: 352 75% 32%;
-    --info: 188 78% 27%;
-    --info-soft: 185 50% 91%;
-    --info-soft-foreground: 188 80% 19%;
-    --border: 217 24% 89%;
-    --input: 218 19% 80%;
-    --ring: 230 70% 46%;
-    --sidebar: 223 38% 13%;
-    --sidebar-foreground: 216 22% 95%;
-    --sidebar-muted: 222 17% 66%;
-    --sidebar-active: 228 42% 25%;
-    --radius: 0.75rem;
+    --destructive-soft: 11 78% 93%;
+    --destructive-soft-foreground: 8 70% 29%;
+    --info: 208 56% 42%;
+    --info-soft: 210 61% 93%;
+    --info-soft-foreground: 208 61% 28%;
+    --border: 150 9% 87%;
+    --input: 153 8% 78%;
+    --ring: 170 46% 21%;
+    --sidebar: 156 14% 93%;
+    --sidebar-foreground: 162 19% 11%;
+    --sidebar-muted: 155 7% 36%;
+    --sidebar-active: 160 27% 89%;
+    --board: 171 48% 16%;
+    --board-raised: 170 46% 21%;
+    --board-foreground: 150 9% 96%;
+    --board-muted: 162 19% 72%;
+    --board-line: 169 35% 28%;
+    --radius: 0.875rem;
 
-    /* Order-pipeline chart slots: mango (waiting), ink (moving), leaf (done), sindoor (problem). Every chart that
-       uses them also labels each series with an icon and a count, so colour is never the only cue. */
-    --chart-waiting: #e59a0b;
-    --chart-moving: #2f4fd6;
-    --chart-done: #14946a;
-    --chart-problem: #d1293d;
-    --chart-grid: hsl(217 24% 90%);
-    --shadow-color: 225 41% 18%;
+    /* Order-pipeline chart slots: turmeric (waiting), chalk (moving), sprout (done), chilli (problem). Every chart
+       that uses them also labels each series with an icon and a count, so colour is never the only cue. */
+    --chart-waiting: #e09a2b;
+    --chart-moving: #1d4f47;
+    --chart-done: #2f8f4e;
+    --chart-problem: #c8412d;
+    --chart-grid: hsl(150 9% 89%);
+    /* The same four on the chalkboard, lifted so they read on dark green. */
+    --board-waiting: #f2a93b;
+    --board-moving: #7fd3be;
+    --board-done: #6fd48f;
+    --board-problem: #ff8a78;
+    --shadow-color: 162 19% 11%;
   }
 
   .dark {
-    --background: 224 42% 9%;
-    --foreground: 222 42% 95%;
-    --card: 223 35% 13%;
-    --card-foreground: 222 42% 95%;
-    --popover: 222 33% 16%;
-    --popover-foreground: 222 42% 95%;
-    --primary: 228 100% 78%;
-    --primary-foreground: 231 73% 15%;
-    --secondary: 230 48% 21%;
-    --secondary-foreground: 228 100% 88%;
-    --muted: 222 33% 16%;
-    --muted-foreground: 223 20% 70%;
-    --accent: 39 100% 65%;
-    --accent-foreground: 40 75% 6%;
-    --accent-soft: 40 68% 14%;
-    --accent-soft-foreground: 41 100% 77%;
-    --success: 157 59% 56%;
-    --success-soft: 162 55% 13%;
-    --success-soft-foreground: 156 66% 77%;
-    --destructive: 355 100% 74%;
-    --destructive-foreground: 354 79% 9%;
-    --destructive-soft: 350 54% 15%;
-    --destructive-soft-foreground: 354 100% 85%;
-    --info: 187 66% 62%;
-    --info-soft: 189 61% 13%;
-    --info-soft-foreground: 187 72% 80%;
-    --border: 223 28% 20%;
-    --input: 222 25% 27%;
-    --ring: 228 100% 78%;
-    --sidebar: 223 47% 6%;
-    --sidebar-foreground: 222 42% 95%;
-    --sidebar-muted: 222 17% 62%;
-    --sidebar-active: 230 48% 21%;
+    --background: 163 20% 7%;
+    --foreground: 156 16% 94%;
+    --card: 162 18% 11%;
+    --card-foreground: 156 16% 94%;
+    --popover: 164 16% 13%;
+    --popover-foreground: 156 16% 94%;
+    --primary: 165 49% 66%;
+    --primary-foreground: 167 58% 9%;
+    --secondary: 165 31% 15%;
+    --secondary-foreground: 164 53% 83%;
+    --muted: 164 16% 13%;
+    --muted-foreground: 157 8% 66%;
+    --accent: 36 100% 70%;
+    --accent-foreground: 36 91% 9%;
+    --accent-soft: 38 61% 14%;
+    --accent-soft-foreground: 38 100% 81%;
+    --success: 139 54% 63%;
+    --success-soft: 141 45% 14%;
+    --success-soft-foreground: 137 62% 81%;
+    --destructive: 8 100% 74%;
+    --destructive-foreground: 9 91% 9%;
+    --destructive-soft: 9 58% 15%;
+    --destructive-soft-foreground: 9 100% 85%;
+    --info: 210 72% 70%;
+    --info-soft: 209 54% 15%;
+    --info-soft-foreground: 209 75% 86%;
+    --border: 160 14% 16%;
+    --input: 159 12% 23%;
+    --ring: 165 49% 66%;
+    --sidebar: 165 18% 9%;
+    --sidebar-foreground: 156 16% 94%;
+    --sidebar-muted: 157 8% 66%;
+    --sidebar-active: 165 31% 15%;
+    --board: 170 45% 13%;
+    --board-raised: 168 43% 18%;
+    --board-foreground: 156 16% 94%;
+    --board-muted: 163 17% 67%;
+    --board-line: 169 34% 24%;
 
-    --chart-waiting: #f5b43c;
-    --chart-moving: #7f97ff;
-    --chart-done: #3fc48f;
-    --chart-problem: #ff6f7d;
-    --chart-grid: hsl(223 28% 19%);
+    --chart-waiting: #ffc064;
+    --chart-moving: #7fd3be;
+    --chart-done: #6fd48f;
+    --chart-problem: #ff8a78;
+    --chart-grid: hsl(160 14% 17%);
     --shadow-color: 0 0% 0%;
   }
 
@@ -117,7 +134,7 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
   ::selection {
-    background: hsl(var(--accent) / 0.35);
+    background: hsl(var(--accent) / 0.4);
   }
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -125,35 +142,48 @@
 }
 
 @layer components {
-  /* Plain tables on smaller pages: same anatomy as DataTable (quiet sentence-case header, hairline rows, hover wash). */
+  /* Plain tables on smaller pages: same anatomy as DataTable (steel header band, hairline rows, chalk hover wash). */
   .lb-table {
     @apply w-full border-separate border-spacing-0 text-sm;
   }
   .lb-table th {
-    @apply whitespace-nowrap border-b bg-card px-4 py-2.5 text-left text-[13px] font-semibold text-muted-foreground;
+    @apply whitespace-nowrap border-b bg-muted/55 px-4 py-2.5 text-left text-[13px] font-semibold text-muted-foreground;
   }
   .lb-table td {
     @apply border-b border-border/70 px-4 py-3 align-middle;
   }
   .lb-table tbody tr {
-    @apply transition-colors hover:bg-muted/45;
+    @apply transition-colors hover:bg-secondary/40;
   }
   .lb-table tbody tr:last-child td {
     @apply border-b-0;
   }
   .lb-table-wrap {
-    @apply overflow-x-auto rounded-xl border bg-card shadow-warm;
+    @apply overflow-x-auto rounded-2xl border bg-card;
   }
 }
 
 @layer utilities {
+  /* Cards are flat: a hairline does the separating. The faint drop is only there to lift them off the steel. */
   .shadow-warm {
-    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 4px 14px -6px hsl(var(--shadow-color) / 0.12);
+    box-shadow: 0 1px 0 hsl(var(--shadow-color) / 0.04);
   }
   .shadow-warm-lg {
-    box-shadow: 0 2px 4px hsl(var(--shadow-color) / 0.06), 0 18px 40px -16px hsl(var(--shadow-color) / 0.28);
+    box-shadow: 0 2px 4px hsl(var(--shadow-color) / 0.06), 0 18px 40px -16px hsl(var(--shadow-color) / 0.3);
   }
-  /* Faint grain behind the login hero; pure CSS so it costs no request. */
+  /* The tiffin rim: a darker lip along the bottom of a filled control, like the pressed edge of a steel tier. */
+  .rim {
+    box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.2);
+  }
+  /* Chalk dust on the chalkboard panels; pure CSS so it costs no request. */
+  .chalk-dust {
+    background-image:
+      radial-gradient(hsl(var(--board-foreground) / 0.05) 1px, transparent 1.2px),
+      radial-gradient(hsl(var(--board-foreground) / 0.03) 1px, transparent 1.2px);
+    background-size: 7px 7px, 11px 11px;
+    background-position: 0 0, 3px 5px;
+  }
+  /* Kept for older markup: a faint grain behind empty map frames. */
   .paper-grain {
     background-image: radial-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px);
     background-size: 3px 3px;
