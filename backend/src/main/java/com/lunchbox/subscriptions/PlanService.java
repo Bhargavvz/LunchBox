@@ -74,12 +74,17 @@ public class PlanService {
     public PlanResponse update(UUID planId, PlanUpdateRequest request) {
         Plan plan = plans.findById(planId).orElseThrow(() -> Errors.notFound("Plan"));
         PlanResponse before = toResponse(plan);
-        String entitlements = features.validate(request.entitlements());
+        // Partial updates (e.g. activate/deactivate) keep every setting they do not mention.
+        String entitlements = request.entitlements() == null ? plan.getEntitlements() : features.validate(request.entitlements());
         plan.update(request.name().trim(), request.description(), request.maxDaysPerWeek(), request.active());
         if (request.features() != null) {
             plan.describe(trimmed(request.features()));
         }
-        plan.configure(request.visibility(), request.trialDays(), request.durationPeriods(), request.maxSubscribers(), entitlements);
+        plan.configure(request.visibility() == null ? plan.getVisibility() : request.visibility(),
+                request.trialDays() == null ? plan.getTrialDays() : request.trialDays(),
+                request.durationPeriods() == null ? plan.getDurationPeriods() : zeroToNull(request.durationPeriods()),
+                request.maxSubscribers() == null ? plan.getMaxSubscribers() : zeroToNull(request.maxSubscribers()),
+                entitlements);
         checkConsistent(plan);
         PlanResponse after = toResponse(plan);
         audit.record("plan.updated", "Plan", planId, before, after);
@@ -107,6 +112,10 @@ public class PlanService {
         return new PlanResponse(p.getId(), p.getCode(), p.getName(), p.getDescription(), p.getPricePaise(),
                 p.getBillingPeriod(), p.getMaxDaysPerWeek(), p.isActive(), List.copyOf(p.getFeatures()), p.getVisibility(),
                 p.getTrialDays(), p.getDurationPeriods(), p.getMaxSubscribers(), live, features.values(p), features.describe(p));
+    }
+
+    private static Integer zeroToNull(Integer v) {
+        return v == null || v == 0 ? null : v;
     }
 
     private static List<String> trimmed(List<String> features) {

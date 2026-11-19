@@ -105,10 +105,13 @@ public final class SubscriptionDtos {
             @Min(1) @Max(7) int maxDaysPerWeek,
             boolean active,
             @Size(max = 8) List<@NotBlank @Size(max = 80) String> features,
+            /* Fields left out (null) keep their current value. */
             Plan.Visibility visibility,
-            @Min(0) @Max(30) int trialDays,
-            @Min(1) @Max(36) Integer durationPeriods,
-            @Positive Integer maxSubscribers,
+            @Min(0) @Max(30) Integer trialDays,
+            /* 0 = renews until cancelled. */
+            @Min(0) @Max(36) Integer durationPeriods,
+            /* 0 = no limit. */
+            @Min(0) Integer maxSubscribers,
             Map<String, JsonNode> entitlements) {
     }
 

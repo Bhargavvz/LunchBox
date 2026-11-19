@@ -3261,7 +3261,7 @@
           "durationPeriods" : {
             "format" : "int32",
             "maximum" : 36,
-            "minimum" : 1,
+            "minimum" : 0,
             "type" : "integer"
           },
           "entitlements" : {
@@ -3288,6 +3288,7 @@
           },
           "maxSubscribers" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           },
           "name" : {
