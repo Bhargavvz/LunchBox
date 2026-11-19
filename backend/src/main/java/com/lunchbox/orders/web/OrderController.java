@@ -6,6 +6,7 @@ import com.lunchbox.common.security.Roles;
 import com.lunchbox.common.time.TimeZones;
 import com.lunchbox.common.web.Csv;
 import com.lunchbox.common.web.PageResponse;
+import com.lunchbox.orders.ChildCalendarService;
 import com.lunchbox.orders.OrderAdminService;
 import com.lunchbox.orders.OrderGenerationService;
 import com.lunchbox.orders.OrderQueryService;
@@ -50,11 +51,14 @@ public class OrderController {
     private final OrderAdminService admin;
     private final OrderGenerationService generation;
     private final OrderRatingService ratings;
+    private final ChildCalendarService calendars;
     private final IdempotencyService idempotency;
     private final Clock clock;
 
     public OrderController(OrderQueryService queries, OrderAdminService admin, OrderGenerationService generation,
-                           OrderRatingService ratings, IdempotencyService idempotency, Clock clock) {
+                           OrderRatingService ratings, ChildCalendarService calendars, IdempotencyService idempotency,
+                           Clock clock) {
+        this.calendars = calendars;
         this.queries = queries;
         this.admin = admin;
         this.generation = generation;
@@ -64,6 +68,16 @@ public class OrderController {
     }
 
     // ---- Parent ----
+
+    @GetMapping("/api/v1/children/{childId}/calendar")
+    @PreAuthorize(Roles.PARENT)
+    @io.swagger.v3.oas.annotations.Operation(summary = "A child's pickup calendar, by the same rules that create orders")
+    public com.lunchbox.orders.web.OrderDtos.ChildCalendarResponse calendar(
+            @AuthenticationPrincipal CurrentUser user, @PathVariable UUID childId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate to) {
+        return calendars.calendar(user.requireUserId(), childId, from, to);
+    }
 
     @GetMapping("/api/v1/orders/today")
     @PreAuthorize(Roles.PARENT)

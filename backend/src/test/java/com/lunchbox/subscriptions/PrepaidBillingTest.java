@@ -59,7 +59,8 @@ class PrepaidBillingTest {
     void setUp() {
         service = new SubscriptionService(subscriptions, plans, mock(LeaveDayRepository.class), children,
                 mock(AddressDirectory.class), mock(SchoolDirectory.class), users, gateway, payments,
-                mock(PickupWindows.class), mock(AuditService.class), events, clock, "prepaid");
+                mock(PickupWindows.class), mock(PlanFeatures.class), mock(CouponService.class), mock(AuditService.class),
+                events, clock, "prepaid");
         monthly = new Plan("WEEKDAY_MONTHLY", "Weekday lunch", null, 150_000, Plan.BillingPeriod.MONTHLY, 6);
         when(users.requireParentId(parentUserId)).thenReturn(parentId);
         when(plans.findById(any())).thenReturn(Optional.of(monthly));
@@ -104,7 +105,7 @@ class PrepaidBillingTest {
     @Test
     void aVerifiedOrderPaymentActivatesThePlanAndRecordsThePayment() {
         Subscription sub = subscription(LocalDate.parse("2026-11-20"));
-        sub.awaitOrder("order_fake_1");
+        sub.awaitOrder("order_fake_1", 150_000, null);
         UUID id = UUID.randomUUID();
         when(subscriptions.findByIdAndParentId(id, parentId)).thenReturn(Optional.of(sub));
 
@@ -119,7 +120,7 @@ class PrepaidBillingTest {
     @Test
     void aForgedSignatureIsRejectedAndNothingIsRecorded() {
         Subscription sub = subscription(LocalDate.parse("2026-11-20"));
-        sub.awaitOrder("order_fake_1");
+        sub.awaitOrder("order_fake_1", 150_000, null);
         UUID id = UUID.randomUUID();
         when(subscriptions.findByIdAndParentId(id, parentId)).thenReturn(Optional.of(sub));
 
@@ -132,7 +133,7 @@ class PrepaidBillingTest {
     @Test
     void theWebhookActivatesAPlanWhoseAppNeverConfirmedThePayment() {
         Subscription sub = subscription(LocalDate.parse("2026-11-20"));
-        sub.awaitOrder("order_fake_2");
+        sub.awaitOrder("order_fake_2", 150_000, null);
         when(subscriptions.findByRazorpayOrderId("order_fake_2")).thenReturn(Optional.of(sub));
 
         service.onOrderPaid("order_fake_2", "pay_2", 150_000, "upi", clock.instant());
@@ -145,7 +146,7 @@ class PrepaidBillingTest {
     @Test
     void theWebhookIgnoresAnAmountThatDoesNotMatchThePlan() {
         Subscription sub = subscription(LocalDate.parse("2026-11-20"));
-        sub.awaitOrder("order_fake_3");
+        sub.awaitOrder("order_fake_3", 150_000, null);
         when(subscriptions.findByRazorpayOrderId("order_fake_3")).thenReturn(Optional.of(sub));
 
         service.onOrderPaid("order_fake_3", "pay_3", 100, "upi", clock.instant());
@@ -161,7 +162,7 @@ class PrepaidBillingTest {
         UUID id = UUID.randomUUID();
         when(subscriptions.findByIdAndParentId(id, parentId)).thenReturn(Optional.of(sub));
 
-        assertThatThrownBy(() -> service.renew(parentUserId, id)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> service.renew(parentUserId, id, null)).isInstanceOf(ApiException.class);
     }
 
     @Test

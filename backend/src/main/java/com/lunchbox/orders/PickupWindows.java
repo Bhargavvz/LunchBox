@@ -26,6 +26,16 @@ public class PickupWindows {
     public record Window(Instant pickupStart, Instant pickupEnd, Instant deliveryDeadline) {
     }
 
+    /** The same window as times of day (IST), for showing a school's daily timings. */
+    public record DailyWindow(LocalTime pickupStart, LocalTime pickupEnd) {
+    }
+
+    public DailyWindow daily(LocalTime deliveryWindowStart, LocalTime deliveryWindowEnd) {
+        LocalTime start = deliveryWindowStart.minusMinutes(settings.pickupLeadMinutes());
+        LocalTime end = start.plusMinutes(settings.pickupWindowMinutes());
+        return new DailyWindow(start, end.isAfter(deliveryWindowEnd) ? deliveryWindowEnd : end);
+    }
+
     public Window forSchool(SchoolInfo school, LocalDate date) {
         Instant deliveryOpens = TimeZones.atIst(date, school.deliveryWindowStart());
         Instant deadline = TimeZones.atIst(date, school.deliveryWindowEnd());

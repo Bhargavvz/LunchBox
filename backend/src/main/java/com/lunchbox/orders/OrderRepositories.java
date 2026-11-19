@@ -37,6 +37,11 @@ interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecificationEx
 
     List<Order> findBySchoolIdAndScheduledDate(UUID schoolId, LocalDate date);
 
+    List<Order> findBySchoolIdAndScheduledDateGreaterThanEqualAndStatusIn(UUID schoolId, LocalDate from,
+                                                                         Collection<OrderStatus> statuses);
+
+    List<Order> findByChildIdAndScheduledDateBetween(UUID childId, LocalDate from, LocalDate to);
+
     List<Order> findByPartnerIdAndScheduledDate(UUID partnerId, LocalDate date);
 
     List<Order> findByPartnerIdAndScheduledDateAndStatusIn(UUID partnerId, LocalDate date, Collection<OrderStatus> statuses);

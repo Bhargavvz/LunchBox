@@ -79,6 +79,21 @@ public class Subscription extends BaseEntity {
     @Column(name = "cancel_reason")
     private String cancelReason;
 
+    /** Paid periods so far (plans with a fixed duration end after their last one). */
+    @Column(name = "periods_paid", nullable = false)
+    private int periodsPaid;
+
+    /** Set when this subscription started with a free trial (one trial per parent). */
+    @Column(name = "trial_ends_at")
+    private Instant trialEndsAt;
+
+    /** Amount and coupon of the open Razorpay order, checked when the payment arrives. */
+    @Column(name = "pending_amount_paise")
+    private Long pendingAmountPaise;
+
+    @Column(name = "pending_coupon_id")
+    private UUID pendingCouponId;
+
     @Version
     private long version;
 
@@ -102,12 +117,29 @@ public class Subscription extends BaseEntity {
         return razorpaySubscriptionId == null;
     }
 
-    void awaitOrder(String orderId) {
+    void awaitOrder(String orderId, long amountPaise, UUID couponId) {
         this.razorpayOrderId = orderId;
+        this.pendingAmountPaise = amountPaise;
+        this.pendingCouponId = couponId;
+    }
+
+    /** What the open order should be paid with: the discounted amount when a coupon was applied. */
+    long expectedAmount(long planPricePaise) {
+        return pendingAmountPaise == null ? planPricePaise : pendingAmountPaise;
     }
 
     void orderPaid() {
         this.razorpayOrderId = null;
+        this.pendingAmountPaise = null;
+        this.pendingCouponId = null;
+        this.periodsPaid++;
+    }
+
+    /** Starts a free trial: deliveries run until {@code endsAt}, then the parent pays to continue. */
+    void startTrial(Instant endsAt) {
+        this.trialEndsAt = endsAt;
+        this.currentPeriodEnd = endsAt;
+        this.status = Status.ACTIVE;
     }
 
     void markReminded(Instant forPeriodEnd) {

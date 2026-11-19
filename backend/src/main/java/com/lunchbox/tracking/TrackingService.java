@@ -11,6 +11,7 @@ import com.lunchbox.common.storage.StorageService;
 import com.lunchbox.dispatch.DispatchTracking.ActiveRoute;
 import com.lunchbox.dispatch.PartnerDirectory;
 import com.lunchbox.orders.OrderQueries;
+import com.lunchbox.subscriptions.SubscriptionQueries;
 import com.lunchbox.orders.OrderStatus;
 import com.lunchbox.orders.OrderView;
 import com.lunchbox.schools.SchoolDirectory;
@@ -60,6 +61,7 @@ public class TrackingService {
     private final LiveBroadcaster messaging;
     private final RateLimiter rateLimiter;
     private final OrderQueries orders;
+    private final SubscriptionQueries subscriptionQueries;
     private final UserDirectory users;
     private final SchoolDirectory schools;
     private final StorageService storage;
@@ -68,7 +70,7 @@ public class TrackingService {
     private final Clock clock;
 
     public TrackingService(PartnerDirectory partners, LiveLocationStore store, GeofenceMonitor geofences, EtaEstimator eta,
-                           LiveBroadcaster messaging, RateLimiter rateLimiter, OrderQueries orders,
+                           LiveBroadcaster messaging, RateLimiter rateLimiter, OrderQueries orders, SubscriptionQueries subscriptionQueries,
                            UserDirectory users, SchoolDirectory schools, StorageService storage,
                            LunchBoxProperties properties, MeterRegistry meters, Clock clock) {
         this.partners = partners;
@@ -78,6 +80,7 @@ public class TrackingService {
         this.messaging = messaging;
         this.rateLimiter = rateLimiter;
         this.orders = orders;
+        this.subscriptionQueries = subscriptionQueries;
         this.users = users;
         this.schools = schools;
         this.storage = storage;
@@ -171,6 +174,7 @@ public class TrackingService {
         UUID parentId = users.requireParentId(parentUserId);
         OrderView order = orders.requireOwnedByParent(orderId, parentId);
         boolean consent = users.hasActiveConsent(parentUserId, ConsentPurpose.LIVE_TRACKING);
+        boolean included = subscriptionQueries.liveTrackingIncluded(order.subscriptionId());
         PartnerCard card = null;
         LiveLocation location = null;
         Integer etaSeconds = null;
@@ -181,7 +185,7 @@ public class TrackingService {
         if (order.partnerId() != null && !order.status().isTerminal()) {
             var p = partners.require(order.partnerId());
             card = new PartnerCard(p.firstName(), p.vehicleType(), p.vehicleNumber(), p.rating());
-            if (consent && OrderStatus.TRACKABLE.contains(order.status())) {
+            if (consent && included && OrderStatus.TRACKABLE.contains(order.status())) {
                 Optional<Fix> fix = store.last(order.partnerId());
                 if (fix.isPresent()) {
                     Fix f = fix.get();
@@ -191,7 +195,7 @@ public class TrackingService {
             }
         }
         return new TrackingSnapshotResponse(order.id(), order.status(), consent, card, location, etaSeconds, destType,
-                destination);
+                destination, included);
     }
 
     // ---- Ops ----

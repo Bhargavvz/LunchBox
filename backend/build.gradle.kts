@@ -108,6 +108,7 @@ tasks.test {
     useJUnitPlatform()
     jvmArgs("-XX:+EnableDynamicAgentLoading")
     systemProperty("updateSnapshot", System.getProperty("updateSnapshot") ?: "false")
+    systemProperty("updateReports", System.getProperty("updateReports") ?: "false")
     finalizedBy(tasks.jacocoTestReport)
 }
 

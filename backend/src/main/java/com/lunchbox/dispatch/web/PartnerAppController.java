@@ -3,9 +3,11 @@ package com.lunchbox.dispatch.web;
 import com.lunchbox.common.idempotency.IdempotencyService;
 import com.lunchbox.common.security.CurrentUser;
 import com.lunchbox.common.security.Roles;
+import com.lunchbox.dispatch.AssignmentService;
 import com.lunchbox.dispatch.PartnerDirectory;
 import com.lunchbox.dispatch.PartnerOperationsService;
 import com.lunchbox.dispatch.ShiftService;
+import com.lunchbox.dispatch.web.DispatchDtos.DeclineRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.FailureRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.HandoverRequest;
 import com.lunchbox.dispatch.web.DispatchDtos.IssueRequest;
@@ -46,9 +48,12 @@ public class PartnerAppController {
     private final PartnerOperationsService operations;
     private final ShiftService shifts;
     private final PartnerDirectory partners;
+    private final AssignmentService assignment;
     private final IdempotencyService idempotency;
 
-    public PartnerAppController(PartnerOperationsService operations, ShiftService shifts, PartnerDirectory partners, IdempotencyService idempotency) {
+    public PartnerAppController(PartnerOperationsService operations, ShiftService shifts, PartnerDirectory partners,
+                                AssignmentService assignment, IdempotencyService idempotency) {
+        this.assignment = assignment;
         this.operations = operations;
         this.shifts = shifts;
         this.partners = partners;
@@ -93,6 +98,16 @@ public class PartnerAppController {
                                      @Valid @RequestBody PickupConfirmRequest request) {
         return idempotency.execute(key, user.requireUserId(), "partner.pickup", Map.of("orderId", orderId, "req", request),
                 TodayRouteResponse.class, () -> operations.confirmPickup(user.requireUserId(), orderId, request));
+    }
+
+    @PostMapping("/orders/{orderId}/decline")
+    @PreAuthorize(Roles.PARTNER)
+    @Operation(summary = "Hand back an order you have not set off for; it is reassigned and not offered to you again")
+    public TodayRouteResponse decline(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID orderId,
+                                      @Valid @RequestBody DeclineRequest request) {
+        PartnerDirectory.PartnerInfo partner = partners.requireWorkingPartner(user.requireUserId());
+        assignment.decline(partner.id(), orderId, request.reason());
+        return operations.todayRoute(user.requireUserId());
     }
 
     @PostMapping("/orders/{orderId}/pickup-failed")

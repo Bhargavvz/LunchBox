@@ -44,7 +44,9 @@ public final class DispatchDtos {
             @Pattern(regexp = Validation.VEHICLE_NUMBER) String vehicleNumber,
             @Min(1) @Max(40) int capacity,
             @NotNull @Valid GeoPoint homeZone,
-            @Min(500) @Max(30000) int serviceRadiusM) {
+            @Min(500) @Max(30000) int serviceRadiusM,
+            /* Optional: limit the rider to one service area. */
+            UUID serviceAreaId) {
     }
 
     public record AdminPartnerResponse(
@@ -58,6 +60,7 @@ public final class DispatchDtos {
             int capacity,
             GeoPoint homeZone,
             int serviceRadiusM,
+            UUID serviceAreaId,
             DeliveryPartner.ApprovalStatus approvalStatus,
             String approvalNotes,
             BigDecimal rating,
@@ -87,10 +90,14 @@ public final class DispatchDtos {
                                 Instant startedAt, Instant endedAt, PartnerShift.Status status) {
     }
 
+    public record DeclineRequest(@NotBlank @Size(max = 300) String reason) {
+    }
+
     public record AssignRequest(@NotNull UUID partnerId, @Size(max = 300) String reason) {
     }
 
-    public record AutoAssignResult(LocalDate date, int considered, int assigned, int unassigned, int routesPlanned) {
+    /** {@code runId} is null when nothing needed doing (no run is logged). */
+    public record AutoAssignResult(LocalDate date, int considered, int assigned, int unassigned, int routesPlanned, UUID runId) {
     }
 
     public record AdminRouteResponse(UUID routeId, UUID partnerId, String partnerName, LocalDate date, Route.Status status,

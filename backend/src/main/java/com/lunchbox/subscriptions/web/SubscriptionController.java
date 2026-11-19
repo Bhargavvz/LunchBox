@@ -11,6 +11,15 @@ import com.lunchbox.subscriptions.SubscriptionService;
 import com.lunchbox.subscriptions.web.SubscriptionDtos.AdminSubscriptionResponse;
 import com.lunchbox.subscriptions.web.SubscriptionDtos.CancelRequest;
 import com.lunchbox.subscriptions.web.SubscriptionDtos.CheckoutResponse;
+import com.lunchbox.subscriptions.CouponService;
+import com.lunchbox.subscriptions.PlanFeatures;
+import com.lunchbox.subscriptions.web.SubscriptionDtos.CouponRequest;
+import com.lunchbox.subscriptions.web.SubscriptionDtos.CouponResponse;
+import com.lunchbox.subscriptions.web.SubscriptionDtos.FeatureDefinitionRequest;
+import com.lunchbox.subscriptions.web.SubscriptionDtos.FeatureDefinitionResponse;
+import com.lunchbox.subscriptions.web.SubscriptionDtos.QuoteRequest;
+import com.lunchbox.subscriptions.web.SubscriptionDtos.QuoteResponse;
+import com.lunchbox.subscriptions.web.SubscriptionDtos.RenewRequest;
 import com.lunchbox.subscriptions.web.SubscriptionDtos.CreateSubscriptionRequest;
 import com.lunchbox.subscriptions.web.SubscriptionDtos.LeaveDayRequest;
 import com.lunchbox.subscriptions.web.SubscriptionDtos.LeaveDayResponse;
@@ -49,14 +58,25 @@ public class SubscriptionController {
     private final SubscriptionService subscriptions;
     private final PlanService plans;
     private final LeaveService leaves;
+    private final PlanFeatures features;
+    private final CouponService coupons;
     private final IdempotencyService idempotency;
 
     public SubscriptionController(SubscriptionService subscriptions, PlanService plans, LeaveService leaves,
-                                  IdempotencyService idempotency) {
+                                  PlanFeatures features, CouponService coupons, IdempotencyService idempotency) {
         this.subscriptions = subscriptions;
         this.plans = plans;
         this.leaves = leaves;
+        this.features = features;
+        this.coupons = coupons;
         this.idempotency = idempotency;
+    }
+
+    @PostMapping("/api/v1/subscriptions/quote")
+    @PreAuthorize(Roles.PARENT)
+    @Operation(summary = "Price of a plan for this parent: coupon discount and free trial, before paying")
+    public QuoteResponse quote(@AuthenticationPrincipal CurrentUser user, @Valid @RequestBody QuoteRequest request) {
+        return subscriptions.quote(user.requireUserId(), request);
     }
 
     @GetMapping("/api/v1/plans")
@@ -96,9 +116,12 @@ public class SubscriptionController {
     @PreAuthorize(Roles.PARENT)
     @Operation(summary = "Prepaid plans: open a Razorpay order for the next period")
     public CheckoutResponse renew(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID subscriptionId,
-                                  @RequestHeader(value = IdempotencyService.HEADER, required = false) String idempotencyKey) {
-        return idempotency.execute(idempotencyKey, user.requireUserId(), "subscription.renew", subscriptionId,
-                CheckoutResponse.class, () -> subscriptions.renew(user.requireUserId(), subscriptionId));
+                                  @RequestHeader(value = IdempotencyService.HEADER, required = false) String idempotencyKey,
+                                  @Valid @RequestBody(required = false) RenewRequest request) {
+        String coupon = request == null ? null : request.couponCode();
+        return idempotency.execute(idempotencyKey, user.requireUserId(), "subscription.renew",
+                subscriptionId + ":" + (coupon == null ? "" : coupon),
+                CheckoutResponse.class, () -> subscriptions.renew(user.requireUserId(), subscriptionId, coupon));
     }
 
     @PutMapping("/api/v1/subscriptions/{subscriptionId}/schedule")
@@ -160,6 +183,44 @@ public class SubscriptionController {
     @PreAuthorize(Roles.SUPER_ADMIN)
     public PlanResponse updatePlan(@PathVariable UUID planId, @Valid @RequestBody PlanUpdateRequest request) {
         return plans.update(planId, request);
+    }
+
+    @GetMapping("/api/v1/admin/plan-features")
+    @PreAuthorize(Roles.ADMIN_READ)
+    public List<FeatureDefinitionResponse> featureDefinitions() {
+        return features.definitions();
+    }
+
+    @PostMapping("/api/v1/admin/plan-features")
+    @PreAuthorize(Roles.SUPER_ADMIN)
+    @ResponseStatus(HttpStatus.CREATED)
+    public FeatureDefinitionResponse createFeature(@Valid @RequestBody FeatureDefinitionRequest request) {
+        return features.create(request);
+    }
+
+    @PutMapping("/api/v1/admin/plan-features/{key}")
+    @PreAuthorize(Roles.SUPER_ADMIN)
+    public FeatureDefinitionResponse updateFeature(@PathVariable String key, @Valid @RequestBody FeatureDefinitionRequest request) {
+        return features.update(key, request);
+    }
+
+    @GetMapping("/api/v1/admin/coupons")
+    @PreAuthorize(Roles.ADMIN_READ)
+    public List<CouponResponse> coupons() {
+        return coupons.list();
+    }
+
+    @PostMapping("/api/v1/admin/coupons")
+    @PreAuthorize(Roles.SUPER_ADMIN)
+    @ResponseStatus(HttpStatus.CREATED)
+    public CouponResponse createCoupon(@Valid @RequestBody CouponRequest request) {
+        return coupons.create(request);
+    }
+
+    @PutMapping("/api/v1/admin/coupons/{couponId}")
+    @PreAuthorize(Roles.SUPER_ADMIN)
+    public CouponResponse updateCoupon(@PathVariable UUID couponId, @Valid @RequestBody CouponRequest request) {
+        return coupons.update(couponId, request);
     }
 
     @GetMapping("/api/v1/admin/subscriptions")

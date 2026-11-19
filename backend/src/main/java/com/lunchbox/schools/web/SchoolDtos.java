@@ -27,7 +27,19 @@ public final class SchoolDtos {
 
     /** What parents see when choosing a school. */
     public record SchoolSummaryResponse(UUID id, String name, String addressLine, String city, String pincode,
-                                        LocalTime lunchTime, Set<DayOfWeek> workingDays) {
+                                        LocalTime lunchTime, Set<DayOfWeek> workingDays, LocalTime deliveryWindowStart,
+                                        LocalTime deliveryWindowEnd) {
+    }
+
+    /**
+     * A school as its parents see it. Pickup times are when riders come to homes (IST); {@code firstBookableDate} is
+     * the first day whose plan, leave and schedule changes are still open.
+     */
+    public record SchoolDetailsResponse(UUID id, String name, String addressLine, String city, String pincode,
+                                        GeoPoint location, LocalTime lunchTime, LocalTime deliveryWindowStart,
+                                        LocalTime deliveryWindowEnd, LocalTime pickupWindowStart,
+                                        LocalTime pickupWindowEnd, Set<DayOfWeek> workingDays,
+                                        List<HolidayResponse> upcomingHolidays, LocalDate firstBookableDate) {
     }
 
     public record SchoolResponse(

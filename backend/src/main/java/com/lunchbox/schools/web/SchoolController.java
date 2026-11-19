@@ -6,6 +6,7 @@ import com.lunchbox.common.web.PageResponse;
 import com.lunchbox.schools.SchoolService;
 import com.lunchbox.schools.web.SchoolDtos.HolidayRequest;
 import com.lunchbox.schools.web.SchoolDtos.HolidayResponse;
+import com.lunchbox.schools.web.SchoolDtos.SchoolDetailsResponse;
 import com.lunchbox.schools.web.SchoolDtos.SchoolRequest;
 import com.lunchbox.schools.web.SchoolDtos.SchoolResponse;
 import com.lunchbox.schools.web.SchoolDtos.SchoolSummaryResponse;
@@ -46,6 +47,12 @@ public class SchoolController {
                                                       @RequestParam(required = false) Integer page,
                                                       @RequestParam(required = false) Integer size) {
         return schools.searchForParents(q, city, page, size);
+    }
+
+    @GetMapping("/api/v1/schools/{schoolId}")
+    @PreAuthorize(Roles.REGISTERED)
+    public SchoolDetailsResponse details(@PathVariable UUID schoolId) {
+        return schools.details(schoolId);
     }
 
     @GetMapping("/api/v1/schools/{schoolId}/holidays")

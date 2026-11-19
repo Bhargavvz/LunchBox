@@ -36,6 +36,9 @@ class DeliveryFlowIT extends IntegrationTest {
     @Autowired
     com.lunchbox.dispatch.RoutePlanningService routePlanning;
 
+    @Autowired
+    com.lunchbox.dispatch.AssignmentService assignment;
+
     @Test
     void lunchboxGoesFromHomeToSchool() throws Exception {
         // ---- Platform setup (Sunday 10:00 IST) ----
@@ -114,8 +117,37 @@ class DeliveryFlowIT extends IntegrationTest {
         clock.set(Instant.parse("2026-10-18T16:00:00Z")); // 21:30 IST
         JsonNode generated = post("/api/v1/admin/jobs/generate-orders?date=2026-10-19", admin, null, 200);
         assertThat(generated.get("created").asInt()).isEqualTo(1);
-        JsonNode assigned = post("/api/v1/admin/jobs/auto-assign?date=2026-10-19", admin, null, 200);
-        assertThat(assigned.get("assigned").asInt()).isEqualTo(1);
+        // Three allocation runs at once (two ops clicks and the scheduled job) assign the order exactly once.
+        java.time.LocalDate mondayDate = java.time.LocalDate.parse("2026-10-19");
+        var runners = java.util.concurrent.Executors.newFixedThreadPool(3);
+        int assignedTotal = 0;
+        try {
+            var runs = List.of(
+                    runners.submit(() -> assignment.autoAssign(mondayDate, com.lunchbox.dispatch.allocation.AllocationRun.Trigger.MANUAL, adminId)),
+                    runners.submit(() -> assignment.autoAssign(mondayDate, com.lunchbox.dispatch.allocation.AllocationRun.Trigger.MANUAL, adminId)),
+                    runners.submit(() -> assignment.autoAssign(mondayDate)));
+            for (var run : runs) {
+                assignedTotal += run.get().assigned();
+            }
+        } finally {
+            runners.shutdown();
+        }
+        assertThat(assignedTotal).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM assignments WHERE status = 'ACTIVE'", Integer.class)).isEqualTo(1);
+        JsonNode rerun = post("/api/v1/admin/jobs/auto-assign?date=2026-10-19", admin, null, 200);
+        assertThat(rerun.get("considered").asInt()).isZero();
+
+        // Who, when and why: the decision log explains the assignment.
+        String mondayOrderId = jdbc.queryForObject("SELECT id FROM orders WHERE scheduled_date = DATE '2026-10-19'", String.class);
+        JsonNode decisions = get200("/api/v1/admin/orders/" + mondayOrderId + "/allocation", admin);
+        assertThat(decisions).anySatisfy(d -> {
+            assertThat(d.get("outcome").asText()).isEqualTo("ASSIGNED");
+            assertThat(d.get("partnerName").asText()).isEqualTo("Ravi");
+            assertThat(d.get("reason").asText()).contains("km to the home");
+            assertThat(d.get("breakdown").get("total").asDouble()).isPositive();
+        });
+        JsonNode runsLogged = get200("/api/v1/admin/allocation/runs?date=2026-10-19", admin);
+        assertThat(runsLogged).anySatisfy(r -> assertThat(r.get("assigned").asInt()).isEqualTo(1));
 
         // Two planners at once (auto-assign and the rider's shift start in the same instant) must not collide.
         jdbc.update("DELETE FROM route_stops");

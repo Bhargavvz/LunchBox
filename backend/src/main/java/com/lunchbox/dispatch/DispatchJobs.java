@@ -4,6 +4,7 @@ import com.lunchbox.common.messaging.Messaging;
 import com.lunchbox.common.outbox.OutboxPublisher;
 import com.lunchbox.common.settings.PlatformSettings;
 import com.lunchbox.common.time.TimeZones;
+import com.lunchbox.dispatch.allocation.AllocationRun;
 import com.lunchbox.orders.PickupWindows;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -61,6 +62,13 @@ public class DispatchJobs {
         assignment.autoAssign(TimeZones.todayIst(clock));
     }
 
+    /** Riders on shift whose phone stopped reporting: release what they have not set off for, alert ops otherwise. */
+    @Scheduled(cron = "0 */2 6-14 * * *", zone = "Asia/Kolkata")
+    @SchedulerLock(name = "offlineRiders", lockAtMostFor = "PT90S")
+    public void watchOfflineRiders() {
+        assignment.handleOfflineRiders();
+    }
+
     /** Partners who have not started their shift after the grace period are marked no-show and released. */
     @Scheduled(cron = "${lunchbox.jobs.no-show-cron}", zone = "Asia/Kolkata")
     @SchedulerLock(name = "noShowDetection", lockAtMostFor = "PT4M")
@@ -87,7 +95,7 @@ public class DispatchJobs {
             }
         }
         if (!late.isEmpty()) {
-            assignment.autoAssign(today);
+            assignment.autoAssign(today, AllocationRun.Trigger.NO_SHOW, null);
         }
     }
 }

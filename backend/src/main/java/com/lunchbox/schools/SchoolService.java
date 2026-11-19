@@ -6,7 +6,10 @@ import com.lunchbox.common.geo.Geo;
 import com.lunchbox.common.security.CurrentUser;
 import com.lunchbox.common.web.PageResponse;
 import com.lunchbox.common.web.Pagination;
+import com.lunchbox.common.time.TimeZones;
+import com.lunchbox.orders.PickupWindows;
 import com.lunchbox.schools.web.SchoolDtos.HolidayRequest;
+import com.lunchbox.schools.web.SchoolDtos.SchoolDetailsResponse;
 import com.lunchbox.schools.web.SchoolDtos.HolidayResponse;
 import com.lunchbox.schools.web.SchoolDtos.SchoolRequest;
 import com.lunchbox.schools.web.SchoolDtos.SchoolResponse;
@@ -18,11 +21,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,12 +39,14 @@ public class SchoolService implements SchoolDirectory {
     private final SchoolRepository schools;
     private final SchoolHolidayRepository holidays;
     private final SchoolMapper mapper;
+    private final PickupWindows pickupWindows;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public SchoolService(SchoolRepository schools, SchoolHolidayRepository holidays, SchoolMapper mapper,
-                         AuditService audit, ApplicationEventPublisher events, Clock clock) {
+                         PickupWindows pickupWindows, AuditService audit, ApplicationEventPublisher events, Clock clock) {
+        this.pickupWindows = pickupWindows;
         this.schools = schools;
         this.holidays = holidays;
         this.mapper = mapper;
@@ -83,6 +91,27 @@ public class SchoolService implements SchoolDirectory {
         SchoolInfo school = require(schoolId);
         return school.active() && school.workingDays().contains(date.getDayOfWeek())
                 && !holidays.existsBySchoolIdAndHolidayDate(schoolId, date);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SchoolDirectory.Holiday> holidaysBetween(UUID schoolId, LocalDate from, LocalDate to) {
+        return holidays.findBySchoolIdAndHolidayDateBetweenOrderByHolidayDate(schoolId, from, to).stream()
+                .map(h -> new SchoolDirectory.Holiday(h.getHolidayDate(), h.getReason())).toList();
+    }
+
+    /** What a parent sees about their child's school: timings, pickup window, working days and coming holidays. */
+    @Transactional(readOnly = true)
+    public SchoolDetailsResponse details(UUID schoolId) {
+        School s = schools.findByIdAndDeletedAtIsNull(schoolId).filter(School::isActive)
+                .orElseThrow(() -> Errors.notFound("School"));
+        PickupWindows.DailyWindow w = pickupWindows.daily(s.getDeliveryWindowStart(), s.getDeliveryWindowEnd());
+        LocalDate today = TimeZones.todayIst(clock);
+        List<HolidayResponse> upcoming = holidays.findBySchoolIdAndHolidayDateBetweenOrderByHolidayDate(schoolId, today,
+                today.plusDays(120)).stream().map(mapper::toResponse).toList();
+        return new SchoolDetailsResponse(s.getId(), s.getName(), s.getAddressLine(), s.getCity(), s.getPincode(),
+                Geo.toGeoPoint(s.getLocation()), s.getLunchTime(), s.getDeliveryWindowStart(), s.getDeliveryWindowEnd(),
+                w.pickupStart(), w.pickupEnd(), s.getWorkingDays(), upcoming, pickupWindows.firstOpenDate());
     }
 
     // ---- Parent-facing ----
@@ -139,9 +168,20 @@ public class SchoolService implements SchoolDirectory {
         if (!school.getCode().equalsIgnoreCase(request.code())) {
             throw Errors.badRequest("code_immutable", "A school's code cannot be changed.");
         }
+        Set<DayOfWeek> daysBefore = EnumSet.copyOf(school.getWorkingDays().isEmpty()
+                ? EnumSet.noneOf(DayOfWeek.class) : school.getWorkingDays());
         apply(school, request);
         SchoolResponse after = mapper.toResponse(school);
         audit.record("school.updated", "School", id, before, after);
+        Set<DayOfWeek> removed = EnumSet.noneOf(DayOfWeek.class);
+        removed.addAll(daysBefore);
+        removed.removeAll(school.getWorkingDays());
+        Set<DayOfWeek> added = EnumSet.noneOf(DayOfWeek.class);
+        added.addAll(school.getWorkingDays());
+        added.removeAll(daysBefore);
+        if (!removed.isEmpty() || !added.isEmpty()) {
+            events.publishEvent(new WorkingDaysChanged(id, removed, added));
+        }
         return after;
     }
 

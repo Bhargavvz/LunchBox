@@ -54,6 +54,10 @@ public class DeliveryPartner extends BaseEntity {
     @Column(name = "service_radius_m", nullable = false)
     private int serviceRadiusM;
 
+    /** Service area the rider is limited to; null = anywhere within the service radius. */
+    @Column(name = "service_area_id")
+    private UUID serviceAreaId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false)
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
@@ -99,7 +103,8 @@ public class DeliveryPartner extends BaseEntity {
     }
 
     void updateProfile(String firstName, String lastName, VehicleType vehicleType, String vehicleNumber, int capacity,
-                       Point homeZone, int serviceRadiusM) {
+                       Point homeZone, int serviceRadiusM, UUID serviceAreaId) {
+        this.serviceAreaId = serviceAreaId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.vehicleType = vehicleType;

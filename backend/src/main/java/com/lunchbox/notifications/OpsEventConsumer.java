@@ -1,5 +1,6 @@
 package com.lunchbox.notifications;
 
+import com.lunchbox.dispatch.AssignmentService;
 import com.lunchbox.common.messaging.Messaging;
 import com.lunchbox.common.messaging.ProcessedEvents;
 import com.lunchbox.common.security.Role;
@@ -30,6 +31,21 @@ public class OpsEventConsumer {
         this.users = users;
         this.processed = processed;
         this.stomp = stomp;
+    }
+
+    /** Orders left without a rider, a rider gone silent mid-route: same channels as partner issues. */
+    @RabbitListener(queues = Messaging.Q_NOTIFICATIONS_DISPATCH_ALERTS)
+    @Transactional
+    public void onDispatchAlert(AssignmentService.DispatchAlert alert, @Header(Messaging.HEADER_EVENT_ID) String eventId) {
+        if (!processed.markFirstDelivery("notifications.dispatch", UUID.fromString(eventId))) {
+            return;
+        }
+        stomp.send("/topic/admin.alerts", new OrderNotificationConsumer.AdminAlert(alert.kind(), null, alert.partnerId(),
+                alert.summary(), alert.at()));
+        Stream.concat(users.activeUserIdsByRole(Role.OPS_ADMIN).stream(), users.activeUserIdsByRole(Role.SUPER_ADMIN).stream())
+                .distinct()
+                .forEach(userId -> notifications.notify(userId, NotificationTemplate.ADMIN_DISPATCH_ALERT,
+                        new Object[]{alert.summary()}, Map.of("kind", alert.kind(), "date", String.valueOf(alert.date()))));
     }
 
     @RabbitListener(queues = Messaging.Q_NOTIFICATIONS_OPS_EVENTS)

@@ -27,6 +27,16 @@ public interface SchoolDirectory {
     /** Whether the school serves lunch on this date (working weekday and not a holiday). */
     boolean isSchoolDay(UUID schoolId, LocalDate date);
 
+    /** Holidays in [from, to], oldest first. */
+    List<Holiday> holidaysBetween(UUID schoolId, LocalDate from, LocalDate to);
+
+    record Holiday(LocalDate date, String reason) {
+    }
+
+    /** Published when ops change a school's working days; orders already made for removed weekdays are cancelled. */
+    record WorkingDaysChanged(UUID schoolId, Set<DayOfWeek> removed, Set<DayOfWeek> added) {
+    }
+
     record SchoolInfo(
             UUID id,
             String name,

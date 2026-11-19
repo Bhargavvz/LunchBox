@@ -53,6 +53,8 @@ export function createLunchBoxApi(options: ClientOptions) {
         unwrap(c.GET('/api/v1/schools', { params: { query: { q, page, size: 30 } } })),
       holidays: (schoolId: string, from: string, to: string) =>
         unwrap(c.GET('/api/v1/schools/{schoolId}/holidays', { params: { path: { schoolId }, query: { from, to } } })),
+      /** Timings, pickup window, working days and coming holidays, as parents see them. */
+      details: (schoolId: string) => unwrap(c.GET('/api/v1/schools/{schoolId}', { params: { path: { schoolId } } })),
     },
 
     serviceAreas: {
@@ -73,6 +75,9 @@ export function createLunchBoxApi(options: ClientOptions) {
         unwrap(c.POST('/api/v1/children/{childId}/leave-days', { params: { path: { childId } }, body })),
       removeLeave: (childId: string, date: string) =>
         unwrap(c.DELETE('/api/v1/children/{childId}/leave-days/{date}', { params: { path: { childId, date } } })),
+      /** Day-by-day pickups worked out by the same rules that create orders. */
+      calendar: (childId: string, from: string, to: string) =>
+        unwrap(c.GET('/api/v1/children/{childId}/calendar', { params: { path: { childId }, query: { from, to } } })),
     },
 
     addresses: {
@@ -99,11 +104,14 @@ export function createLunchBoxApi(options: ClientOptions) {
             body,
           }),
         ),
+      /** Price, coupon discount and free trial for a plan, before paying. */
+      quote: (body: S['QuoteRequest']) => unwrap(c.POST('/api/v1/subscriptions/quote', { body })),
       /** Prepaid plans (ADR-0018): opens a Razorpay order for the next period. */
-      renew: (subscriptionId: string, idempotencyKey = newIdempotencyKey()) =>
+      renew: (subscriptionId: string, couponCode?: string, idempotencyKey = newIdempotencyKey()) =>
         unwrap(
           c.POST('/api/v1/subscriptions/{subscriptionId}/renew', {
             params: { path: { subscriptionId }, header: { 'Idempotency-Key': idempotencyKey } },
+            body: couponCode ? { couponCode } : undefined,
           }),
         ),
       /** Local development only (fake Razorpay): pays a prepaid order. */
@@ -181,6 +189,9 @@ export function createLunchBoxApi(options: ClientOptions) {
             body,
           }),
         ),
+      /** Hand back an order you have not set off for; it goes to another rider. */
+      decline: (orderId: string, reason: string) =>
+        unwrap(c.POST('/api/v1/partner/orders/{orderId}/decline', { params: { path: { orderId } }, body: { reason } })),
       handoverUploadUrl: () => unwrap(c.POST('/api/v1/partner/handover/upload-url')),
       handover: (schoolId: string, body: S['HandoverRequest'], idempotencyKey: string) =>
         unwrap(
@@ -263,6 +274,12 @@ function createAdminApi(c: ReturnType<typeof createRawClient>, raw: (m: string, 
       unwrap(c.POST('/api/v1/admin/jobs/generate-orders', { params: { query: { date } } })),
     autoAssign: (date?: string) => unwrap(c.POST('/api/v1/admin/jobs/auto-assign', { params: { query: { date } } })),
     routes: (date?: string) => unwrap(c.GET('/api/v1/admin/routes', { params: { query: { date } } })),
+    allocationRuns: (date?: string, limit = 50) =>
+      unwrap(c.GET('/api/v1/admin/allocation/runs', { params: { query: { date, limit } } })),
+    allocationRunDecisions: (runId: string) =>
+      unwrap(c.GET('/api/v1/admin/allocation/runs/{runId}/decisions', { params: { path: { runId } } })),
+    orderAllocation: (orderId: string) =>
+      unwrap(c.GET('/api/v1/admin/orders/{orderId}/allocation', { params: { path: { orderId } } })),
 
     partners: (query: { q?: string; approvalStatus?: string; page?: number; size?: number }) =>
       unwrap(c.GET('/api/v1/admin/partners', { params: { query: query as never } })),
@@ -303,6 +320,14 @@ function createAdminApi(c: ReturnType<typeof createRawClient>, raw: (m: string, 
       unwrap(c.POST('/api/v1/admin/issues/{issueId}/resolve', { params: { path: { issueId } }, body: { note } })),
 
     plans: () => unwrap(c.GET('/api/v1/admin/plans')),
+    planFeatures: () => unwrap(c.GET('/api/v1/admin/plan-features')),
+    createPlanFeature: (body: Schemas['FeatureDefinitionRequest']) => unwrap(c.POST('/api/v1/admin/plan-features', { body })),
+    updatePlanFeature: (key: string, body: Schemas['FeatureDefinitionRequest']) =>
+      unwrap(c.PUT('/api/v1/admin/plan-features/{key}', { params: { path: { key } }, body })),
+    coupons: () => unwrap(c.GET('/api/v1/admin/coupons')),
+    createCoupon: (body: Schemas['CouponRequest']) => unwrap(c.POST('/api/v1/admin/coupons', { body })),
+    updateCoupon: (couponId: string, body: Schemas['CouponRequest']) =>
+      unwrap(c.PUT('/api/v1/admin/coupons/{couponId}', { params: { path: { couponId } }, body })),
     createPlan: (body: Schemas['PlanRequest']) => unwrap(c.POST('/api/v1/admin/plans', { body })),
     fleet: () => unwrap(c.GET('/api/v1/admin/tracking/partners')),
     updatePlan: (planId: string, body: Schemas['PlanUpdateRequest']) =>

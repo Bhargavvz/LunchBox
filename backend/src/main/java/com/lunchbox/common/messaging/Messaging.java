@@ -16,6 +16,7 @@ public final class Messaging {
     public static final String SHIFT_ENDED = "shift.ended";
     public static final String SHIFT_NO_SHOW = "shift.no_show";
     public static final String PARTNER_ISSUE_REPORTED = "partner.issue_reported";
+    public static final String DISPATCH_ALERT = "dispatch.alert";
     public static final String BROADCAST_REQUESTED = "broadcast.requested";
     public static final String PAYOUT_REQUESTED = "payout.requested";
     // Deliberately outside "order.#" so the notifications consumer never receives it.
@@ -24,6 +25,7 @@ public final class Messaging {
     // Consumer queues
     public static final String Q_NOTIFICATIONS_ORDER_EVENTS = "notifications.order-events";
     public static final String Q_NOTIFICATIONS_OPS_EVENTS = "notifications.ops-events";
+    public static final String Q_NOTIFICATIONS_DISPATCH_ALERTS = "notifications.dispatch-alerts";
     public static final String Q_EARNINGS_EVENTS = "payouts.earnings-events";
     public static final String Q_TRACKING_ORDER_EVENTS = "tracking.order-events";
     public static final String Q_DISPATCH_RATINGS = "dispatch.ratings";

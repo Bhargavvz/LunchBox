@@ -113,9 +113,16 @@ public record LunchBoxProperties(
     }
 
     /** Absent or {@code or-tools}: in-process solver. {@code google}: Route Optimization API with OR-Tools failover. */
-    public record Routing(Provider provider, Google google) {
+    public record Routing(Provider provider, Google google, Matrix matrix) {
 
         public enum Provider { OR_TOOLS, GOOGLE }
+
+        /**
+         * Road distances for rider allocation (Google Routes API "computeRouteMatrix"). Empty key: distances are
+         * estimated from straight lines.
+         */
+        public record Matrix(String googleApiKey, String baseUrl, Duration timeout) {
+        }
 
         /** {@code credentialsJson} empty → Application Default Credentials. */
         public record Google(String projectId, String credentialsJson, String baseUrl, Duration timeout) {

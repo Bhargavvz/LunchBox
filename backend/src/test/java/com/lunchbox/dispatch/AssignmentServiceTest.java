@@ -1,14 +1,25 @@
 package com.lunchbox.dispatch;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lunchbox.audit.AuditService;
 import com.lunchbox.common.error.ApiException;
 import com.lunchbox.common.geo.Geo;
 import com.lunchbox.common.lock.DistributedLock;
+import com.lunchbox.common.outbox.OutboxPublisher;
+import com.lunchbox.common.settings.PlatformSettings;
+import com.lunchbox.dispatch.allocation.AllocationDecision.Outcome;
+import com.lunchbox.dispatch.allocation.AllocationLog;
+import com.lunchbox.dispatch.allocation.AllocationRun;
+import com.lunchbox.dispatch.allocation.AllocationWeights;
+import com.lunchbox.dispatch.allocation.EstimatedTravelTimes;
 import com.lunchbox.dispatch.web.DispatchDtos.AutoAssignResult;
 import com.lunchbox.orders.OrderCommands;
 import com.lunchbox.orders.OrderQueries;
 import com.lunchbox.orders.OrderStatus;
 import com.lunchbox.orders.OrderView;
+import com.lunchbox.serviceareas.ServiceAreaDirectory;
+import com.lunchbox.subscriptions.SubscriptionQueries;
+import com.lunchbox.tracking.LiveLocationStore;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,17 +32,23 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,13 +66,19 @@ class AssignmentServiceTest {
     private final OrderCommands orderCommands = mock(OrderCommands.class);
     private final RoutePlanningService routePlanning = mock(RoutePlanningService.class);
     private final DistributedLock lock = mock(DistributedLock.class);
+    private final AllocationLog allocationLog = mock(AllocationLog.class);
+    private final PlatformSettings settings = mock(PlatformSettings.class);
+    private final LiveLocationStore liveLocations = mock(LiveLocationStore.class);
+    private final SubscriptionQueries subscriptions = mock(SubscriptionQueries.class);
     private final PlatformTransactionManager txManager = mock(PlatformTransactionManager.class);
     private final AssignmentService service = new AssignmentService(assignments, shifts, partners, orderQueries,
-            orderCommands, routePlanning, lock, mock(AuditService.class), new SimpleMeterRegistry(), txManager,
-            Clock.fixed(T0, ZoneOffset.UTC));
+            orderCommands, routePlanning, lock, mock(AuditService.class), allocationLog, new EstimatedTravelTimes(), settings,
+            liveLocations, mock(ServiceAreaDirectory.class), subscriptions, mock(OutboxPublisher.class),
+            new SimpleMeterRegistry(), txManager, Clock.fixed(T0, ZoneOffset.UTC));
 
     private final UUID schoolA = UUID.randomUUID();
     private final UUID schoolB = UUID.randomUUID();
+    private final List<DeliveryPartner> known = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -63,6 +86,9 @@ class AssignmentServiceTest {
         when(lock.tryAcquire(anyString(), any(Duration.class))).thenReturn(Optional.of("token"));
         when(assignments.findByOrderIdAndStatus(any(), eq(Assignment.Status.ACTIVE))).thenReturn(Optional.empty());
         when(routePlanning.plan(any(), eq(DATE))).thenReturn(Optional.of(UUID.randomUUID()));
+        when(settings.raw("allocation.weights")).thenReturn(new ObjectMapper().valueToTree(AllocationWeights.DEFAULTS));
+        when(partners.findByIdIn(any())).thenAnswer(inv -> known);
+        when(allocationLog.startRun(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
     }
 
     @Test
@@ -77,6 +103,7 @@ class AssignmentServiceTest {
 
         assertThat(result.assigned()).isEqualTo(1);
         assertThat(result.routesPlanned()).isEqualTo(1);
+        assertThat(result.runId()).isNotNull();
         verify(orderCommands).assignPartner(eq(order.id()), eq(near.getId()), anyMap());
         verify(routePlanning).plan(near.getId(), DATE);
     }
@@ -88,7 +115,7 @@ class AssignmentServiceTest {
         shiftsFor(closer, sameSchool);
         when(orderQueries.forPartnerAndDate(sameSchool.getId(), DATE))
                 .thenReturn(List.of(assigned(sameSchool.getId(), schoolB)));
-        // ~144 m from `closer`, ~167 m from `sameSchool`: the 0.5 affinity (≈ 83 m) tips it to `sameSchool`.
+        // ~144 m from `closer`, ~167 m from `sameSchool`: adding a new school to `closer` costs far more than 23 m.
         OrderView order = order(17.3862, 78.4872, schoolB);
         pending(order);
 
@@ -113,6 +140,48 @@ class AssignmentServiceTest {
         assertThat(result.unassigned()).isEqualTo(2);
         verify(orderCommands).assignPartner(eq(first.id()), eq(small.getId()), anyMap());
         verify(orderCommands, never()).assignPartner(eq(outOfRange.id()), any(), anyMap());
+        verify(allocationLog).record(any(), eq(outOfRange.id()), isNull(), eq(Outcome.UNASSIGNED), eq("OUT_OF_RANGE"),
+                anyString(), isNull(), eq(0), isNull(), isNull(), isNull());
+        verify(allocationLog).record(any(), eq(second.id()), isNull(), eq(Outcome.UNASSIGNED), eq("ALL_FULL"),
+                anyString(), isNull(), eq(0), isNull(), isNull(), isNull());
+    }
+
+    @Test
+    void spreadsWorkBetweenTwoEquallyPlacedRiders() {
+        DeliveryPartner a = partner(17.385, 78.4867, 8, 5000);
+        DeliveryPartner b = partner(17.385, 78.4868, 8, 5000);
+        shiftsFor(a, b);
+        List<OrderView> orders = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            orders.add(order(17.386 + i * 0.0001, 78.4870, i % 2 == 0 ? schoolA : schoolB));
+        }
+        pending(orders.toArray(OrderView[]::new));
+
+        service.autoAssign(DATE);
+
+        Map<UUID, Integer> load = new HashMap<>();
+        for (OrderView o : orders) {
+            verify(orderCommands).assignPartner(eq(o.id()), any(), anyMap());
+        }
+        org.mockito.ArgumentCaptor<UUID> partner = org.mockito.ArgumentCaptor.forClass(UUID.class);
+        verify(orderCommands, org.mockito.Mockito.times(6)).assignPartner(any(), partner.capture(), anyMap());
+        partner.getAllValues().forEach(p -> load.merge(p, 1, Integer::sum));
+        // Each rider takes one whole school (3 boxes) instead of one rider taking all six.
+        assertThat(load.values()).containsExactlyInAnyOrder(3, 3);
+    }
+
+    @Test
+    void neverOffersAnOrderBackToARiderWhoDeclinedIt() {
+        DeliveryPartner decliner = partner(17.385, 78.4867, 5, 5000);
+        DeliveryPartner other = partner(17.395, 78.4967, 5, 5000);
+        shiftsFor(decliner, other);
+        OrderView order = order(17.3855, 78.4872, schoolA);
+        pending(order);
+        when(allocationLog.declinedBy(anyCollection())).thenReturn(Map.of(order.id(), Set.of(decliner.getId())));
+
+        service.autoAssign(DATE);
+
+        verify(orderCommands).assignPartner(eq(order.id()), eq(other.getId()), anyMap());
     }
 
     @Test
@@ -136,6 +205,8 @@ class AssignmentServiceTest {
 
         assertThat(service.autoAssign(DATE).assigned()).isZero();
         verify(assignments, never()).save(any());
+        verify(allocationLog).record(any(), eq(order.id()), eq(p.getId()), eq(Outcome.CONFLICT), anyString(), anyString(),
+                any(), any(), any(), any(), any());
     }
 
     @Test
@@ -152,9 +223,73 @@ class AssignmentServiceTest {
     }
 
     @Test
+    void aQuietRerunWithNothingNewLeavesNoRunBehind() {
+        DeliveryPartner p = partner(17.385, 78.4867, 1, 5000);
+        shiftsFor(p);
+        when(orderQueries.forPartnerAndDate(p.getId(), DATE)).thenReturn(List.of(assigned(p.getId(), schoolA)));
+        OrderView order = order(17.3855, 78.4872, schoolA);
+        pending(order);
+        when(allocationLog.latestOutcomes(anyCollection()))
+                .thenReturn(Map.of(order.id(), new AllocationLog.LatestOutcome(Outcome.UNASSIGNED, "ALL_FULL")));
+
+        AutoAssignResult result = service.autoAssign(DATE);
+
+        assertThat(result.runId()).isNull();
+        verify(allocationLog, never()).startRun(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void anOpsRunIsAlwaysLogged() {
+        DeliveryPartner p = partner(17.385, 78.4867, 1, 5000);
+        shiftsFor(p);
+        when(orderQueries.forPartnerAndDate(p.getId(), DATE)).thenReturn(List.of(assigned(p.getId(), schoolA)));
+        pending(order(17.3855, 78.4872, schoolA));
+        when(allocationLog.latestOutcomes(anyCollection())).thenReturn(Map.of());
+        UUID admin = UUID.randomUUID();
+
+        service.autoAssign(DATE, AllocationRun.Trigger.MANUAL, admin);
+
+        verify(allocationLog).startRun(eq(DATE), eq(AllocationRun.Trigger.MANUAL), eq(admin), any(), any());
+    }
+
+    @Test
+    void refusesToAllocateAPastDay() {
+        assertThatThrownBy(() -> service.autoAssign(DATE.minusDays(1)))
+                .isInstanceOf(ApiException.class).extracting("code").isEqualTo("past_date");
+    }
+
+    @Test
+    void aRiderCanOnlyDeclineTheirOwnOrderBeforeSettingOff() {
+        DeliveryPartner p = partner(17.385, 78.4867, 5, 5000);
+        OrderView enRoute = withStatus(order(17.3855, 78.4872, schoolA), OrderStatus.PARTNER_EN_ROUTE, p.getId());
+        when(orderQueries.require(enRoute.id())).thenReturn(enRoute);
+        OrderView someoneElses = withStatus(order(17.3855, 78.4872, schoolA), OrderStatus.ASSIGNED, UUID.randomUUID());
+        when(orderQueries.require(someoneElses.id())).thenReturn(someoneElses);
+
+        assertThatThrownBy(() -> service.decline(p.getId(), enRoute.id(), "Flat tyre"))
+                .isInstanceOf(ApiException.class).extracting("code").isEqualTo("cannot_decline");
+        assertThatThrownBy(() -> service.decline(p.getId(), someoneElses.id(), "No"))
+                .isInstanceOf(ApiException.class).extracting("code").isEqualTo("not_found");
+    }
+
+    @Test
+    void declineReleasesTheOrderRecordsItAndReallocates() {
+        DeliveryPartner p = partner(17.385, 78.4867, 5, 5000);
+        OrderView order = withStatus(order(17.3855, 78.4872, schoolA), OrderStatus.ASSIGNED, p.getId());
+        when(orderQueries.require(order.id())).thenReturn(order);
+        when(orderQueries.forDate(eq(DATE), any())).thenReturn(List.of());
+
+        service.decline(p.getId(), order.id(), "Flat tyre");
+
+        verify(orderCommands).releasePartner(order.id(), "Declined by rider: Flat tyre");
+        verify(allocationLog).record(isNull(), eq(order.id()), eq(p.getId()), eq(Outcome.DECLINED), eq("RIDER_DECLINED"),
+                anyString(), isNull(), isNull(), isNull(), isNull(), isNull());
+        verify(routePlanning).plan(p.getId(), DATE);
+    }
+
+    @Test
     void manualAssignRefusesOrdersAlreadyCollected() {
         DeliveryPartner p = partner(17.385, 78.4867, 5, 5000);
-        when(partners.findById(p.getId())).thenReturn(Optional.of(p));
         PartnerShift shift = new PartnerShift(p.getId(), DATE, T0, T0.plusSeconds(4 * 3600));
         when(shifts.findByPartnerIdAndShiftDate(p.getId(), DATE)).thenReturn(Optional.of(shift));
         OrderView pickedUp = withStatus(order(17.3855, 78.4872, schoolA), OrderStatus.PICKED_UP, UUID.randomUUID());
@@ -167,7 +302,6 @@ class AssignmentServiceTest {
     @Test
     void manualAssignRequiresAShiftThatDay() {
         DeliveryPartner p = partner(17.385, 78.4867, 5, 5000);
-        when(partners.findById(p.getId())).thenReturn(Optional.of(p));
         when(shifts.findByPartnerIdAndShiftDate(p.getId(), DATE)).thenReturn(Optional.empty());
         OrderView order = order(17.3855, 78.4872, schoolA);
         when(orderQueries.require(order.id())).thenReturn(order);
@@ -176,15 +310,31 @@ class AssignmentServiceTest {
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("no_shift");
     }
 
+    @Test
+    void manualAssignIsLoggedAsAnOverrideWithItsReason() {
+        DeliveryPartner p = partner(17.385, 78.4867, 5, 5000);
+        PartnerShift shift = new PartnerShift(p.getId(), DATE, T0, T0.plusSeconds(4 * 3600));
+        when(shifts.findByPartnerIdAndShiftDate(p.getId(), DATE)).thenReturn(Optional.of(shift));
+        OrderView order = order(17.3855, 78.4872, schoolA);
+        when(orderQueries.require(order.id())).thenReturn(order);
+
+        service.manualAssign(order.id(), p.getId(), "Parent asked for Ravi");
+
+        verify(allocationLog).record(isNull(), eq(order.id()), eq(p.getId()), eq(Outcome.MANUAL), eq("OPS_OVERRIDE"),
+                eq("Parent asked for Ravi"), isNull(), isNull(), isNull(), isNull(), any());
+    }
+
     // ---- fixtures ----
 
     private DeliveryPartner partner(double lat, double lng, int capacity, int radiusM) {
         DeliveryPartner p = new DeliveryPartner(UUID.randomUUID());
         ReflectionTestUtils.setField(p, "id", UUID.randomUUID());
-        p.updateProfile("Ravi", null, DeliveryPartner.VehicleType.SCOOTER, "TS09AB1234", capacity, Geo.point(lat, lng), radiusM);
+        p.updateProfile("Ravi", null, DeliveryPartner.VehicleType.SCOOTER, "TS09AB1234", capacity, Geo.point(lat, lng),
+                radiusM, null);
         p.decide(true, UUID.randomUUID(), null, T0);
         when(partners.findById(p.getId())).thenReturn(Optional.of(p));
         when(orderQueries.forPartnerAndDate(p.getId(), DATE)).thenReturn(List.of());
+        known.add(p);
         return p;
     }
 

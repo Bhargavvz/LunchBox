@@ -190,7 +190,7 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
 
     private static void apply(DeliveryPartner p, PartnerProfileRequest r) {
         p.updateProfile(r.firstName().trim(), r.lastName() == null ? null : r.lastName().trim(), r.vehicleType(),
-                r.vehicleNumber(), r.capacity(), Geo.point(r.homeZone()), r.serviceRadiusM());
+                r.vehicleNumber(), r.capacity(), Geo.point(r.homeZone()), r.serviceRadiusM(), r.serviceAreaId());
     }
 
     static PartnerInfo info(DeliveryPartner p) {
@@ -203,7 +203,7 @@ public class PartnerService implements PartnerDirectory, ActivationPolicy {
         String phone = users.findUser(p.getUserId()).map(UserDirectory.UserSummary::phone).orElse(null);
         return new AdminPartnerResponse(p.getId(), p.getUserId(), p.getFirstName(), p.getLastName(), phone,
                 p.getVehicleType(), p.getVehicleNumber(), p.getCapacity(), Geo.toGeoPoint(p.getHomeZone()),
-                p.getServiceRadiusM(), p.getApprovalStatus(), p.getApprovalNotes(), p.getRating(), p.getRatingCount(), p.isActive(),
+                p.getServiceRadiusM(), p.getServiceAreaId(), p.getApprovalStatus(), p.getApprovalNotes(), p.getRating(), p.getRatingCount(), p.isActive(),
                 p.getPayoutFundAccountId() != null, p.getCreatedAt());
     }
 

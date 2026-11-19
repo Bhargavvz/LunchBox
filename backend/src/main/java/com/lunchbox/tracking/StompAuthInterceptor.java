@@ -6,6 +6,7 @@ import com.lunchbox.common.security.CurrentUser;
 import com.lunchbox.common.security.LunchBoxAuthentication;
 import com.lunchbox.common.security.Role;
 import com.lunchbox.orders.OrderQueries;
+import com.lunchbox.subscriptions.SubscriptionQueries;
 import com.lunchbox.users.ConsentPurpose;
 import com.lunchbox.users.UserDirectory;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,13 +38,15 @@ public class StompAuthInterceptor implements ChannelInterceptor {
     private final Authenticator authenticator;
     private final OrderQueries orders;
     private final UserDirectory users;
+    private final SubscriptionQueries subscriptions;
     private final MeterRegistry meters;
 
     public StompAuthInterceptor(@Lazy Authenticator authenticator, @Lazy OrderQueries orders, @Lazy UserDirectory users,
-                                MeterRegistry meters) {
+                                @Lazy SubscriptionQueries subscriptions, MeterRegistry meters) {
         this.authenticator = authenticator;
         this.orders = orders;
         this.users = users;
+        this.subscriptions = subscriptions;
         this.meters = meters;
     }
 
@@ -108,9 +111,12 @@ public class StompAuthInterceptor implements ChannelInterceptor {
             }
             if (user.is(Role.PARENT)) {
                 UUID parentId = users.requireParentId(user.userId());
-                orders.requireOwnedByParent(orderId, parentId);
+                var order = orders.requireOwnedByParent(orderId, parentId);
                 if (!users.hasActiveConsent(user.userId(), ConsentPurpose.LIVE_TRACKING)) {
                     throw deny("Live tracking consent required");
+                }
+                if (!subscriptions.liveTrackingIncluded(order.subscriptionId())) {
+                    throw deny("Live tracking is not part of this plan");
                 }
                 return;
             }

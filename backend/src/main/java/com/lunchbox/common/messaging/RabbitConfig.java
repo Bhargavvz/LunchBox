@@ -41,6 +41,7 @@ public class RabbitConfig {
 
         queue(d, events, dlx, Q_NOTIFICATIONS_ORDER_EVENTS, "order.#");
         queue(d, events, dlx, Q_NOTIFICATIONS_OPS_EVENTS, PARTNER_ISSUE_REPORTED);
+        queue(d, events, dlx, Q_NOTIFICATIONS_DISPATCH_ALERTS, DISPATCH_ALERT);
         Queue earnings = queue(d, events, dlx, Q_EARNINGS_EVENTS, ORDER_STATUS_CHANGED);
         d.add(BindingBuilder.bind(earnings).to(events).with(ROUTE_COMPLETED));
         d.add(BindingBuilder.bind(earnings).to(events).with(SHIFT_ENDED));

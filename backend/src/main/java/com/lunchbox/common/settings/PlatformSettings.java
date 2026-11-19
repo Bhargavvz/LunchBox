@@ -1,5 +1,7 @@
 package com.lunchbox.common.settings;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.time.LocalTime;
 
 /** Operational knobs editable from the admin panel (backed by {@code app_settings}). */
@@ -27,6 +29,9 @@ public interface PlatformSettings {
     int noShowGraceMinutes();
 
     PayRates payRates();
+
+    /** A setting's JSON value, for modules that parse their own structured settings (e.g. allocation weights). */
+    JsonNode raw(String key);
 
     record PayRates(
             long baseDayPaise,

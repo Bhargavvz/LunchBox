@@ -64,7 +64,9 @@ public final class TrackingDtos {
             LiveLocation location,
             Integer etaSeconds,
             String destinationType,
-            GeoPoint destination) {
+            GeoPoint destination,
+            /* False when the order's plan does not include live tracking. */
+            boolean includedInPlan) {
     }
 
     /** One rider on shift today, for the operations map. Phone is shown to staff only. */

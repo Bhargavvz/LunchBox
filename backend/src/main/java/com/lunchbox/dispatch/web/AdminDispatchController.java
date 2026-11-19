@@ -9,6 +9,8 @@ import com.lunchbox.dispatch.DeliveryPartner;
 import com.lunchbox.dispatch.DispatchAdminService;
 import com.lunchbox.dispatch.PartnerService;
 import com.lunchbox.dispatch.ShiftService;
+import com.lunchbox.dispatch.allocation.AllocationLog;
+import com.lunchbox.dispatch.allocation.AllocationRun;
 import com.lunchbox.dispatch.web.DispatchDtos.AdminPartnerResponse;
 import com.lunchbox.dispatch.web.DispatchDtos.AdminRouteResponse;
 import com.lunchbox.dispatch.web.DispatchDtos.AssignRequest;
@@ -53,14 +55,16 @@ public class AdminDispatchController {
     private final ShiftService shifts;
     private final AssignmentService assignment;
     private final DispatchAdminService dispatch;
+    private final AllocationLog allocationLog;
     private final Clock clock;
 
     public AdminDispatchController(PartnerService partners, ShiftService shifts,
-                                   AssignmentService assignment, DispatchAdminService dispatch, Clock clock) {
+                                   AssignmentService assignment, DispatchAdminService dispatch, AllocationLog allocationLog, Clock clock) {
         this.partners = partners;
         this.shifts = shifts;
         this.assignment = assignment;
         this.dispatch = dispatch;
+        this.allocationLog = allocationLog;
         this.clock = clock;
     }
 
@@ -156,8 +160,30 @@ public class AdminDispatchController {
 
     @PostMapping("/jobs/auto-assign")
     @PreAuthorize(Roles.ADMIN_WRITE)
-    public AutoAssignResult autoAssign(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return assignment.autoAssign(date == null ? TimeZones.todayIst(clock).plusDays(1) : date);
+    public AutoAssignResult autoAssign(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                       @AuthenticationPrincipal CurrentUser user) {
+        return assignment.autoAssign(date == null ? TimeZones.todayIst(clock).plusDays(1) : date,
+                AllocationRun.Trigger.MANUAL, user.userId());
+    }
+
+    @GetMapping("/allocation/runs")
+    @PreAuthorize(Roles.ADMIN_READ)
+    public List<AllocationLog.RunView> allocationRuns(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(defaultValue = "50") int limit) {
+        return allocationLog.runs(date, limit);
+    }
+
+    @GetMapping("/allocation/runs/{runId}/decisions")
+    @PreAuthorize(Roles.ADMIN_READ)
+    public List<AllocationLog.DecisionView> allocationRunDecisions(@PathVariable UUID runId) {
+        return allocationLog.forRun(runId);
+    }
+
+    @GetMapping("/orders/{orderId}/allocation")
+    @PreAuthorize(Roles.ADMIN_READ)
+    public List<AllocationLog.DecisionView> orderAllocation(@PathVariable UUID orderId) {
+        return allocationLog.forOrder(orderId);
     }
 
     @GetMapping("/routes")

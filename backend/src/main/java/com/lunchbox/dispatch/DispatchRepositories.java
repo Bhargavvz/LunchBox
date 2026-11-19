@@ -48,6 +48,22 @@ interface PartnerShiftRepository extends JpaRepository<PartnerShift, UUID> {
     List<PartnerShift> findByPartnerIdAndShiftDateBetweenOrderByShiftDate(UUID partnerId, LocalDate from, LocalDate to);
 
     List<PartnerShift> findByShiftDate(LocalDate date);
+
+    @Query("""
+            select s.partnerId as partnerId, s.status as status, count(s) as total from PartnerShift s
+            where s.partnerId in :partnerIds and s.shiftDate >= :from and s.shiftDate < :to
+            group by s.partnerId, s.status
+            """)
+    List<ShiftCount> countByStatus(@Param("partnerIds") Collection<UUID> partnerIds, @Param("from") LocalDate from,
+                                   @Param("to") LocalDate to);
+
+    interface ShiftCount {
+        UUID getPartnerId();
+
+        PartnerShift.Status getStatus();
+
+        long getTotal();
+    }
 }
 
 interface RouteRepository extends JpaRepository<Route, UUID> {

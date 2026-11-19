@@ -15,6 +15,38 @@ import java.util.UUID;
 
 public final class OrderDtos {
 
+    /** What happens on a day of a child's calendar. */
+    public enum DayState {
+        /** An order exists for the day; see its status. */
+        ORDER,
+        /** A pickup will be scheduled (the order is created after the cut-off the evening before). */
+        PICKUP,
+        LEAVE,
+        HOLIDAY,
+        /** The school does not work on this weekday. */
+        NO_SCHOOL,
+        /** The child has no plan. */
+        NO_PLAN,
+        BEFORE_START,
+        PLAN_ENDED,
+        /** A school day the plan does not cover. */
+        NOT_A_PLAN_DAY,
+        /** Covered by the plan but not paid for yet (renew or finish the payment). */
+        RENEW_TO_CONTINUE
+    }
+
+    /** {@code editable}: the parent can still mark or remove leave for this day. */
+    public record CalendarDay(LocalDate date, DayState state, UUID orderId, OrderStatus orderStatus, String note,
+                              boolean editable) {
+    }
+
+    public record ChildCalendarResponse(UUID childId, UUID schoolId, String schoolName, LocalDate firstBookableDate,
+                                        java.time.LocalTime pickupWindowStart, java.time.LocalTime pickupWindowEnd,
+                                        java.time.LocalTime deliveryDeadline, java.util.Set<java.time.DayOfWeek> schoolDays,
+                                        String planName, String planStatus, java.util.Set<java.time.DayOfWeek> planDays,
+                                        List<CalendarDay> days) {
+    }
+
     private OrderDtos() {
     }
 

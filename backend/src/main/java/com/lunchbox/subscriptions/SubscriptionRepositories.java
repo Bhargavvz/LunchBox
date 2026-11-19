@@ -21,7 +21,36 @@ interface PlanRepository extends JpaRepository<Plan, UUID> {
     boolean existsByCodeIgnoreCase(String code);
 }
 
+interface PlanFeatureDefinitionRepository extends JpaRepository<PlanFeatureDefinition, String> {
+
+    List<PlanFeatureDefinition> findAllByOrderByDisplayOrderAscKeyAsc();
+}
+
+interface CouponRepository extends JpaRepository<Coupon, UUID> {
+
+    Optional<Coupon> findByCodeIgnoreCase(String code);
+
+    boolean existsByCodeIgnoreCase(String code);
+
+    List<Coupon> findAllByOrderByCreatedAtDesc();
+}
+
+interface CouponRedemptionRepository extends JpaRepository<CouponRedemption, UUID> {
+
+    boolean existsByCouponIdAndParentId(UUID couponId, UUID parentId);
+}
+
 interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
+
+    long countByPlanIdAndStatusIn(UUID planId, Collection<Subscription.Status> statuses);
+
+    long countByParentIdAndPlanIdAndStatusIn(UUID parentId, UUID planId, Collection<Subscription.Status> statuses);
+
+    boolean existsByParentIdAndTrialEndsAtIsNotNull(UUID parentId);
+
+    boolean existsByParentId(UUID parentId);
+
+    List<Subscription> findByIdIn(Collection<UUID> ids);
 
     List<Subscription> findByParentIdOrderByCreatedAtDesc(UUID parentId);
 
@@ -68,4 +97,6 @@ interface LeaveDayRepository extends JpaRepository<LeaveDay, UUID> {
     List<UUID> findChildIdsOnLeave(@Param("date") LocalDate date);
 
     List<LeaveDay> findByChildIdIn(Collection<UUID> childIds);
+
+    long countByChildIdAndLeaveDateBetween(UUID childId, LocalDate from, LocalDate to);
 }

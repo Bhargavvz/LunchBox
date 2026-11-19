@@ -8,11 +8,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.locationtech.jts.geom.Geometry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -38,6 +40,13 @@ public class ServiceAreaService implements ServiceAreaDirectory {
     }
 
     public record ServiceabilityResponse(boolean serviceable) {
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Geometry> activeBoundary(UUID areaId) {
+        return areaId == null ? Optional.empty()
+                : repository.findById(areaId).filter(ServiceArea::isActive).map(ServiceArea::getBoundary);
     }
 
     @Override

@@ -320,6 +320,10 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "serviceAreaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "serviceRadiusM" : {
             "format" : "int32",
             "type" : "integer"
@@ -336,7 +340,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "active", "approvalNotes", "approvalStatus", "capacity", "createdAt", "firstName", "homeZone", "id", "lastName", "payoutAccountLinked", "phone", "rating", "ratingCount", "serviceRadiusM", "userId", "vehicleNumber", "vehicleType" ],
+        "required" : [ "active", "approvalNotes", "approvalStatus", "capacity", "createdAt", "firstName", "homeZone", "id", "lastName", "payoutAccountLinked", "phone", "rating", "ratingCount", "serviceAreaId", "serviceRadiusM", "userId", "vehicleNumber", "vehicleType" ],
         "type" : "object"
       },
       "AdminRouteResponse" : {
@@ -566,12 +570,16 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "runId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "unassigned" : {
             "format" : "int32",
             "type" : "integer"
           }
         },
-        "required" : [ "assigned", "considered", "date", "routesPlanned", "unassigned" ],
+        "required" : [ "assigned", "considered", "date", "routesPlanned", "runId", "unassigned" ],
         "type" : "object"
       },
       "BankAccountRequest" : {
@@ -654,6 +662,34 @@
         "required" : [ "audience", "body", "createdAt", "id", "recipientCount", "schoolId", "status", "title" ],
         "type" : "object"
       },
+      "CalendarDay" : {
+        "properties" : {
+          "date" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "editable" : {
+            "type" : "boolean"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "orderId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orderStatus" : {
+            "enum" : [ "SCHEDULED", "ASSIGNED", "REASSIGNED", "PARTNER_EN_ROUTE", "PICKED_UP", "IN_TRANSIT", "AT_SCHOOL", "DELIVERED", "CANCELLED", "PICKUP_FAILED", "DELIVERY_FAILED" ],
+            "type" : "string"
+          },
+          "state" : {
+            "enum" : [ "ORDER", "PICKUP", "LEAVE", "HOLIDAY", "NO_SCHOOL", "NO_PLAN", "BEFORE_START", "PLAN_ENDED", "NOT_A_PLAN_DAY", "RENEW_TO_CONTINUE" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "date", "editable", "note", "orderId", "orderStatus", "state" ],
+        "type" : "object"
+      },
       "CancelRequest" : {
         "properties" : {
           "reason" : {
@@ -695,6 +731,13 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "couponCode" : {
+            "type" : "string"
+          },
+          "discountPaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "planName" : {
             "type" : "string"
           },
@@ -719,9 +762,71 @@
           "subscriptionId" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "trialEndsAt" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         },
-        "required" : [ "amountPaise", "planName", "prefillContact", "prefillName", "providerOrderId", "providerSubscriptionId", "razorpayKeyId", "shortUrl", "subscriptionId" ],
+        "required" : [ "amountPaise", "couponCode", "discountPaise", "planName", "prefillContact", "prefillName", "providerOrderId", "providerSubscriptionId", "razorpayKeyId", "shortUrl", "subscriptionId", "trialEndsAt" ],
+        "type" : "object"
+      },
+      "ChildCalendarResponse" : {
+        "properties" : {
+          "childId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "days" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CalendarDay"
+            },
+            "type" : "array"
+          },
+          "deliveryDeadline" : {
+            "type" : "string"
+          },
+          "firstBookableDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "pickupWindowEnd" : {
+            "type" : "string"
+          },
+          "pickupWindowStart" : {
+            "type" : "string"
+          },
+          "planDays" : {
+            "items" : {
+              "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ],
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          },
+          "planName" : {
+            "type" : "string"
+          },
+          "planStatus" : {
+            "type" : "string"
+          },
+          "schoolDays" : {
+            "items" : {
+              "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ],
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          },
+          "schoolId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "schoolName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "childId", "days", "deliveryDeadline", "firstBookableDate", "pickupWindowEnd", "pickupWindowStart", "planDays", "planName", "planStatus", "schoolDays", "schoolId", "schoolName" ],
         "type" : "object"
       },
       "ChildRequest" : {
@@ -847,6 +952,122 @@
         "required" : [ "granted", "grantedAt", "id", "policyVersion", "purpose", "withdrawnAt" ],
         "type" : "object"
       },
+      "CouponRequest" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "amount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "code" : {
+            "minLength" : 1,
+            "pattern" : "^[A-Za-z0-9_-]{3,30}$",
+            "type" : "string"
+          },
+          "description" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "firstSubscriptionOnly" : {
+            "type" : "boolean"
+          },
+          "kind" : {
+            "enum" : [ "PERCENT", "FLAT" ],
+            "type" : "string"
+          },
+          "maxDiscountPaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "maxRedemptions" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "planIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "maxItems" : 50,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "validFrom" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "validTo" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "kind" ],
+        "type" : "object"
+      },
+      "CouponResponse" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "amount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "firstSubscriptionOnly" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "PERCENT", "FLAT" ],
+            "type" : "string"
+          },
+          "maxDiscountPaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "maxRedemptions" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "planIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "redeemed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "validFrom" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "validTo" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "active", "amount", "code", "createdAt", "description", "firstSubscriptionOnly", "id", "kind", "maxDiscountPaise", "maxRedemptions", "planIds", "redeemed", "validFrom", "validTo" ],
+        "type" : "object"
+      },
       "CreateManualOrderRequest" : {
         "properties" : {
           "addressId" : {
@@ -914,12 +1135,17 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "couponCode" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
           "daysOfWeek" : {
             "items" : {
               "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ],
               "type" : "string"
             },
-            "maxItems" : 6,
+            "maxItems" : 7,
             "minItems" : 0,
             "type" : "array",
             "uniqueItems" : true
@@ -1036,6 +1262,77 @@
           }
         },
         "required" : [ "generatedAt", "sections", "userId" ],
+        "type" : "object"
+      },
+      "DecisionView" : {
+        "properties" : {
+          "actorUserId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "breakdown" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "eligibleRiders" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orderId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "outcome" : {
+            "enum" : [ "ASSIGNED", "UNASSIGNED", "CONFLICT", "MANUAL", "DECLINED", "RELEASED" ],
+            "type" : "string"
+          },
+          "partnerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "partnerName" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "reasonCode" : {
+            "type" : "string"
+          },
+          "runId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "runnerUpCost" : {
+            "type" : "number"
+          },
+          "runnerUpName" : {
+            "type" : "string"
+          },
+          "runnerUpPartnerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "actorUserId", "breakdown", "createdAt", "eligibleRiders", "id", "orderId", "outcome", "partnerId", "partnerName", "reason", "reasonCode", "runId", "runnerUpCost", "runnerUpName", "runnerUpPartnerId" ],
+        "type" : "object"
+      },
+      "DeclineRequest" : {
+        "properties" : {
+          "reason" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason" ],
         "type" : "object"
       },
       "DropBox" : {
@@ -1159,6 +1456,72 @@
           }
         },
         "required" : [ "count", "reason", "status" ],
+        "type" : "object"
+      },
+      "FeatureDefinitionRequest" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "description" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "displayOrder" : {
+            "format" : "int32",
+            "maximum" : 10000,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "key" : {
+            "minLength" : 1,
+            "pattern" : "^[a-z][a-z0-9_]{1,59}$",
+            "type" : "string"
+          },
+          "label" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "valueType" : {
+            "enum" : [ "BOOLEAN", "INTEGER", "DAYS", "TEXT", "MONEY" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "key", "label", "valueType" ],
+        "type" : "object"
+      },
+      "FeatureDefinitionResponse" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "defaultValue" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "displayOrder" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "enforced" : {
+            "type" : "boolean"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "valueType" : {
+            "enum" : [ "BOOLEAN", "INTEGER", "DAYS", "TEXT", "MONEY" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "active", "defaultValue", "description", "displayOrder", "enforced", "key", "label", "valueType" ],
         "type" : "object"
       },
       "FleetPartnerResponse" : {
@@ -2296,6 +2659,10 @@
             "pattern" : "^[\\p{L}\\p{M} .'-]{1,80}$",
             "type" : "string"
           },
+          "serviceAreaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "serviceRadiusM" : {
             "format" : "int32",
             "maximum" : 30000,
@@ -2600,6 +2967,35 @@
         "required" : [ "lat", "lng", "recordedAt" ],
         "type" : "object"
       },
+      "PlanFeatureValue" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "displayOrder" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "enforced" : {
+            "type" : "boolean"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "value" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "valueType" : {
+            "enum" : [ "BOOLEAN", "INTEGER", "DAYS", "TEXT", "MONEY" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "description", "displayOrder", "enforced", "key", "label", "value", "valueType" ],
+        "type" : "object"
+      },
       "PlanRequest" : {
         "properties" : {
           "billingPeriod" : {
@@ -2617,6 +3013,18 @@
             "minLength" : 0,
             "type" : "string"
           },
+          "durationPeriods" : {
+            "format" : "int32",
+            "maximum" : 36,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "entitlements" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/JsonNode"
+            },
+            "type" : "object"
+          },
           "features" : {
             "items" : {
               "maxLength" : 80,
@@ -2629,8 +3037,12 @@
           },
           "maxDaysPerWeek" : {
             "format" : "int32",
-            "maximum" : 6,
+            "maximum" : 7,
             "minimum" : 1,
+            "type" : "integer"
+          },
+          "maxSubscribers" : {
+            "format" : "int32",
             "type" : "integer"
           },
           "name" : {
@@ -2641,6 +3053,16 @@
           "pricePaise" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "trialDays" : {
+            "format" : "int32",
+            "maximum" : 30,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "visibility" : {
+            "enum" : [ "PUBLIC", "HIDDEN" ],
+            "type" : "string"
           }
         },
         "required" : [ "billingPeriod", "code", "name" ],
@@ -2661,6 +3083,22 @@
           "description" : {
             "type" : "string"
           },
+          "durationPeriods" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "entitlements" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/JsonNode"
+            },
+            "type" : "object"
+          },
+          "featureList" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PlanFeatureValue"
+            },
+            "type" : "array"
+          },
           "features" : {
             "items" : {
               "type" : "string"
@@ -2671,7 +3109,15 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "liveSubscribers" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "maxDaysPerWeek" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "maxSubscribers" : {
             "format" : "int32",
             "type" : "integer"
           },
@@ -2681,9 +3127,17 @@
           "pricePaise" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "trialDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "visibility" : {
+            "enum" : [ "PUBLIC", "HIDDEN" ],
+            "type" : "string"
           }
         },
-        "required" : [ "active", "billingPeriod", "code", "description", "features", "id", "maxDaysPerWeek", "name", "pricePaise" ],
+        "required" : [ "active", "billingPeriod", "code", "description", "durationPeriods", "entitlements", "featureList", "features", "id", "liveSubscribers", "maxDaysPerWeek", "maxSubscribers", "name", "pricePaise", "trialDays", "visibility" ],
         "type" : "object"
       },
       "PlanUpdateRequest" : {
@@ -2695,6 +3149,18 @@
             "maxLength" : 500,
             "minLength" : 0,
             "type" : "string"
+          },
+          "durationPeriods" : {
+            "format" : "int32",
+            "maximum" : 36,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "entitlements" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/JsonNode"
+            },
+            "type" : "object"
           },
           "features" : {
             "items" : {
@@ -2708,17 +3174,75 @@
           },
           "maxDaysPerWeek" : {
             "format" : "int32",
-            "maximum" : 6,
+            "maximum" : 7,
             "minimum" : 1,
+            "type" : "integer"
+          },
+          "maxSubscribers" : {
+            "format" : "int32",
             "type" : "integer"
           },
           "name" : {
             "maxLength" : 120,
             "minLength" : 0,
             "type" : "string"
+          },
+          "trialDays" : {
+            "format" : "int32",
+            "maximum" : 30,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "visibility" : {
+            "enum" : [ "PUBLIC", "HIDDEN" ],
+            "type" : "string"
           }
         },
         "required" : [ "name" ],
+        "type" : "object"
+      },
+      "QuoteRequest" : {
+        "properties" : {
+          "couponCode" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "planId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "planId" ],
+        "type" : "object"
+      },
+      "QuoteResponse" : {
+        "properties" : {
+          "couponCode" : {
+            "type" : "string"
+          },
+          "discountPaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "payablePaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "planId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pricePaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "trialDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "couponCode", "discountPaise", "payablePaise", "planId", "pricePaise", "trialDays" ],
         "type" : "object"
       },
       "RateOrderRequest" : {
@@ -2818,6 +3342,16 @@
         "required" : [ "consents", "firstName", "policyVersion" ],
         "type" : "object"
       },
+      "RenewRequest" : {
+        "properties" : {
+          "couponCode" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ResolveIssueRequest" : {
         "properties" : {
           "note" : {
@@ -2827,6 +3361,127 @@
           }
         },
         "required" : [ "note" ],
+        "type" : "object"
+      },
+      "RunView" : {
+        "properties" : {
+          "actorUserId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "assigned" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "considered" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "date" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "finishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "improvingMoves" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "riders" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "solveMs" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "startedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "totalCost" : {
+            "type" : "number"
+          },
+          "travelSource" : {
+            "type" : "string"
+          },
+          "trigger" : {
+            "enum" : [ "SCHEDULED", "MANUAL", "DECLINE", "NO_SHOW", "OFFLINE" ],
+            "type" : "string"
+          },
+          "unassigned" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "weights" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "required" : [ "actorUserId", "assigned", "considered", "date", "finishedAt", "id", "improvingMoves", "riders", "solveMs", "startedAt", "totalCost", "travelSource", "trigger", "unassigned", "weights" ],
+        "type" : "object"
+      },
+      "SchoolDetailsResponse" : {
+        "properties" : {
+          "addressLine" : {
+            "type" : "string"
+          },
+          "city" : {
+            "type" : "string"
+          },
+          "deliveryWindowEnd" : {
+            "type" : "string"
+          },
+          "deliveryWindowStart" : {
+            "type" : "string"
+          },
+          "firstBookableDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "location" : {
+            "$ref" : "#/components/schemas/GeoPoint"
+          },
+          "lunchTime" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "pickupWindowEnd" : {
+            "type" : "string"
+          },
+          "pickupWindowStart" : {
+            "type" : "string"
+          },
+          "pincode" : {
+            "type" : "string"
+          },
+          "upcomingHolidays" : {
+            "items" : {
+              "$ref" : "#/components/schemas/HolidayResponse"
+            },
+            "type" : "array"
+          },
+          "workingDays" : {
+            "items" : {
+              "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ],
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          }
+        },
+        "required" : [ "addressLine", "city", "deliveryWindowEnd", "deliveryWindowStart", "firstBookableDate", "id", "location", "lunchTime", "name", "pickupWindowEnd", "pickupWindowStart", "pincode", "upcomingHolidays", "workingDays" ],
         "type" : "object"
       },
       "SchoolOrderResponse" : {
@@ -3023,6 +3678,12 @@
           "city" : {
             "type" : "string"
           },
+          "deliveryWindowEnd" : {
+            "type" : "string"
+          },
+          "deliveryWindowStart" : {
+            "type" : "string"
+          },
           "id" : {
             "format" : "uuid",
             "type" : "string"
@@ -3045,7 +3706,7 @@
             "uniqueItems" : true
           }
         },
-        "required" : [ "addressLine", "city", "id", "lunchTime", "name", "pincode", "workingDays" ],
+        "required" : [ "addressLine", "city", "deliveryWindowEnd", "deliveryWindowStart", "id", "lunchTime", "name", "pincode", "workingDays" ],
         "type" : "object"
       },
       "ServiceAreaRequest" : {
@@ -3306,6 +3967,9 @@
           "cancelReason" : {
             "type" : "string"
           },
+          "cancellationAllowed" : {
+            "type" : "boolean"
+          },
           "cancelledAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -3337,6 +4001,10 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "periodsPaid" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "planId" : {
             "format" : "uuid",
             "type" : "string"
@@ -3355,9 +4023,13 @@
           "status" : {
             "enum" : [ "PENDING_PAYMENT", "ACTIVE", "PAUSED", "HALTED", "CANCELLED", "EXPIRED" ],
             "type" : "string"
+          },
+          "trialEndsAt" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         },
-        "required" : [ "addressId", "cancelReason", "cancelledAt", "childId", "childName", "currentPeriodEnd", "daysOfWeek", "endDate", "id", "planId", "planName", "pricePaise", "startDate", "status" ],
+        "required" : [ "addressId", "cancelReason", "cancellationAllowed", "cancelledAt", "childId", "childName", "currentPeriodEnd", "daysOfWeek", "endDate", "id", "periodsPaid", "planId", "planName", "pricePaise", "startDate", "status", "trialEndsAt" ],
         "type" : "object"
       },
       "TodayRouteResponse" : {
@@ -3404,6 +4076,9 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "includedInPlan" : {
+            "type" : "boolean"
+          },
           "liveTrackingEnabled" : {
             "type" : "boolean"
           },
@@ -3422,7 +4097,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "destination", "destinationType", "etaSeconds", "liveTrackingEnabled", "location", "orderId", "partner", "status" ],
+        "required" : [ "destination", "destinationType", "etaSeconds", "includedInPlan", "liveTrackingEnabled", "location", "orderId", "partner", "status" ],
         "type" : "object"
       },
       "UnreadCountResponse" : {
@@ -3471,7 +4146,7 @@
               "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ],
               "type" : "string"
             },
-            "maxItems" : 6,
+            "maxItems" : 7,
             "minItems" : 0,
             "type" : "array",
             "uniqueItems" : true
@@ -3652,6 +4327,75 @@
         "tags" : [ "Addresses" ]
       }
     },
+    "/api/v1/admin/allocation/runs" : {
+      "get" : {
+        "operationId" : "allocationRuns",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "date",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 50,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/RunView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin · Dispatch" ]
+      }
+    },
+    "/api/v1/admin/allocation/runs/{runId}/decisions" : {
+      "get" : {
+        "operationId" : "allocationRunDecisions",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "runId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/DecisionView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin · Dispatch" ]
+      }
+    },
     "/api/v1/admin/audit-logs" : {
       "get" : {
         "operationId" : "search_4",
@@ -3827,6 +4571,90 @@
           }
         },
         "tags" : [ "Children" ]
+      }
+    },
+    "/api/v1/admin/coupons" : {
+      "get" : {
+        "operationId" : "coupons",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CouponResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Subscriptions" ]
+      },
+      "post" : {
+        "operationId" : "createCoupon",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CouponRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CouponResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Subscriptions" ]
+      }
+    },
+    "/api/v1/admin/coupons/{couponId}" : {
+      "put" : {
+        "operationId" : "updateCoupon",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "couponId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CouponRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CouponResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Subscriptions" ]
       }
     },
     "/api/v1/admin/dashboard" : {
@@ -4196,6 +5024,36 @@
           }
         },
         "tags" : [ "Orders" ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}/allocation" : {
+      "get" : {
+        "operationId" : "orderAllocation",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orderId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/DecisionView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin · Dispatch" ]
       }
     },
     "/api/v1/admin/orders/{orderId}/assign" : {
@@ -4788,6 +5646,89 @@
           }
         },
         "tags" : [ "Earnings & payouts" ]
+      }
+    },
+    "/api/v1/admin/plan-features" : {
+      "get" : {
+        "operationId" : "featureDefinitions",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/FeatureDefinitionResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Subscriptions" ]
+      },
+      "post" : {
+        "operationId" : "createFeature",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FeatureDefinitionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeatureDefinitionResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Subscriptions" ]
+      }
+    },
+    "/api/v1/admin/plan-features/{key}" : {
+      "put" : {
+        "operationId" : "updateFeature",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "key",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FeatureDefinitionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeatureDefinitionResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Subscriptions" ]
       }
     },
     "/api/v1/admin/plans" : {
@@ -5950,6 +6891,50 @@
         "tags" : [ "Children" ]
       }
     },
+    "/api/v1/children/{childId}/calendar" : {
+      "get" : {
+        "operationId" : "calendar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "childId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "from",
+          "required" : true,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : true,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChildCalendarResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A child's pickup calendar, by the same rules that create orders",
+        "tags" : [ "Orders" ]
+      }
+    },
     "/api/v1/children/{childId}/leave-days" : {
       "get" : {
         "operationId" : "leaveDays",
@@ -6765,6 +7750,44 @@
         "tags" : [ "Partner app" ]
       }
     },
+    "/api/v1/partner/orders/{orderId}/decline" : {
+      "post" : {
+        "operationId" : "decline",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orderId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DeclineRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TodayRouteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Hand back an order you have not set off for; it is reassigned and not offered to you again",
+        "tags" : [ "Partner app" ]
+      }
+    },
     "/api/v1/partner/orders/{orderId}/delivery-failed" : {
       "post" : {
         "operationId" : "deliveryFailed",
@@ -7280,6 +8303,33 @@
         "tags" : [ "Schools" ]
       }
     },
+    "/api/v1/schools/{schoolId}" : {
+      "get" : {
+        "operationId" : "details",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "schoolId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SchoolDetailsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Schools" ]
+      }
+    },
     "/api/v1/schools/{schoolId}/holidays" : {
       "get" : {
         "operationId" : "holidays",
@@ -7421,6 +8471,35 @@
         "tags" : [ "Subscriptions" ]
       }
     },
+    "/api/v1/subscriptions/quote" : {
+      "post" : {
+        "operationId" : "quote",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/QuoteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuoteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Price of a plan for this parent: coupon discount and free trial, before paying",
+        "tags" : [ "Subscriptions" ]
+      }
+    },
     "/api/v1/subscriptions/{subscriptionId}/cancel" : {
       "post" : {
         "operationId" : "cancel",
@@ -7477,6 +8556,15 @@
             "type" : "string"
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RenewRequest"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
             "content" : {

@@ -34,7 +34,8 @@ class LeaveServiceTest {
     private final PickupWindows windows = mock(PickupWindows.class);
     private final AuditService audit = mock(AuditService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final LeaveService service = new LeaveService(leaves, children, users, windows, audit, events);
+    private final LeaveService service = new LeaveService(leaves, mock(SubscriptionRepository.class),
+            mock(PlanRepository.class), mock(PlanFeatures.class), children, users, windows, audit, events);
 
     private final UUID parentUser = UUID.randomUUID();
     private final UUID parentId = UUID.randomUUID();

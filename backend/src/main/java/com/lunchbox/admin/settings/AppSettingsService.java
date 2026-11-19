@@ -6,6 +6,7 @@ import com.lunchbox.audit.AuditService;
 import com.lunchbox.common.error.Errors;
 import com.lunchbox.common.security.CurrentUser;
 import com.lunchbox.common.settings.PlatformSettings;
+import com.lunchbox.dispatch.allocation.AllocationWeights;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -29,15 +31,25 @@ import java.util.function.Predicate;
 @Service
 public class AppSettingsService implements PlatformSettings {
 
-    private static final Map<String, Predicate<JsonNode>> VALIDATORS = Map.of(
-            "order.cutoff_time", v -> v.isTextual() && parsesTime(v.asText()),
-            "order.pickup_lead_minutes", v -> v.isInt() && v.asInt() >= 15 && v.asInt() <= 240,
-            "order.pickup_window_minutes", v -> v.isInt() && v.asInt() >= 10 && v.asInt() <= 120,
-            "geofence.home_arrival_radius_m", v -> v.isInt() && v.asInt() >= 20 && v.asInt() <= 500,
-            "geofence.default_school_radius_m", v -> v.isInt() && v.asInt() >= 50 && v.asInt() <= 2000,
-            "dispatch.pickup_wait_minutes", v -> v.isInt() && v.asInt() >= 1 && v.asInt() <= 30,
-            "dispatch.no_show_grace_minutes", v -> v.isInt() && v.asInt() >= 5 && v.asInt() <= 120,
-            "pay.rates", AppSettingsService::validRates);
+    /** Per key: the problems with a proposed value (empty = valid). Keys not listed here cannot be edited. */
+    private static final Map<String, Function<JsonNode, List<String>>> VALIDATORS = Map.of(
+            "order.cutoff_time", simple(v -> v.isTextual() && parsesTime(v.asText()), "Use a 24-hour time like \"21:00\"."),
+            "order.pickup_lead_minutes", intRange(15, 240),
+            "order.pickup_window_minutes", intRange(10, 120),
+            "geofence.home_arrival_radius_m", intRange(20, 500),
+            "geofence.default_school_radius_m", intRange(50, 2000),
+            "dispatch.pickup_wait_minutes", intRange(1, 30),
+            "dispatch.no_show_grace_minutes", intRange(5, 120),
+            "pay.rates", simple(AppSettingsService::validRates, "Every rate must be a whole number of paise from 0 to 1,00,00,000."),
+            "allocation.weights", AllocationWeights::problems);
+
+    private static Function<JsonNode, List<String>> simple(Predicate<JsonNode> ok, String message) {
+        return v -> ok.test(v) ? List.of() : List.of(message);
+    }
+
+    private static Function<JsonNode, List<String>> intRange(int min, int max) {
+        return simple(v -> v.isInt() && v.asInt() >= min && v.asInt() <= max, "Enter a whole number from " + min + " to " + max + ".");
+    }
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
@@ -78,6 +90,11 @@ public class AppSettingsService implements PlatformSettings {
             throw new IllegalStateException("Missing app setting " + key);
         }
         return v;
+    }
+
+    @Override
+    public JsonNode raw(String key) {
+        return get(key);
     }
 
     @Override
@@ -141,12 +158,13 @@ public class AppSettingsService implements PlatformSettings {
     /** Optimistic concurrency via the version column: two admins editing at once cannot overwrite each other. */
     @Transactional
     public SettingResponse update(String key, UpdateSettingRequest request, CurrentUser admin) {
-        Predicate<JsonNode> validator = VALIDATORS.get(key);
+        Function<JsonNode, List<String>> validator = VALIDATORS.get(key);
         if (validator == null) {
             throw Errors.notFound("Setting");
         }
-        if (request.value() == null || !validator.test(request.value())) {
-            throw Errors.badRequest("invalid_setting", "That value is not valid for " + key + ".");
+        List<String> problems = request.value() == null ? List.of("A value is required.") : validator.apply(request.value());
+        if (!problems.isEmpty()) {
+            throw Errors.badRequest("invalid_setting", String.join(" ", problems));
         }
         JsonNode before = get(key);
         int updated = jdbc.update("""
