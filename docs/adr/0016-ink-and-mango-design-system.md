@@ -1,6 +1,6 @@
 # ADR-0016: "Ink & Mango" design system across mobile and admin
 
-**Status:** Proposed. Please confirm the palette and typefaces. Supersedes ADR-0015 for all three surfaces.
+**Status:** Superseded by ADR-0022 (apps and admin panel). Supersedes ADR-0015.
 
 **Context.** ADR-0015's "Tiffin" look (warm cream paper, a high-contrast serif, a clay-and-turmeric accent) is the
 combination generated interfaces most often default to, so the apps read as templated. The owner asked for a design

@@ -1,8 +1,90 @@
 # Progress
 
-_Last updated: 2026-11-15_
+_Last updated: 2026-11-19_
 
-## Status: all phases written; backend (135 tests) and JS checks pass; both apps run natively on the Android emulator against the local stack. Not deployed.
+## Status: all phases written; backend (139 tests) and JS checks pass; deployed to one EC2 server (us-east-1, sslip.io names) with EAS builds of both apps.
+
+## 2026-11-19 (night) — admin panel redesign, rider screens, deployed, new EAS builds
+
+- **Admin panel** on "Chalk & Turmeric" (ADR-0022): new tokens, Khand + Hind, light sidebar with chalk pill, flat
+  cards and tables, Khand titles and figures, rim buttons, chalk-plate empty states, new brand mark. Dashboard: a
+  chalkboard panel with today's pickups, on-time rate (a dash until something is delivered) and the pipeline as
+  tiffin tiers. Sign-in hero on the chalkboard. Plans page: readable billing text, sized status filter, empty table
+  state. Reports: charts show an empty state when the range has no deliveries instead of a blank box.
+- **Admin fix:** after a page reload every page opened with "Please sign in to continue" because queries ran before
+  Firebase restored the session; the token now waits for `authStateReady()`.
+- **Rider app:** route stops drawn as tiffin tiers (current stop turmeric, done chalk, failed chilli) with bordered
+  cards; earnings hides the empty chart until there is money in the range; profile shows "New / No ratings yet"
+  instead of a bare dash.
+- **Verified:** typecheck, lint and tests (15 turbo tasks), backend 139 tests. Admin checked against a local stack
+  (Firebase Auth emulator, fresh `lunchbox_ui` database, demo seed) at 1440 px light and dark and at 390 px: login,
+  dashboard, orders, schools, live tracking, plans, reports. Rider app checked signed in on the emulator against the
+  live server (route empty state, earnings, profile) and the stop list on a temporary preview (deleted).
+- **Deployed** with `scripts/deploy-from-pc.sh`: backend healthy, the live admin serves the new design. The backend
+  image was unchanged (no backend code changed), so the container kept running.
+- **EAS `apk` builds** of both apps finished (parent 603241b4…, partner a785cf60…).
+
+## 2026-11-19 (evening) — "Chalk & Turmeric" redesign of both apps (ADR-0022)
+
+- **Design system** (`packages/ui`): chalk-green brand, turmeric accent, charcoal text on steel; Khand for titles and
+  numbers, Hind for reading (both with Devanagari). Buttons with a tiffin-rim lip, a chalk pill under the active tab,
+  order progress as three tiffin tiers, flat bordered cards and list groups, chalk-tray summaries, empty states drawn
+  as dashed trays with the tiffin on a chalk plate. Map style, toast tints and the tiffin drawing recoloured.
+- **Parent Today:** the greeting fits on one line and shows the profile photo. A new account sees a three-step setup
+  (child → address → plan, or "finish the payment" while a plan awaits payment) instead of an empty box; a set-up
+  account with nothing today sees a short note and a link to the calendar.
+- **Other screens:** notifications grouped on cards with a turmeric edge for unread; Leave days empty state links to
+  "Add child"; Plans shows a slim "no active plan" note so the plans stay in view; partner "no shift" without the grey box.
+- **Fixes:** the active tab pill lost its rounded corners on Android after switching tabs (now re-created on focus).
+- **Icons and splash** redrawn in the new colours for both apps (`docs/brand/*`, `apps/*/assets/*`).
+- **Verified:** typecheck, lint and tests pass for `ui`, parent, partner and admin (12 turbo tasks). On the emulator
+  against the live server: sign-in, Today with the setup steps, Children, Calendar, Alerts, Account, Plans, Profile,
+  Payments and Addresses; order cards in assigned, on-the-way, delivered and failed states on a temporary preview
+  screen (deleted). Partner sign-in and "not active" screens checked.
+- **Not verified:** the partner's signed-in screens (the test rider number is not registered as a partner on the live
+  server); new EAS builds with the redesign have not been made yet.
+
+## 2026-11-19 — parent profile & photo, plans screen, address lookup, admin live tracking, logo
+
+- **Backend:** `V12` adds `users.photo_key` and `plans.features`. `PATCH /me` edits email (normalised, unique);
+  `POST /me/photo/upload-url`, `PUT /me/photo`, `DELETE /me/photo` (signed upload to Firebase Storage under
+  `profiles/`, ownership and JPEG/2 MB checks, `photoUrl` in `/me`, photo deleted with the account); `POST /me/phone`
+  adopts a number only from the OTP-verified token. Payments carry the Razorpay `transactionId`. New push
+  `order.assigned` (en/hi). `GET /admin/tracking/partners`: riders on shift today with phone, availability
+  (online/busy/offline), last location and current delivery. Tests: `ParentProfileIT`, `DeliveryFlowIT` additions.
+- **Parent app:** soft school doodles behind every screen (`SchoolDoodles`, via `ScreenBackdrop`); Edit profile
+  (name, email, photo from camera/gallery compressed to 600 px JPEG, remove, phone change by OTP, permission
+  handling); Plans & subscriptions (current plans with renew, plans with validity and features, secure-payment note,
+  payment history with transaction IDs, PDF receipts); address picker fills street/city/PIN from the pin
+  (reverse geocoding, no coordinates shown). New deps: expo-image-picker, expo-image-manipulator, expo-print,
+  expo-sharing, expo-splash-screen.
+- **Admin:** Live tracking page (map by availability, rider details with phone, ongoing deliveries with status
+  filter, live updates); pin pickers replace latitude/longitude fields on school and rider forms; plan features.
+- **Brand:** LunchBox logo (tiffin mark) in `docs/brand/`; app icons, adaptive icons and splash for both apps, admin
+  favicon.
+- **Not built (conflicts with ADR-0019):** a call button and a rider photo for parents.
+- **Verified:** 139 backend tests, 15 JS tasks (type check, lint, tests), deployed (V12 applied, health UP, admin
+  `/live/` served). EAS builds started; emulator checks below.
+
+## 2026-11-15 (night) — deployed to AWS; EAS builds of both apps
+
+- **Server:** EC2 m7i-flex.large in **us-east-1** (move to ap-south-1 before launch), Docker Compose with Caddy:
+  `https://api.18-211-99-232.sslip.io` (health UP, WebSocket upgrade OK, actuator hidden, unsigned webhooks refused)
+  and `https://admin.18-211-99-232.sslip.io`. Deployed from this PC with `scripts/deploy-from-pc.sh`; nightly
+  `backup.sh` cron (first dump verified). Firebase: admin domain authorized, TOTP second factor enabled.
+- **Apps:** EAS `apk` profile (production package names, server URLs, reCAPTCHA sign-in); `google-services.json` and
+  the Maps key are EAS secrets; the partner app now has its own EAS project. EAS signing SHA-1/256 added to Firebase.
+  Verified on the emulator: the parent APK signed in (test number), registered and reached home against the server;
+  the partner APK signed in and got "not registered" (no rider created yet).
+- **Not verified:** admin sign-in with TOTP (owner enrols the authenticator), school/plan/rider setup on the server,
+  a delivery against the server, maps in the EAS builds (Maps key restrictions), Razorpay webhook.
+
+## 2026-11-15 (evening) — real-number sign-in works
+
+With the Play Integrity API enabled, sign-in still failed: Play Integrity does not recognise builds installed outside
+Google Play. Development and preview builds now use Firebase's reCAPTCHA check
+(`EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA`, off for Play Store builds). Verified: the owner signed in on the emulator
+with a real number (SMS code), and a new parent account was registered through the local backend.
 
 ## 2026-11-15 (afternoon test) — both apps end to end on the real Firebase project
 
