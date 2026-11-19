@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { searchPlaces } from '../AddressSearch';
+import { isPlusCode, searchPlaces } from '../AddressSearch';
 
 jest.mock('expo-location', () => ({ geocodeAsync: jest.fn(), reverseGeocodeAsync: jest.fn() }));
 
@@ -45,5 +45,16 @@ describe('searchPlaces', () => {
     reverse.mockRejectedValue(new Error('offline'));
 
     expect(await searchPlaces('Gachibowli')).toEqual([{ lat: 17.4, lng: 78.45, label: 'Gachibowli' }]);
+  });
+
+  it('drops Plus Codes from place names', async () => {
+    expect(isPlusCode('CC8Q+QF3')).toBe(true);
+    expect(isPlusCode('Lotus Residency')).toBe(false);
+    geocode.mockResolvedValue([{ latitude: 17.4156, longitude: 78.4347 }]);
+    reverse.mockResolvedValue([{ name: 'CC8Q+QF3', district: 'Banjara Hills', city: 'Hyderabad', postalCode: '500034' }]);
+
+    expect(await searchPlaces('Banjara Hills')).toEqual([
+      { lat: 17.4156, lng: 78.4347, label: 'Banjara Hills, Hyderabad, 500034' },
+    ]);
   });
 });

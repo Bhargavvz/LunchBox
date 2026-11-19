@@ -10,6 +10,16 @@ function ifPresent(path: string): string | undefined {
   return existsSync(resolve(__dirname, path)) ? path : undefined;
 }
 
+// Classes Expo loads by name (Class.forName): the headless app loader that runs background tasks, the task
+// manager and the location task consumer. expo-task-manager ships these rules but does not apply them to apps.
+const EXPO_REFLECTION_RULES = [
+  '-keep class expo.modules.adapters.react.apploader.** { *; }',
+  '-keep class * extends expo.modules.apploader.HeadlessAppLoader { *; }',
+  '-keep class expo.modules.taskManager.** { *; }',
+  '-keep class expo.modules.location.taskConsumers.** { *; }',
+  '-keep class * implements expo.modules.interfaces.taskManager.TaskConsumerInterface { *; }',
+];
+
 const env = process.env.APP_ENV ?? 'development';
 const isProd = env === 'production';
 
@@ -76,7 +86,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ['expo-build-properties', {
       ios: { useFrameworks: 'static' },
       android: { minSdkVersion: 24, compileSdkVersion: 36, targetSdkVersion: 36, enableProguardInReleaseBuilds: true,
-        enableShrinkResourcesInReleaseBuilds: true },
+        enableShrinkResourcesInReleaseBuilds: true, extraProguardRules: EXPO_REFLECTION_RULES.join('\n') },
     }],
   ],
   experiments: { typedRoutes: true },

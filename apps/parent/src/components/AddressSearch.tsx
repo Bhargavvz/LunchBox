@@ -16,6 +16,11 @@ const MIN_CHARS = 3;
 const DEBOUNCE_MS = 450;
 const MAX_HITS = 5;
 
+/** Google Plus Codes ("CC8Q+QF3") come back as a place's name for areas; they mean nothing to a parent. */
+export function isPlusCode(name: string | null | undefined): boolean {
+  return !!name && /^[23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{0,3}$/i.test(name.trim());
+}
+
 function inCity(lat: number, lng: number): boolean {
   const b = SERVICE_CITY_BOUNDS;
   return lat >= b.south && lat <= b.north && lng >= b.west && lng <= b.east;
@@ -33,7 +38,8 @@ export async function searchPlaces(query: string): Promise<PlaceHit[]> {
   const near = coords.filter((c) => inCity(c.latitude, c.longitude)).slice(0, MAX_HITS);
   const hits = await Promise.all(near.map(async (c) => {
     const [a] = await Location.reverseGeocodeAsync({ latitude: c.latitude, longitude: c.longitude }).catch(() => []);
-    const parts = a ? [a.name, [a.streetNumber, a.street].filter(Boolean).join(' '), a.district, a.city ?? a.subregion, a.postalCode] : [];
+    const name = isPlusCode(a?.name) ? null : a?.name;
+    const parts = a ? [name, [a.streetNumber, a.street].filter(Boolean).join(' '), a.district, a.city ?? a.subregion, a.postalCode] : [];
     const label = parts.filter((v, i, all): v is string => !!v && all.indexOf(v) === i).join(', ');
     return { lat: c.latitude, lng: c.longitude, label: label || q };
   }));

@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { z } from 'zod';
-import { AddressSearch } from '../../src/components/AddressSearch';
+import { AddressSearch, isPlusCode } from '../../src/components/AddressSearch';
 import { api } from '../../src/lib/api';
 import { errorMessage } from '../../src/lib/queryClient';
 
@@ -34,7 +34,7 @@ const LABELS = ['home', 'work', 'family'] as const;
 /** "Flat 4, Road No. 12, Banjara Hills, Hyderabad 500034" from the phone's geocoder (no coordinates ever shown). */
 function readable(a: Location.LocationGeocodedAddress): string {
   const street = [a.streetNumber, a.street].filter(Boolean).join(' ');
-  const parts = [a.name && a.name !== a.streetNumber && a.name !== street ? a.name : null, street || null, a.district,
+  const parts = [a.name && !isPlusCode(a.name) && a.name !== a.streetNumber && a.name !== street ? a.name : null, street || null, a.district,
     a.city ?? a.subregion, a.postalCode];
   return parts.filter((v, i, all): v is string => !!v && all.indexOf(v) === i).join(', ');
 }
