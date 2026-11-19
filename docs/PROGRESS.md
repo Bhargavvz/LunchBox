@@ -4,6 +4,16 @@ _Last updated: 2026-11-20_
 
 ## Status: all phases written; backend 302 tests and JS checks pass; deployed to one EC2 server (us-east-1, sslip.io names) with EAS builds of both apps (APK and Play bundle).
 
+## 2026-11-20 (later) — deployed; live data reset to a fresh start
+
+- Deployed backend and admin (migrations V13–V15 applied over existing data; health UP; new endpoints and the public
+  Privacy and Delete account pages live).
+- At the owner's request ("DELETE ALL USER DATA") the live database was reset: backups taken first on the server
+  (`/opt/lunchbox/backups/lunchbox-20261119T230111Z.sql.gz` before the deploy, `…T230531Z` right before the reset),
+  schema dropped and rebuilt by Flyway (15 migrations, default settings and plan feature types), Redis flushed,
+  RabbitMQ queues purged. Only the bootstrap super admin exists; Firebase sign-in accounts remain and register as new
+  users. Schools, plans, service areas and riders need to be set up again (or load demo data from Settings).
+
 ## 2026-11-20 — production readiness round: OTP, allocation engine, plans, calendar, tracking, admin, Play Store
 
 - **Sign-in:** Resend now sends a new SMS (Android needed `forceResend`); shared `useOtpSignIn` with growing resend
