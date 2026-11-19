@@ -22,6 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: '0.1.0',
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
+  icon: './assets/icon.png',
   runtimeVersion: { policy: 'appVersion' },
   updates: { url: process.env.EAS_UPDATE_URL },
   ios: {
@@ -36,10 +37,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
+    adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#1D4F47' },
     package: isProd ? 'in.lunchbox.parent' : `in.lunchbox.parent.${env}`,
     googleServicesFile: ifPresent(process.env.GOOGLE_SERVICES_JSON ?? './google-services.json'),
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } },
-    permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'POST_NOTIFICATIONS'],
+    permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'POST_NOTIFICATIONS', 'CAMERA'],
     blockedPermissions: ['ACCESS_BACKGROUND_LOCATION'],
   },
   plugins: [
@@ -47,8 +49,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-localization',
     ['expo-location', { locationWhenInUsePermission: 'LunchBox uses your location to place your home pin.' }],
+    // Profile photo: camera or gallery, compressed on the phone before upload.
+    ['expo-image-picker', {
+      photosPermission: 'LunchBox uses your photos so you can choose a profile picture.',
+      cameraPermission: 'LunchBox uses the camera so you can take a profile picture.',
+      microphonePermission: false,
+    }],
     '@react-native-firebase/app',
     '@react-native-firebase/auth',
+    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 180, resizeMode: 'contain', backgroundColor: '#1D4F47',
+      dark: { image: './assets/splash-icon.png', backgroundColor: '#0E1513' } }],
     ['expo-build-properties', { ios: { useFrameworks: 'static' }, android: { minSdkVersion: 24 } }],
   ],
   experiments: { typedRoutes: true },

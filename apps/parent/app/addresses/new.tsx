@@ -3,8 +3,8 @@ import { Banner, Button, Chip, IconButton, Row, Screen, SectionHeader, Text, Tex
 import { useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { House, LocateFixed } from 'lucide-react-native';
-import { useMemo, useRef, useState } from 'react';
+import { House, LocateFixed, MapPin } from 'lucide-react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, View } from 'react-native';
@@ -27,6 +27,14 @@ type Form = z.infer<typeof schema>;
 const DEFAULT_REGION: Region = { latitude: 12.9716, longitude: 77.5946, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 const LABELS = ['home', 'work', 'family'] as const;
 
+/** "Flat 4, 12th Main Road, Indiranagar, Bengaluru 560038" from the phone's geocoder (no coordinates ever shown). */
+function readable(a: Location.LocationGeocodedAddress): string {
+  const street = [a.streetNumber, a.street].filter(Boolean).join(' ');
+  const parts = [a.name && a.name !== a.streetNumber && a.name !== street ? a.name : null, street || null, a.district,
+    a.city ?? a.subregion, a.postalCode];
+  return parts.filter((v, i, all): v is string => !!v && all.indexOf(v) === i).join(', ');
+}
+
 /** The pin is fixed at the map centre; the parent drags the map until the pin sits on their door. */
 export default function NewAddressScreen() {
   const { t } = useTranslation();
@@ -46,6 +54,41 @@ export default function NewAddressScreen() {
     defaultValues: { label: t('address.labels.home'), line1: '', line2: '', landmark: '', city: '', pincode: '', instructions: '' },
   });
   const label = watch('label');
+  const [lookup, setLookup] = useState<{ state: 'idle' | 'busy' | 'done' | 'none'; text?: string }>({ state: 'idle' });
+  const canGeocode = useRef(false);
+  const geocodeSeq = useRef(0);
+
+  // Reverse geocoding needs location permission on Android; ask once up front (it also powers "use my location").
+  useEffect(() => {
+    void Location.requestForegroundPermissionsAsync().then((p) => {
+      canGeocode.current = p.status === 'granted';
+    });
+  }, []);
+
+  // When the pin settles, look up the address and fill the fields the parent has not typed in themselves.
+  useEffect(() => {
+    if (!canGeocode.current || region === DEFAULT_REGION) return;
+    const seq = ++geocodeSeq.current;
+    const timer = setTimeout(async () => {
+      setLookup({ state: 'busy' });
+      try {
+        const [hit] = await Location.reverseGeocodeAsync({ latitude: region.latitude, longitude: region.longitude });
+        if (seq !== geocodeSeq.current) return;
+        if (!hit) return setLookup({ state: 'none' });
+        setLookup({ state: 'done', text: readable(hit) });
+        const fill = (name: 'line2' | 'city' | 'pincode', value: string | null | undefined) => {
+          if (value && !formState.dirtyFields[name]) setValue(name, value, { shouldValidate: true });
+        };
+        fill('line2', [[hit.streetNumber, hit.street].filter(Boolean).join(' '), hit.district].filter(Boolean).join(', '));
+        fill('city', hit.city ?? hit.subregion);
+        fill('pincode', hit.postalCode?.replace(/\s/g, ''));
+      } catch {
+        if (seq === geocodeSeq.current) setLookup({ state: 'none' });
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [region]);
 
   const raise = (up: boolean) => {
     if (lifted.current === up) return;
@@ -139,6 +182,14 @@ export default function NewAddressScreen() {
         </View>
       </View>
       {locating ? <Text variant="caption" muted center>{t('address.locating')}</Text> : null}
+      {lookup.state !== 'idle' ? (
+        <View accessibilityLiveRegion="polite"><Row gap={2} align="flex-start">
+          <MapPin size={18} color={theme.colors.primary} />
+          <Text variant="label" style={{ flex: 1 }}>
+            {lookup.state === 'busy' ? t('address.lookingUp') : lookup.state === 'none' ? t('address.noLookup') : lookup.text}
+          </Text>
+        </Row></View>
+      ) : null}
 
       <SectionHeader title={t('address.saveAs')} />
       <Row gap={2} wrap>
@@ -150,7 +201,7 @@ export default function NewAddressScreen() {
       {field('label', t('address.label'), t('address.errors.label'))}
 
       <SectionHeader title={t('address.details')} />
-      {field('line1', t('address.line1'), t('address.errors.line1'), { testID: 'address-line1' })}
+      {field('line1', t('address.line1'), t('address.errors.line1'), { testID: 'address-line1', hint: t('address.line1Hint') })}
       {field('line2', t('address.line2'), t('address.errors.line2'))}
       {field('landmark', t('address.landmark'), t('address.errors.landmark'))}
       <Row gap={3} align="flex-start">

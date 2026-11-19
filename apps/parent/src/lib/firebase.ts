@@ -15,6 +15,13 @@ if (__DEV__ && !emulatorHost && process.env.EXPO_PUBLIC_FIREBASE_TEST_NUMBERS_ON
   auth().settings.appVerificationDisabledForTesting = true;
 }
 
+// Builds installed outside Google Play (development clients, EAS preview APKs, emulators) cannot pass Play Integrity
+// ("Invalid app info in play_integrity_token"). They verify with Firebase's reCAPTCHA page instead, which works for
+// real numbers. Play Store builds leave this off and use Play Integrity.
+if (!emulatorHost && process.env.EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA === 'true') {
+  auth().settings.forceRecaptchaFlowForTesting = true;
+}
+
 /** Current Firebase ID token (auto-refreshed by the SDK); `force` after registration picks up new role claims. */
 export async function idToken(force = false): Promise<string | null> {
   const user = auth().currentUser;
@@ -32,3 +39,20 @@ export async function signOut(): Promise<void> {
 }
 
 export { auth };
+
+/**
+ * Changing the sign-in number: Firebase texts a code to the new number, and the account is moved to it only once that
+ * code is confirmed. The backend then adopts the number from the refreshed (verified) token, never from a form.
+ */
+export async function startPhoneChange(phoneE164: string): Promise<string> {
+  const snapshot = await auth().verifyPhoneNumber(phoneE164);
+  return snapshot.verificationId;
+}
+
+export async function confirmPhoneChange(verificationId: string, code: string): Promise<void> {
+  const user = auth().currentUser;
+  if (!user) throw new Error('Not signed in');
+  const credential = auth.PhoneAuthProvider.credential(verificationId, code);
+  await user.updatePhoneNumber(credential);
+  await user.getIdToken(true);
+}

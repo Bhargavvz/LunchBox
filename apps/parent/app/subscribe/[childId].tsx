@@ -47,7 +47,7 @@ function Radio({ on }: { on: boolean }) {
 }
 
 export default function SubscribeScreen() {
-  const { childId } = useLocalSearchParams<{ childId: string }>();
+  const { childId, planId: preselected } = useLocalSearchParams<{ childId: string; planId?: string }>();
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const qc = useQueryClient();
@@ -56,7 +56,7 @@ export default function SubscribeScreen() {
   const child = useQuery({ queryKey: ['child', childId], queryFn: () => api.children.get(childId) });
   const plans = useQuery({ queryKey: ['plans'], queryFn: api.plans.list });
   const addresses = useQuery({ queryKey: ['addresses'], queryFn: api.addresses.list });
-  const [planId, setPlanId] = useState<string | null>(null);
+  const [planId, setPlanId] = useState<string | null>(preselected ?? null);
   const [addressId, setAddressId] = useState<string | null>(null);
   const [days, setDays] = useState<Weekday[]>(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']);
   const startOptions = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(todayIst(), i + 1)), []);

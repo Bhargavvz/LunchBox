@@ -1,6 +1,7 @@
 import { addDays, istDate, todayIst } from '@lunchbox/api-client';
 import {
   Banner,
+  Button,
   Card,
   Chip,
   EmptyState,
@@ -15,6 +16,8 @@ import {
   useToast,
 } from '@lunchbox/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { Plus } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -63,6 +66,7 @@ function monthsBetween(first: string, last: string, locale: string): Month[] {
 
 export default function CalendarScreen() {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const theme = useTheme();
   const toast = useToast();
   const qc = useQueryClient();
@@ -105,7 +109,8 @@ export default function CalendarScreen() {
     return (
       <Screen safeTop>
         <PageTitle title={t('calendar.title')} />
-        <EmptyState art={<TiffinArt size={92} mood="muted" />} title={t('calendar.chooseChild')} message={t('calendar.noChildren')} />
+        <EmptyState art={<TiffinArt size={70} mood="muted" />} title={t('calendar.chooseChild')} message={t('calendar.noChildren')}
+                    action={<Button title={t('today.setup.addChild')} icon={Plus} onPress={() => router.push('/children/new')} />} />
       </Screen>
     );
   }

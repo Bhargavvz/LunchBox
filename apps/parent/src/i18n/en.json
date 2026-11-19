@@ -107,7 +107,27 @@
     "details": "View details",
     "manageChildren": "Manage children",
     "pickupShort": "Pickup",
-    "schoolShort": "At school by"
+    "schoolShort": "At school by",
+    "setup": {
+      "title": "Three steps to the first lunchbox",
+      "progress": "{{done}} of 3 done",
+      "child": "Add your child",
+      "childHint": "School, class and section, so the rider knows where to go.",
+      "address": "Add the pickup address",
+      "addressHint": "Pin your home on the map; the rider collects the box here.",
+      "plan": "Choose a plan",
+      "planHint": "Pickups start on the next school day after payment.",
+      "planPending": "Finish the payment",
+      "planPendingHint": "Your plan is waiting for payment before pickups start.",
+      "addChild": "Add child",
+      "addAddress": "Add address",
+      "choosePlan": "See plans",
+      "finishPayment": "Pay now",
+      "done": "Done"
+    },
+    "openCalendar": "Open calendar",
+    "noneReady": "Nothing to pick up today",
+    "noneReadyHint": "Pickups show here on school days. Holidays and leave days are skipped."
   },
   "code": {
     "title": "Pickup code",
@@ -225,7 +245,10 @@
       "city": "Enter the city",
       "pincode": "Enter a valid 6-digit PIN code",
       "instructions": "Keep it under 500 characters"
-    }
+    },
+    "lookingUp": "Finding the address…",
+    "noLookup": "Could not find the address here. Please type it below.",
+    "line1Hint": "House or flat number, building and floor"
   },
   "subscribe": {
     "title": "Choose a plan",
@@ -332,7 +355,9 @@
     "item": "Item",
     "method": "Method",
     "reference": "Reference",
-    "total": "Total"
+    "total": "Total",
+    "downloadPdf": "Download PDF",
+    "transactionId": "Txn {{id}}"
   },
   "status": {
     "SCHEDULED": "Scheduled",
@@ -385,5 +410,59 @@
     "label": "Box mark",
     "onLid": "Write {{code}} on the lid",
     "hint": "Your partner matches this mark at pickup and at the school gate, so boxes never get swapped. A marker pen or a sticker works."
+  },
+  "profile": {
+    "title": "Edit profile",
+    "edit": "Edit profile",
+    "editHint": "Name, email, photo and mobile number",
+    "details": "Your details",
+    "email": "Email (optional)",
+    "emailHint": "For receipts and important updates. We never share it.",
+    "saved": "Profile saved",
+    "photoHint": "A clear photo of you. Only you and LunchBox staff can see it.",
+    "takePhoto": "Take photo",
+    "choosePhoto": "Gallery",
+    "removePhoto": "Remove photo",
+    "photoSaved": "Photo updated",
+    "photoRemoved": "Photo removed",
+    "photoFailed": "Could not update the photo: {{reason}}",
+    "permissionTitle": "Permission needed",
+    "cameraDenied": "Allow camera access to take a profile photo.",
+    "galleryDenied": "Allow access to your photos to choose a profile photo.",
+    "openSettings": "Open settings",
+    "mobile": "Mobile number",
+    "changePhone": "Change",
+    "newPhone": "New mobile number",
+    "newPhoneHint": "We will send a code to this number. You will sign in with it from now on.",
+    "codeSent": "Enter the 6-digit code sent to {{phone}}",
+    "enterCode": "Verification code",
+    "confirmPhone": "Confirm",
+    "samePhone": "This is already your number.",
+    "phoneChanged": "Mobile number updated",
+    "phoneInUse": "This number is already used by another LunchBox account.",
+    "errors": {
+      "firstName": "Enter your first name",
+      "lastName": "Last name is too long",
+      "email": "Enter a valid email address"
+    }
+  },
+  "plans": {
+    "title": "Plans & subscriptions",
+    "entryHint": "Current plans, renewals and new plans",
+    "current": "Your plans",
+    "available": "Available plans",
+    "noneActive": "No active plan yet",
+    "noneActiveHint": "Choose a plan below to start daily lunch pickups.",
+    "validity_one": "Valid {{count}} month",
+    "validity_other": "Valid {{count}} months",
+    "daysPerWeek_one": "{{count}} day a week",
+    "daysPerWeek_other": "Up to {{count}} days a week",
+    "perMonth": "per month",
+    "perQuarter": "per quarter",
+    "choose": "Choose plan",
+    "forWhom": "Which child is this plan for?",
+    "securePayment": "Payments are processed securely by Razorpay (UPI, cards, net banking, wallets). LunchBox never sees or stores your card details.",
+    "history": "Payment history & receipts",
+    "historyHint": "Download a receipt for any payment"
   }
 }

@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   ListGroup,
+  PressableScale,
   ListItem,
   PageTitle,
   Screen,
@@ -19,7 +20,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { Download, History, LogOut, MapPin, ReceiptText, Trash2 } from 'lucide-react-native';
+import { ChevronRight, CreditCard, Download, History, LogOut, MapPin, Pencil, ReceiptText, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Share, View } from 'react-native';
@@ -126,15 +127,20 @@ export default function AccountScreen() {
       <PageTitle title={t('account.title')} />
       {error ? <Banner tone="danger" title={t('common.problem')}>{error}</Banner> : null}
 
-      <Card tone="brand">
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <Avatar name={name || 'LunchBox'} size={60} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text variant="heading" tone="onPrimary" numberOfLines={1}>{name}</Text>
-            <Text variant="caption" tone="onPrimary" style={{ opacity: 0.8, fontVariant: ['tabular-nums'] }}>{formatPhone(me?.phone)}</Text>
+      <PressableScale onPress={() => router.push('/profile')} scaleTo={0.985} accessibilityRole="button"
+                      accessibilityLabel={`${name}, ${t('profile.edit')}`} testID="open-profile">
+        <Card tone="brand">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <Avatar name={name || 'LunchBox'} size={60} uri={me?.photoUrl} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text variant="heading" tone="onPrimary" numberOfLines={1}>{name}</Text>
+              <Text variant="caption" tone="onPrimary" style={{ opacity: 0.8, fontVariant: ['tabular-nums'] }}>{formatPhone(me?.phone)}</Text>
+              {me?.email ? <Text variant="caption" tone="onPrimary" style={{ opacity: 0.8 }} numberOfLines={1}>{me.email}</Text> : null}
+            </View>
+            <ChevronRight size={20} color="rgba(255,255,255,0.8)" />
           </View>
-        </View>
-      </Card>
+        </Card>
+      </PressableScale>
 
       {plans.length > 0 ? (
         <View style={{ gap: 8 }}>
@@ -165,6 +171,9 @@ export default function AccountScreen() {
       <View style={{ gap: 8 }}>
         <SectionHeader title={t('account.manage')} />
         <ListGroup>
+          <ListItem icon={Pencil} iconTone="info" title={t('profile.edit')} subtitle={t('profile.editHint')} onPress={() => router.push('/profile')} />
+          <ListItem icon={CreditCard} iconTone="accent" title={t('plans.title')} subtitle={t('plans.entryHint')} onPress={() => router.push('/plans')}
+                    testID="open-plans" />
           <ListItem icon={MapPin} title={t('account.addresses')} subtitle={t('account.addressesHint')} onPress={() => router.push('/addresses')} />
           <ListItem icon={History} iconTone="info" title={t('account.orders')} onPress={() => router.push('/orders/history')} />
           <ListItem icon={ReceiptText} iconTone="accent" title={t('account.payments')} onPress={() => router.push('/payments')} />

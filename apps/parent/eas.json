@@ -10,7 +10,8 @@
       "env": {
         "APP_ENV": "development",
         "EXPO_PUBLIC_FAKE_PAYMENTS": "true",
-        "GOOGLE_SERVICES_JSON": "./google-services.local.json"
+        "GOOGLE_SERVICES_JSON": "./google-services.local.json",
+        "EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA": "true"
       }
     },
     "preview": {
@@ -19,7 +20,8 @@
       "env": {
         "APP_ENV": "staging",
         "EXPO_PUBLIC_API_URL": "https://api.staging.lunchbox.in",
-        "EXPO_PUBLIC_WS_URL": "wss://api.staging.lunchbox.in/ws"
+        "EXPO_PUBLIC_WS_URL": "wss://api.staging.lunchbox.in/ws",
+        "EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA": "true"
       }
     },
     "production": {
@@ -28,8 +30,25 @@
       "env": {
         "APP_ENV": "production",
         "EXPO_PUBLIC_API_URL": "https://api.lunchbox.in",
-        "EXPO_PUBLIC_WS_URL": "wss://api.lunchbox.in/ws"
+        "EXPO_PUBLIC_WS_URL": "wss://api.lunchbox.in/ws",
+        "EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA": "false"
       }
+    },
+    "apk": {
+      "extends": "production",
+      "distribution": "internal",
+      "channel": "apk",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://api.18-211-99-232.sslip.io",
+        "EXPO_PUBLIC_WS_URL": "wss://api.18-211-99-232.sslip.io/ws",
+        "EXPO_PUBLIC_FAKE_PAYMENTS": "false",
+        "EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA": "true"
+      },
+      "environment": "production"
     }
   },
   "submit": {

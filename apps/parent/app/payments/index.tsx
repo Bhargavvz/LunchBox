@@ -54,6 +54,11 @@ function PaymentRow({ p }: { p: PaymentResponse }) {
           {p.paidAt ? t('payments.paidOn', { date: istDate(p.paidAt) }) : istDate(p.createdAt)}
           {p.method ? ` · ${p.method.toUpperCase()}` : ''}
         </Text>
+        {p.transactionId ? (
+          <Text variant="caption" tone="faint" selectable numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>
+            {t('payments.transactionId', { id: p.transactionId })}
+          </Text>
+        ) : null}
         {p.failureReason ? <Text variant="caption" tone="danger" numberOfLines={2}>{p.failureReason}</Text> : null}
       </View>
       <View style={{ alignItems: 'flex-end', gap: 5 }}>

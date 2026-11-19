@@ -10,7 +10,7 @@ import { startPhoneSignIn } from '../lib/firebase';
 const RESEND_AFTER_S = 30;
 
 /** Maps Firebase Auth error codes to sentences a parent can act on; anything unexpected keeps Firebase's text. */
-function authError(e: unknown, t: (k: string) => string): string {
+export function authError(e: unknown, t: (k: string) => string): string {
   const code = (e as { code?: string } | null)?.code ?? '';
   switch (code) {
     case 'auth/invalid-verification-code':
