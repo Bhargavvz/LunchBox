@@ -366,8 +366,17 @@ function createAdminApi(c: ReturnType<typeof createRawClient>, raw: (m: string, 
     failures: (from: string, to: string) =>
       unwrap(c.GET('/api/v1/admin/reports/failures', { params: { query: { from, to } } })),
 
-    auditLogs: (query: { entityType?: string; entityId?: string; action?: string; from?: string; to?: string; page?: number }) =>
-      unwrap(c.GET('/api/v1/admin/audit-logs', { params: { query } })),
+    auditLogs: (query: {
+      entityType?: string; entityId?: string; action?: string; severity?: string; module?: string; q?: string;
+      actorUserId?: string; from?: string; to?: string; page?: number; size?: number;
+    }) => unwrap(c.GET('/api/v1/admin/audit-logs', { params: { query } })),
+
+    payments: (query: { status?: string; from?: string; to?: string; q?: string; page?: number; size?: number }) =>
+      unwrap(c.GET('/api/v1/admin/payments', { params: { query: query as never } })),
+
+    demoData: () => unwrap(c.GET('/api/v1/admin/demo-data')),
+    loadDemoData: () => unwrap(c.POST('/api/v1/admin/demo-data')),
+    removeDemoData: () => unwrap(c.DELETE('/api/v1/admin/demo-data')),
 
     /** CSV endpoints stream files, so they bypass the JSON client. */
     downloadCsv: async (path: string, query: Record<string, string | undefined>): Promise<Blob> => {

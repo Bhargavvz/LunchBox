@@ -58,6 +58,16 @@ public class AuditLog {
     @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt;
 
+    /** INFO, WARNING or ERROR. */
+    @Column(nullable = false)
+    private String severity = "INFO";
+
+    /** Area of the product, e.g. orders, allocation, payment (the action's first word). */
+    private String module;
+
+    /** One sentence in plain English. */
+    private String summary;
+
     AuditLog(UUID actorUserId, String actorRole, String action, String entityType, String entityId,
              String beforeState, String afterState, String ip, String userAgent, String requestId, Instant occurredAt) {
         this.actorUserId = actorUserId;
@@ -71,5 +81,12 @@ public class AuditLog {
         this.userAgent = userAgent;
         this.requestId = requestId;
         this.occurredAt = occurredAt;
+    }
+
+    AuditLog describe(String severity, String module, String summary) {
+        this.severity = severity;
+        this.module = module;
+        this.summary = summary == null || summary.length() <= 500 ? summary : summary.substring(0, 497) + "...";
+        return this;
     }
 }

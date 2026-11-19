@@ -1,5 +1,6 @@
 package com.lunchbox.payments;
 
+import com.lunchbox.audit.AuditService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lunchbox.common.crypto.Hmac;
@@ -21,9 +22,12 @@ public class RazorpayWebhookService {
     private final PaymentRecorder recorder;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meters;
+    private final AuditService audit;
 
     public RazorpayWebhookService(PaymentGateway gateway, WebhookInbox inbox, List<RazorpayWebhookHandler> handlers,
-                                  PaymentRecorder recorder, ObjectMapper objectMapper, MeterRegistry meters) {
+                                  PaymentRecorder recorder, ObjectMapper objectMapper, MeterRegistry meters,
+                                  AuditService audit) {
+        this.audit = audit;
         this.gateway = gateway;
         this.inbox = inbox;
         this.handlers = handlers;
@@ -36,6 +40,10 @@ public class RazorpayWebhookService {
     public void receive(String rawBody, String signature, String eventIdHeader) {
         if (signature == null || !gateway.verifyWebhookSignature(rawBody, signature)) {
             meters.counter("lunchbox.webhooks.rejected", "provider", "razorpay").increment();
+            audit.system(AuditService.Severity.WARNING, "payment.webhook_rejected", "Webhook", null,
+                    "A Razorpay webhook was refused because its signature did not match. If this repeats, check the "
+                            + "webhook secret in Razorpay and on the server.",
+                    java.util.Map.of("signaturePresent", signature != null));
             throw Errors.unauthorized("Invalid webhook signature.");
         }
         JsonNode root;

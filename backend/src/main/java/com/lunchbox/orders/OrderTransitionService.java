@@ -33,10 +33,13 @@ public class OrderTransitionService implements OrderCommands {
     private final OutboxPublisher outbox;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meters;
+    private final com.lunchbox.audit.AuditService audit;
     private final Clock clock;
 
     public OrderTransitionService(OrderRepository orders, OrderStatusHistoryRepository history, OutboxPublisher outbox,
-                                  ObjectMapper objectMapper, MeterRegistry meters, Clock clock) {
+                                  ObjectMapper objectMapper, MeterRegistry meters, com.lunchbox.audit.AuditService audit,
+                                  Clock clock) {
+        this.audit = audit;
         this.orders = orders;
         this.history = history;
         this.outbox = outbox;
@@ -94,6 +97,13 @@ public class OrderTransitionService implements OrderCommands {
                 actor.map(u -> u.role() == null ? "UNREGISTERED" : u.role().name()).orElse("SYSTEM"),
                 trim(reason), toJson(metadata), now));
 
+        if (to == OrderStatus.PICKUP_FAILED || to == OrderStatus.DELIVERY_FAILED) {
+            audit.system(com.lunchbox.audit.AuditService.Severity.WARNING,
+                    to == OrderStatus.PICKUP_FAILED ? "order.pickup_failed" : "order.delivery_failed", "Order", order.getId(),
+                    (to == OrderStatus.PICKUP_FAILED ? "A lunchbox could not be collected: " : "A lunchbox could not be delivered: ")
+                            + (reason == null ? "no reason given" : reason) + ".",
+                    java.util.Map.of("from", from.name(), "to", to.name()));
+        }
         outbox.publish("Order", order.getId(), Messaging.ORDER_STATUS_CHANGED, new OrderStatusChanged(
                 order.getId(), order.getParentId(), order.getChildId(), order.getSchoolId(), order.getPartnerId(),
                 order.getScheduledDate(), from, to, trim(reason), order.getDeliveryDeadline(), now));

@@ -264,7 +264,12 @@
     },
     "lookingUp": "Finding the address…",
     "noLookup": "Could not find the address here. Please type it below.",
-    "line1Hint": "House or flat number, building and floor"
+    "line1Hint": "House or flat number, building and floor",
+    "search": "Search your area or building",
+    "searchPlaceholder": "e.g. Lotus Residency, Banjara Hills",
+    "searching": "Searching",
+    "noResults": "No matching place in Hyderabad. Try an area or a landmark, or move the map.",
+    "searchFailed": "Search isn't available right now. Move the map to your door instead."
   },
   "subscribe": {
     "title": "Choose a plan",

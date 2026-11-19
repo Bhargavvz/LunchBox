@@ -199,11 +199,20 @@ public class AssignmentService {
                 }
             } catch (RuntimeException e) {
                 log.error("Route planning failed for partner {} on {}", partnerId, date, e);
+                audit.system(AuditService.Severity.ERROR, "route.planning_failed", "Partner", partnerId,
+                        "The route for a rider on " + date + " could not be planned; their stops keep the previous order "
+                                + "until the next run.", Map.of("error", String.valueOf(e.getMessage())));
             }
         }
         int unassigned = pending.size() - assigned;
         if (runId != null) {
             allocationLog.finishRun(runId, pending.size(), assigned, unassigned, riders.size(), result);
+            audit.system(AuditService.Severity.INFO, "allocation.run", "AllocationRun", runId,
+                    "Rider allocation for " + date + ": " + assigned + " of " + pending.size() + " orders assigned to "
+                            + touched.size() + " of " + riders.size() + " riders (" + trigger.name().toLowerCase(Locale.ROOT) + ").",
+                    Map.of("trigger", trigger.name(), "considered", pending.size(), "assigned", assigned,
+                            "unassigned", unassigned, "riders", riders.size(), "solveMs", result.solveMillis(),
+                            "travel", result.travelSource()));
         }
         meters.counter("lunchbox.dispatch.assigned").increment(assigned);
         if (unassigned > 0) {
@@ -314,6 +323,8 @@ public class AssignmentService {
                 .collect(Collectors.joining("; "));
         String summary = unassigned.size() + " order" + (unassigned.size() == 1 ? "" : "s") + " for " + date
                 + " have no rider: " + why;
+        audit.system(AuditService.Severity.WARNING, "allocation.unassigned", "OrderBatch", date, summary,
+                byReason.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
         tx.executeWithoutResult(s -> outbox.publish("Dispatch", UUID.nameUUIDFromBytes(("unassigned:" + date).getBytes()),
                 Messaging.DISPATCH_ALERT, new DispatchAlert("UNASSIGNED_ORDERS", date, null, summary, clock.instant())));
     }
@@ -429,6 +440,8 @@ public class AssignmentService {
                 String name = partners.findById(shift.getPartnerId()).map(AssignmentService::displayName).orElse("A rider");
                 String summary = name + " has not sent a location for " + minutes + " min with " + onTheWay
                         + " lunchbox" + (onTheWay == 1 ? "" : "es") + " on the way. Call the rider.";
+                audit.system(AuditService.Severity.WARNING, "allocation.rider_offline", "Partner", shift.getPartnerId(), summary,
+                        Map.of("minutesSilent", minutes, "boxesOnTheWay", onTheWay));
                 tx.executeWithoutResult(s -> outbox.publish("Dispatch", shift.getPartnerId(), Messaging.DISPATCH_ALERT,
                         new DispatchAlert("RIDER_OFFLINE", today, shift.getPartnerId(), summary, clock.instant())));
             }

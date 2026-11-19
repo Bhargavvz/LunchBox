@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-interface PaymentRepository extends JpaRepository<Payment, UUID> {
+interface PaymentRepository extends JpaRepository<Payment, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Payment> {
 
     Optional<Payment> findByRazorpayPaymentId(String razorpayPaymentId);
 

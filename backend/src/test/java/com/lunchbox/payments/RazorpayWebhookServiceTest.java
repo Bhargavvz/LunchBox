@@ -33,7 +33,7 @@ class RazorpayWebhookServiceTest {
     private final RazorpayWebhookHandler handler = mock(RazorpayWebhookHandler.class);
     private final PaymentRecorder recorder = mock(PaymentRecorder.class);
     private final RazorpayWebhookService service = new RazorpayWebhookService(gateway, inbox, List.of(handler), recorder,
-            new ObjectMapper(), new SimpleMeterRegistry());
+            new ObjectMapper(), new SimpleMeterRegistry(), org.mockito.Mockito.mock(com.lunchbox.audit.AuditService.class));
 
     @Test
     void rejectsMissingOrInvalidSignaturesBeforeParsing() {

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { z } from 'zod';
+import { AddressSearch } from '../../src/components/AddressSearch';
 import { api } from '../../src/lib/api';
 import { errorMessage } from '../../src/lib/queryClient';
 
@@ -149,6 +150,11 @@ export default function NewAddressScreen() {
   return (
     <Screen keyboard footer={<Button title={t('common.save')} size="lg" onPress={submit} loading={formState.isSubmitting} testID="address-save" />}>
       {error ? <Banner tone="danger">{error}</Banner> : null}
+      <AddressSearch enabled onPick={(hit) => {
+        const next = { ...region, latitude: hit.lat, longitude: hit.lng, latitudeDelta: 0.004, longitudeDelta: 0.004 };
+        mapRef.current?.animateToRegion(next, 600);
+        setRegion(next);
+      }} />
       <View style={[styles.map, { borderColor: theme.colors.border }]}>
         <MapView
           ref={mapRef}

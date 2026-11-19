@@ -46,6 +46,18 @@ public class PaymentController {
         return payments.invoice(user.requireUserId(), paymentId);
     }
 
+    @GetMapping("/api/v1/admin/payments")
+    @PreAuthorize(Roles.ADMIN_READ)
+    public PageResponse<PaymentService.AdminPaymentResponse> adminPayments(
+            @RequestParam(required = false) Payment.Status status,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return payments.adminSearch(status, from, to, q, page, size);
+    }
+
     /** Razorpay webhook. Authenticated by HMAC signature over the raw body, not by a bearer token. */
     @Hidden
     @PostMapping(value = "/api/v1/webhooks/razorpay", consumes = "application/json")

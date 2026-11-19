@@ -1,5 +1,6 @@
 package com.lunchbox.dispatch;
 
+import com.lunchbox.audit.AuditService;
 import com.lunchbox.common.messaging.Messaging;
 import com.lunchbox.common.outbox.OutboxPublisher;
 import com.lunchbox.common.settings.PlatformSettings;
@@ -28,12 +29,14 @@ public class DispatchJobs {
     private final PickupWindows windows;
     private final PlatformSettings settings;
     private final OutboxPublisher outbox;
+    private final AuditService audit;
     private final TransactionTemplate tx;
     private final Clock clock;
 
     public DispatchJobs(AssignmentService assignment, PartnerShiftRepository shifts, PickupWindows windows,
-                        PlatformSettings settings, OutboxPublisher outbox, PlatformTransactionManager txManager,
-                        Clock clock) {
+                        PlatformSettings settings, OutboxPublisher outbox, AuditService audit,
+                        PlatformTransactionManager txManager, Clock clock) {
+        this.audit = audit;
         this.assignment = assignment;
         this.shifts = shifts;
         this.windows = windows;
@@ -89,6 +92,10 @@ public class DispatchJobs {
                     outbox.publish("Shift", fresh.getId(), Messaging.SHIFT_NO_SHOW,
                             new ShiftService.ShiftNoShow(fresh.getId(), fresh.getPartnerId(), today));
                     log.warn("Partner {} no-show; released {} orders", fresh.getPartnerId(), released.size());
+                    audit.system(AuditService.Severity.WARNING, "shift.no_show", "Partner", fresh.getPartnerId(),
+                            "A rider did not start their shift in time; " + released.size() + " order"
+                                    + (released.size() == 1 ? " was" : "s were") + " handed to other riders.",
+                            java.util.Map.of("shiftId", fresh.getId().toString(), "released", released.size()));
                 });
             } catch (RuntimeException e) {
                 log.error("No-show handling failed for shift {}", shift.getId(), e);

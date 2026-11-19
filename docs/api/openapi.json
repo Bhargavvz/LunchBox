@@ -343,6 +343,55 @@
         "required" : [ "active", "approvalNotes", "approvalStatus", "capacity", "createdAt", "firstName", "homeZone", "id", "lastName", "payoutAccountLinked", "phone", "rating", "ratingCount", "serviceAreaId", "serviceRadiusM", "userId", "vehicleNumber", "vehicleType" ],
         "type" : "object"
       },
+      "AdminPaymentResponse" : {
+        "properties" : {
+          "amountPaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "failureReason" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "method" : {
+            "type" : "string"
+          },
+          "paidAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "parentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "parentName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "CREATED", "AUTHORIZED", "CAPTURED", "FAILED", "REFUNDED" ],
+            "type" : "string"
+          },
+          "subscriptionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "transactionId" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "amountPaise", "createdAt", "description", "failureReason", "id", "method", "paidAt", "parentId", "parentName", "status", "subscriptionId", "transactionId" ],
+        "type" : "object"
+      },
       "AdminRouteResponse" : {
         "properties" : {
           "date" : {
@@ -515,6 +564,9 @@
           "action" : {
             "type" : "string"
           },
+          "actorName" : {
+            "type" : "string"
+          },
           "actorRole" : {
             "type" : "string"
           },
@@ -541,15 +593,27 @@
           "ip" : {
             "type" : "string"
           },
+          "module" : {
+            "type" : "string"
+          },
           "occurredAt" : {
             "format" : "date-time",
             "type" : "string"
           },
           "requestId" : {
             "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "summary" : {
+            "type" : "string"
+          },
+          "userAgent" : {
+            "type" : "string"
           }
         },
-        "required" : [ "action", "actorRole", "actorUserId", "after", "before", "entityId", "entityType", "id", "ip", "occurredAt", "requestId" ],
+        "required" : [ "action", "actorName", "actorRole", "actorUserId", "after", "before", "entityId", "entityType", "id", "ip", "module", "occurredAt", "requestId", "severity", "summary", "userAgent" ],
         "type" : "object"
       },
       "AutoAssignResult" : {
@@ -1333,6 +1397,22 @@
           }
         },
         "required" : [ "reason" ],
+        "type" : "object"
+      },
+      "DemoDataStatus" : {
+        "properties" : {
+          "present" : {
+            "type" : "boolean"
+          },
+          "records" : {
+            "additionalProperties" : {
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "type" : "object"
+          }
+        },
+        "required" : [ "present", "records" ],
         "type" : "object"
       },
       "DropBox" : {
@@ -2227,6 +2307,34 @@
           "items" : {
             "items" : {
               "$ref" : "#/components/schemas/AdminPartnerResponse"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalElements" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "items", "page", "size", "totalElements", "totalPages" ],
+        "type" : "object"
+      },
+      "PageResponseAdminPaymentResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AdminPaymentResponse"
             },
             "type" : "array"
           },
@@ -4430,6 +4538,27 @@
           }
         }, {
           "in" : "query",
+          "name" : "severity",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "module",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
           "name" : "from",
           "required" : false,
           "schema" : {
@@ -4473,7 +4602,64 @@
             "description" : "OK"
           }
         },
-        "tags" : [ "Admin · Audit" ]
+        "tags" : [ "audit-controller" ]
+      }
+    },
+    "/api/v1/admin/audit-logs.csv" : {
+      "get" : {
+        "operationId" : "export_2",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "severity",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "module",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "actorUserId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "from",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "audit-controller" ]
       }
     },
     "/api/v1/admin/broadcasts" : {
@@ -4682,6 +4868,58 @@
           }
         },
         "tags" : [ "Admin · Reports" ]
+      }
+    },
+    "/api/v1/admin/demo-data" : {
+      "delete" : {
+        "operationId" : "remove",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DemoDataStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Remove every demo record, and nothing else",
+        "tags" : [ "Admin" ]
+      },
+      "get" : {
+        "operationId" : "status",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DemoDataStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin" ]
+      },
+      "post" : {
+        "operationId" : "seed",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DemoDataStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Load tagged demo data (inactive schools, riders who cannot take work, 30 days of history)",
+        "tags" : [ "Admin" ]
       }
     },
     "/api/v1/admin/issues" : {
@@ -5576,6 +5814,72 @@
           }
         },
         "tags" : [ "Admin · Dispatch" ]
+      }
+    },
+    "/api/v1/admin/payments" : {
+      "get" : {
+        "operationId" : "adminPayments",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CREATED", "AUTHORIZED", "CAPTURED", "FAILED", "REFUNDED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "from",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseAdminPaymentResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Payments" ]
       }
     },
     "/api/v1/admin/payouts" : {

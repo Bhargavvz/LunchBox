@@ -78,6 +78,50 @@ public class PaymentService implements PaymentRecorder, PersonalDataContributor 
         });
     }
 
+    /** A payment as ops see it: who paid, for what, how, and the Razorpay reference. */
+    public record AdminPaymentResponse(UUID id, UUID parentId, String parentName, UUID subscriptionId, String description,
+                                       long amountPaise, Payment.Status status, String method, String failureReason,
+                                       Instant paidAt, Instant createdAt, String transactionId) {
+    }
+
+    public record PaymentTotals(long count, long capturedPaise, long failedCount) {
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AdminPaymentResponse> adminSearch(Payment.Status status, Instant from, Instant to, String q,
+                                                          Integer page, Integer size) {
+        org.springframework.data.jpa.domain.Specification<Payment> spec = (root, query, cb) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> p = new java.util.ArrayList<>();
+            if (status != null) {
+                p.add(cb.equal(root.get("status"), status));
+            }
+            if (from != null) {
+                p.add(cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+            }
+            if (to != null) {
+                p.add(cb.lessThan(root.get("createdAt"), to));
+            }
+            if (q != null && !q.isBlank()) {
+                String like = "%" + q.trim().toLowerCase(java.util.Locale.ROOT) + "%";
+                p.add(cb.or(cb.like(cb.lower(root.get("razorpayPaymentId")), like), cb.like(cb.lower(root.get("description")), like)));
+            }
+            return cb.and(p.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        var result = payments.findAll(spec, Pagination.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        java.util.Map<UUID, String> names = new java.util.HashMap<>();
+        result.getContent().forEach(pay -> names.computeIfAbsent(pay.getParentId(), id -> {
+            try {
+                UserDirectory.ParentInfo info = users.requireParent(id);
+                return info.lastName() == null ? info.firstName() : info.firstName() + " " + info.lastName();
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }));
+        return PageResponse.of(result, pay -> new AdminPaymentResponse(pay.getId(), pay.getParentId(), names.get(pay.getParentId()),
+                pay.getSubscriptionId(), pay.getDescription(), pay.getAmountPaise(), pay.getStatus(), pay.getMethod(),
+                pay.getFailureReason(), pay.getPaidAt(), pay.getCreatedAt(), pay.getRazorpayPaymentId()));
+    }
+
     // ---- Parent ----
 
     @Transactional(readOnly = true)
