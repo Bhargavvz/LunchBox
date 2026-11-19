@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { SERVICE_CITY, SERVICE_CITY_CENTER } from '@lunchbox/api-client';
 import { Banner, Button, Chip, IconButton, Row, Screen, SectionHeader, Text, TextField, elevation, mapStyle, useTheme } from '@lunchbox/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
@@ -24,10 +25,12 @@ const schema = z.object({
 });
 type Form = z.infer<typeof schema>;
 
-const DEFAULT_REGION: Region = { latitude: 12.9716, longitude: 77.5946, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+const DEFAULT_REGION: Region = {
+  latitude: SERVICE_CITY_CENTER.lat, longitude: SERVICE_CITY_CENTER.lng, latitudeDelta: 0.01, longitudeDelta: 0.01,
+};
 const LABELS = ['home', 'work', 'family'] as const;
 
-/** "Flat 4, 12th Main Road, Indiranagar, Bengaluru 560038" from the phone's geocoder (no coordinates ever shown). */
+/** "Flat 4, Road No. 12, Banjara Hills, Hyderabad 500034" from the phone's geocoder (no coordinates ever shown). */
 function readable(a: Location.LocationGeocodedAddress): string {
   const street = [a.streetNumber, a.street].filter(Boolean).join(' ');
   const parts = [a.name && a.name !== a.streetNumber && a.name !== street ? a.name : null, street || null, a.district,
@@ -51,7 +54,7 @@ export default function NewAddressScreen() {
   const lifted = useRef(false);
   const { control, handleSubmit, setValue, watch, formState } = useForm<Form>({
     resolver: zodResolver(schema),
-    defaultValues: { label: t('address.labels.home'), line1: '', line2: '', landmark: '', city: '', pincode: '', instructions: '' },
+    defaultValues: { label: t('address.labels.home'), line1: '', line2: '', landmark: '', city: SERVICE_CITY, pincode: '', instructions: '' },
   });
   const label = watch('label');
   const [lookup, setLookup] = useState<{ state: 'idle' | 'busy' | 'done' | 'none'; text?: string }>({ state: 'idle' });

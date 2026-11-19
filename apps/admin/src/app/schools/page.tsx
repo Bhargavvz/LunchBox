@@ -1,6 +1,6 @@
 'use client';
 
-import { istDate, type SchoolRequest, type SchoolResponse } from '@lunchbox/api-client';
+import { SERVICE_CITY, SERVICE_CITY_CENTER, istDate, type SchoolRequest, type SchoolResponse } from '@lunchbox/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState, type FormEvent } from 'react';
@@ -23,10 +23,10 @@ function SchoolForm({ school, onDone }: { school: SchoolResponse | null; onDone:
     code: school?.code ?? '',
     name: school?.name ?? '',
     addressLine: school?.addressLine ?? '',
-    city: school?.city ?? '',
+    city: school?.city ?? SERVICE_CITY,
     pincode: school?.pincode ?? '',
-    lat: school?.location.lat ?? 12.9716,
-    lng: school?.location.lng ?? 77.5946,
+    lat: school?.location.lat ?? SERVICE_CITY_CENTER.lat,
+    lng: school?.location.lng ?? SERVICE_CITY_CENTER.lng,
     geofenceRadiusM: school?.geofenceRadiusM ?? 150,
     lunchTime: trimTime(school?.lunchTime, '12:30'),
     deliveryWindowStart: trimTime(school?.deliveryWindowStart, '11:30'),
@@ -63,7 +63,7 @@ function SchoolForm({ school, onDone }: { school: SchoolResponse | null; onDone:
     <form className="space-y-3" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
       {save.error ? <Alert>{errorText(save.error)}</Alert> : null}
       <div className="grid gap-3 md:grid-cols-2">
-        <Field label="Code" htmlFor="s-code"><Input id="s-code" required disabled={!!school} value={f.code} onChange={set('code')} placeholder="DPS-BLR-01" /></Field>
+        <Field label="Code" htmlFor="s-code"><Input id="s-code" required disabled={!!school} value={f.code} onChange={set('code')} placeholder="DPS-HYD-01" /></Field>
         <Field label="Name" htmlFor="s-name"><Input id="s-name" required value={f.name} onChange={set('name')} /></Field>
         <Field label="Address" htmlFor="s-addr"><Input id="s-addr" required value={f.addressLine} onChange={set('addressLine')} /></Field>
         <Field label="City" htmlFor="s-city"><Input id="s-city" required value={f.city} onChange={set('city')} /></Field>

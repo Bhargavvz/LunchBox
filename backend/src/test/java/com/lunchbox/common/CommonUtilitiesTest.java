@@ -66,9 +66,9 @@ class CommonUtilitiesTest {
 
     @Test
     void haversineMatchesKnownDistance() {
-        // Bengaluru MG Road to Indiranagar ≈ 3.8 km
-        double d = Geo.haversineMeters(12.9756, 77.6066, 12.9719, 77.6412);
-        assertThat(d).isCloseTo(3770, within(150.0));
+        // Hyderabad: Charminar to Golconda Fort ≈ 8.2 km
+        double d = Geo.haversineMeters(17.3616, 78.4747, 17.3833, 78.4011);
+        assertThat(d).isCloseTo(8175, within(150.0));
     }
 
     @Test

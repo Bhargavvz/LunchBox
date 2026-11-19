@@ -1,6 +1,6 @@
 import { distanceMeters, shouldSend, THROTTLE, type Fix } from '../throttle';
 
-const base: Fix = { lat: 12.9716, lng: 77.5946, speedMps: 5, at: 1_000_000 };
+const base: Fix = { lat: 17.3866, lng: 78.4913, speedMps: 5, at: 1_000_000 };
 
 function moved(meters: number, ms: number, speed = 5): Fix {
   // ~111,320 m per degree of latitude

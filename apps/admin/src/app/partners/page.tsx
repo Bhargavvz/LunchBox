@@ -1,6 +1,6 @@
 'use client';
 
-import type { AdminPartner } from '@lunchbox/api-client';
+import { SERVICE_CITY_CENTER, type AdminPartner } from '@lunchbox/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
@@ -19,7 +19,7 @@ function CreatePartner() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ phone: '', firstName: '', lastName: '', vehicleType: 'SCOOTER' as (typeof VEHICLES)[number],
-    vehicleNumber: '', capacity: 8, lat: 12.9716, lng: 77.5946, serviceRadiusM: 5000 });
+    vehicleNumber: '', capacity: 8, lat: SERVICE_CITY_CENTER.lat, lng: SERVICE_CITY_CENTER.lng, serviceRadiusM: 5000 });
   const create = useMutation({
     mutationFn: () => api.admin.createPartner({
       phone: `+91${f.phone.replace(/\D/g, '').slice(-10)}`,
@@ -44,7 +44,7 @@ function CreatePartner() {
             <Field label="Vehicle" htmlFor="p-vehicle">
               <Select id="p-vehicle" value={f.vehicleType} onChange={set('vehicleType')}>{VEHICLES.map((v) => <option key={v}>{v}</option>)}</Select>
             </Field>
-            <Field label="Vehicle number" htmlFor="p-vno"><Input id="p-vno" value={f.vehicleNumber} onChange={set('vehicleNumber')} placeholder="KA01AB1234" /></Field>
+            <Field label="Vehicle number" htmlFor="p-vno"><Input id="p-vno" value={f.vehicleNumber} onChange={set('vehicleNumber')} placeholder="TS09AB1234" /></Field>
             <Field label="Capacity (lunchboxes)" htmlFor="p-cap"><Input id="p-cap" type="number" min={1} max={40} value={f.capacity} onChange={set('capacity')} /></Field>
             <Field label="Service radius (m)" htmlFor="p-radius"><Input id="p-radius" type="number" min={500} max={30000} value={f.serviceRadiusM} onChange={set('serviceRadiusM')} /></Field>
           </div>

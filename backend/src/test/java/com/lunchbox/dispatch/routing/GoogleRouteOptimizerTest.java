@@ -25,17 +25,17 @@ class GoogleRouteOptimizerTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Instant T0 = Instant.parse("2026-10-19T04:00:00Z");
     private static final UUID SCHOOL = UUID.randomUUID();
-    private static final GeoPoint SCHOOL_AT = new GeoPoint(12.98, 77.60);
-    private static final PickupTask A = task(new GeoPoint(12.970, 77.590), T0, T0.plusSeconds(1800));
-    private static final PickupTask B = task(new GeoPoint(12.975, 77.595), T0, T0.plusSeconds(1800));
-    private static final PickupTask EXPIRED = task(new GeoPoint(12.972, 77.592), T0.minusSeconds(3600), T0.minusSeconds(60));
+    private static final GeoPoint SCHOOL_AT = new GeoPoint(17.395, 78.4967);
+    private static final PickupTask A = task(new GeoPoint(17.385, 78.4867), T0, T0.plusSeconds(1800));
+    private static final PickupTask B = task(new GeoPoint(17.39, 78.4917), T0, T0.plusSeconds(1800));
+    private static final PickupTask EXPIRED = task(new GeoPoint(17.387, 78.4887), T0.minusSeconds(3600), T0.minusSeconds(60));
 
     private static PickupTask task(GeoPoint at, Instant from, Instant to) {
         return new PickupTask(UUID.randomUUID(), SCHOOL, at, from, to);
     }
 
     private static RoutingProblem problem(List<PickupTask> pickups) {
-        return new RoutingProblem(new GeoPoint(12.96, 77.58), T0, 6, 5.0, Duration.ofMinutes(2), Duration.ofMinutes(3),
+        return new RoutingProblem(new GeoPoint(17.375, 78.4767), T0, 6, 5.0, Duration.ofMinutes(2), Duration.ofMinutes(3),
                 pickups, List.of(new DropTarget(SCHOOL, SCHOOL_AT, T0.plusSeconds(3600), T0.plusSeconds(7200))));
     }
 

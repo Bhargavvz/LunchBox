@@ -146,8 +146,8 @@ async function refresh(refreshToken) {
   return (await res.json()).id_token;
 }
 
-const HOME = { lat: 12.9784, lng: 77.6408 };
-const SCHOOL = { lat: 12.9719, lng: 77.6412 };
+const HOME = { lat: 17.4221, lng: 78.4331 };
+const SCHOOL = { lat: 17.4156, lng: 78.4347 };
 
 async function main() {
   const admin = await adminToken();
@@ -159,19 +159,19 @@ async function main() {
   }
 
   const areas = (await call('GET', '/api/v1/admin/service-areas', admin)).body;
-  if (!areas.some((a) => a.name === 'Indiranagar')) {
+  if (!areas.some((a) => a.name === 'Banjara Hills')) {
     await call('POST', '/api/v1/admin/service-areas', admin, {
-      name: 'Indiranagar', city: 'Bengaluru', active: true,
-      boundary: [{ lat: 12.95, lng: 77.62 }, { lat: 12.95, lng: 77.66 }, { lat: 13.0, lng: 77.66 }, { lat: 13.0, lng: 77.62 }],
+      name: 'Banjara Hills', city: 'Hyderabad', active: true,
+      boundary: [{ lat: 17.40, lng: 78.41 }, { lat: 17.40, lng: 78.46 }, { lat: 17.44, lng: 78.46 }, { lat: 17.44, lng: 78.41 }],
     });
-    console.log('Created service area Indiranagar.');
+    console.log('Created service area Banjara Hills.');
   }
 
   let school = (await call('GET', '/api/v1/admin/schools?q=Greenwood', admin)).body.items?.[0];
   if (!school) {
     school = (await call('POST', '/api/v1/admin/schools', admin, {
-      name: 'Greenwood Public School', code: 'GWPS-BLR', addressLine: '12th Main Road, HAL 2nd Stage', city: 'Bengaluru',
-      pincode: '560038', location: SCHOOL, geofenceRadiusM: 150, lunchTime: '12:30', deliveryWindowStart: '11:30',
+      name: 'Greenwood Public School', code: 'GWPS-HYD', addressLine: 'Road No. 12, Banjara Hills', city: 'Hyderabad',
+      pincode: '500034', location: SCHOOL, geofenceRadiusM: 150, lunchTime: '12:30', deliveryWindowStart: '11:30',
       deliveryWindowEnd: '12:15', handoverInstructions: 'Reception desk at Gate 2. Ask for the lunch register.',
       workingDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'], active: true,
     })).body;
@@ -213,8 +213,8 @@ async function main() {
   let addresses = (await call('GET', '/api/v1/addresses', parent)).body;
   if (addresses.length === 0) {
     await call('POST', '/api/v1/addresses', parent, {
-      label: 'Home', line1: 'Flat 304, Lakeview Apartments', line2: '9th Cross, HAL 2nd Stage', landmark: 'Opposite the Ganesha temple',
-      city: 'Bengaluru', pincode: '560038', location: HOME, instructions: 'Ring the bell once; the box is kept by the door.',
+      label: 'Home', line1: 'Flat 304, Lakeview Apartments', line2: 'Road No. 10, Banjara Hills', landmark: 'Opposite the Hanuman temple',
+      city: 'Hyderabad', pincode: '500034', location: HOME, instructions: 'Ring the bell once; the box is kept by the door.',
       makeDefault: true,
     });
     addresses = (await call('GET', '/api/v1/addresses', parent)).body;
@@ -234,7 +234,7 @@ async function main() {
   if (!partner) {
     partner = (await call('POST', '/api/v1/admin/partners', admin, {
       phone: PARTNER_PHONE,
-      profile: { firstName: 'Ravi', lastName: 'Kumar', vehicleType: 'EV_SCOOTER', vehicleNumber: 'KA03EV4512', capacity: 8,
+      profile: { firstName: 'Ravi', lastName: 'Kumar', vehicleType: 'EV_SCOOTER', vehicleNumber: 'TS09EV4512', capacity: 8,
         homeZone: HOME, serviceRadiusM: 6000 },
     })).body;
     console.log('Created rider Ravi.');

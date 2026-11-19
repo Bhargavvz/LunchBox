@@ -59,8 +59,8 @@ function connect(socket, token) {
 
 export function partner() {
   const pair = pairs[(__VU - 1) % pairs.length];
-  let lat = 12.97 + Math.random() * 0.05;
-  let lng = 77.59 + Math.random() * 0.05;
+  let lat = 17.385 + Math.random() * 0.05;
+  let lng = 78.4867 + Math.random() * 0.05;
   const res = ws.connect(WS_URL, {}, (socket) => {
     socket.on('open', () => connect(socket, pair.partnerToken));
     socket.on('message', (m) => {

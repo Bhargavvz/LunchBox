@@ -33,8 +33,8 @@ two lines. They asked for a look that is clean, clear and unlike any other app.
 - **Empty states** are invitations to act. Each is an open tray with a dashed rim, the tiffin drawing on a chalk
   plate, a title saying what is missing, and the action that fills it. Secondary summaries use a pale chalk tray
   instead of a grey inset.
-- **Background.** Faint hand-drawn school doodles (bag, tiffin, book, pencil, apple) tile behind parent screens at
-  about 8 % opacity. Every list and card sits on an opaque surface so the doodles never sit behind text.
+- **Background.** Plain steel `#F3F5F4` (dark `#0E1513`) with no pattern; the white cards and the chalk and turmeric
+  accents carry the colour. (A tiled school-doodle pattern was tried first and dropped at the owner's request.)
 - **Maps** use a desaturated steel-and-chalk style so the rider marker and destination are the only saturated things.
 - **Admin panel.** The same tokens as HSL variables in `apps/admin/src/app/globals.css`, Khand and Hind through
   `next/font`. A light steel sidebar whose active page sits on a chalk pill (the apps' tab-bar mark), flat white

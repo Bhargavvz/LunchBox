@@ -1,12 +1,12 @@
 'use client';
 
-import type { GeoPoint } from '@lunchbox/api-client';
+import { SERVICE_CITY_BOUNDS, SERVICE_CITY_CENTER, type GeoPoint } from '@lunchbox/api-client';
 import { APIProvider, Map, Marker, useMap } from '@vis.gl/react-google-maps';
 import { MapPinned } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 const KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
-export const DEFAULT_CENTER = { lat: 12.9716, lng: 77.5946 };
+export const DEFAULT_CENTER = { ...SERVICE_CITY_CENTER };
 const INK = '#1D4F47';
 
 /** Quiet steel-and-chalk basemap so partner pins and fences are the loudest thing on it (same intent as the mobile mapStyle). */
@@ -151,7 +151,7 @@ export function PinPicker({ value, onChange, label, height = 300 }: {
     if (!query.trim() || typeof google === 'undefined') return;
     setNote(null);
     try {
-      const { results } = await new google.maps.Geocoder().geocode({ address: query, region: 'IN' });
+      const { results } = await new google.maps.Geocoder().geocode({ address: query, region: 'IN', bounds: SERVICE_CITY_BOUNDS });
       const hit = results[0];
       if (!hit) return setNote('No place found for that address.');
       const point = { lat: hit.geometry.location.lat(), lng: hit.geometry.location.lng() };

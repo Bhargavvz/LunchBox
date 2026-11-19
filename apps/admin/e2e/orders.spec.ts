@@ -12,7 +12,7 @@ test.describe('order management', () => {
     api.on('GET', /\/api\/v1\/admin\/tracking\/nearby/, (r) => r.fulfill({ json: [] }));
     api.on('GET', /\/api\/v1\/admin\/partners\?/, (r) => r.fulfill({ json: page1([{
       id: 'pt1', userId: 'pu1', firstName: 'Ravi', lastName: null, phone: '+919800000002', vehicleType: 'SCOOTER',
-      vehicleNumber: 'KA01AB1234', capacity: 8, homeZone: { lat: 12.97, lng: 77.59 }, serviceRadiusM: 5000,
+      vehicleNumber: 'TS09AB1234', capacity: 8, homeZone: { lat: 17.385, lng: 78.4867 }, serviceRadiusM: 5000,
       approvalStatus: 'APPROVED', approvalNotes: null, rating: 4.8, ratingCount: 12, active: true, payoutAccountLinked: true,
       createdAt: '2026-09-01T00:00:00Z' }]) }));
   });

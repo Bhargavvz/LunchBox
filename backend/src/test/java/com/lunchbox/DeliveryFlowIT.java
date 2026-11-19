@@ -25,10 +25,10 @@ import static org.awaitility.Awaitility.await;
  */
 class DeliveryFlowIT extends IntegrationTest {
 
-    private static final double SCHOOL_LAT = 12.9750;
-    private static final double SCHOOL_LNG = 77.6000;
-    private static final double HOME_LAT = 12.9690;
-    private static final double HOME_LNG = 77.5950;
+    private static final double SCHOOL_LAT = 17.39;
+    private static final double SCHOOL_LNG = 78.4967;
+    private static final double HOME_LAT = 17.384;
+    private static final double HOME_LNG = 78.4917;
 
     @Autowired
     JdbcTemplate jdbc;
@@ -48,7 +48,7 @@ class DeliveryFlowIT extends IntegrationTest {
 
         JsonNode school = post("/api/v1/admin/schools", admin, Map.ofEntries(
                 Map.entry("code", "DPS-IT-1"), Map.entry("name", "Delhi Public School"),
-                Map.entry("addressLine", "1 School Road"), Map.entry("city", "Bengaluru"), Map.entry("pincode", "560001"),
+                Map.entry("addressLine", "1 School Road"), Map.entry("city", "Hyderabad"), Map.entry("pincode", "500001"),
                 Map.entry("location", Map.of("lat", SCHOOL_LAT, "lng", SCHOOL_LNG)), Map.entry("geofenceRadiusM", 200),
                 Map.entry("lunchTime", "12:30"), Map.entry("deliveryWindowStart", "11:30"),
                 Map.entry("deliveryWindowEnd", "12:15"),
@@ -56,9 +56,9 @@ class DeliveryFlowIT extends IntegrationTest {
                 Map.entry("active", true)), 201);
         String schoolId = school.get("id").asText();
 
-        post("/api/v1/admin/service-areas", admin, Map.of("name", "Central", "city", "Bengaluru", "active", true,
-                "boundary", List.of(Map.of("lat", 12.90, "lng", 77.50), Map.of("lat", 12.90, "lng", 77.70),
-                        Map.of("lat", 13.05, "lng", 77.70), Map.of("lat", 13.05, "lng", 77.50))), 201);
+        post("/api/v1/admin/service-areas", admin, Map.of("name", "Central", "city", "Hyderabad", "active", true,
+                "boundary", List.of(Map.of("lat", 17.315, "lng", 78.3967), Map.of("lat", 17.315, "lng", 78.5967),
+                        Map.of("lat", 17.465, "lng", 78.5967), Map.of("lat", 17.465, "lng", 78.3967))), 201);
 
         JsonNode plan = post("/api/v1/admin/plans", admin, Map.of("code", "MONTHLY_5", "name", "Monthly · 5 days",
                 "pricePaise", 249900, "billingPeriod", "MONTHLY", "maxDaysPerWeek", 5,
@@ -76,7 +76,7 @@ class DeliveryFlowIT extends IntegrationTest {
                         Map.of("purpose", "LIVE_TRACKING", "granted", true))), 201);
 
         JsonNode address = post("/api/v1/addresses", parent, Map.of("label", "Home", "line1", "12 Lotus Residency",
-                "city", "Bengaluru", "pincode", "560025", "location", Map.of("lat", HOME_LAT, "lng", HOME_LNG),
+                "city", "Hyderabad", "pincode", "500034", "location", Map.of("lat", HOME_LAT, "lng", HOME_LNG),
                 "instructions", "Ring twice", "makeDefault", true), 201);
         JsonNode child = post("/api/v1/children", parent, Map.of("schoolId", schoolId, "firstName", "Meera",
                 "className", "4", "section", "B", "rollNumber", "17"), 201);
@@ -97,8 +97,8 @@ class DeliveryFlowIT extends IntegrationTest {
 
         // ---- Partner onboarding + approval ----
         JsonNode partner = post("/api/v1/admin/partners", admin, Map.of("phone", "+919800000002", "profile", Map.of(
-                "firstName", "Ravi", "vehicleType", "SCOOTER", "vehicleNumber", "KA01AB1234", "capacity", 8,
-                "homeZone", Map.of("lat", 12.9700, "lng", 77.5900), "serviceRadiusM", 6000)), 201);
+                "firstName", "Ravi", "vehicleType", "SCOOTER", "vehicleNumber", "TS09AB1234", "capacity", 8,
+                "homeZone", Map.of("lat", 17.385, "lng", 78.4867), "serviceRadiusM", 6000)), 201);
         String partnerId = partner.get("id").asText();
         JsonNode approved = post("/api/v1/admin/partners/" + partnerId + "/approval", admin,
                 Map.of("approved", true, "notes", "Police verification seen"), 200);
@@ -136,7 +136,7 @@ class DeliveryFlowIT extends IntegrationTest {
 
         // ---- Monday morning ----
         clock.set(Instant.parse("2026-10-19T03:30:00Z")); // 09:00 IST
-        post("/api/v1/partner/shift/start", partnerToken, Map.of("location", Map.of("lat", 12.97, "lng", 77.59)), 200);
+        post("/api/v1/partner/shift/start", partnerToken, Map.of("location", Map.of("lat", 17.385, "lng", 78.4867)), 200);
 
         // Operations map: the rider on shift with phone, availability and the lunchbox they will handle next.
         JsonNode fleet = get200("/api/v1/admin/tracking/partners", admin);
@@ -213,7 +213,7 @@ class DeliveryFlowIT extends IntegrationTest {
         clock.advance(Duration.ofMinutes(40));
         JsonNode upload = post("/api/v1/partner/handover/upload-url", partnerToken, null, 200);
         post("/api/v1/partner/schools/" + schoolId + "/handover", partnerToken,
-                Map.of("photoKey", upload.get("key").asText(), "location", Map.of("lat", 12.990, "lng", 77.620)), 422);
+                Map.of("photoKey", upload.get("key").asText(), "location", Map.of("lat", 17.405, "lng", 78.5167)), 422);
         post("/api/v1/partner/schools/" + schoolId + "/handover", partnerToken,
                 Map.of("photoKey", upload.get("key").asText(), "location", Map.of("lat", SCHOOL_LAT + 0.0005, "lng", SCHOOL_LNG)), 200);
 

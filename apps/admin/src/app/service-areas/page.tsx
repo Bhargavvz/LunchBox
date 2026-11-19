@@ -1,6 +1,6 @@
 'use client';
 
-import type { GeoPoint, Schemas } from '@lunchbox/api-client';
+import { SERVICE_CITY, type GeoPoint, type Schemas } from '@lunchbox/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { AppShell } from '@/components/AppShell';
@@ -17,7 +17,7 @@ export default function ServiceAreasPage() {
   const areas = useQuery({ queryKey: ['service-areas'], queryFn: api.admin.serviceAreas });
   const [selected, setSelected] = useState<Area | null>(null);
   const [name, setName] = useState('');
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState(SERVICE_CITY);
   const [active, setActive] = useState(true);
   const [boundary, setBoundary] = useState<GeoPoint[]>([]);
   const writable = can('SUPER_ADMIN', 'OPS_ADMIN');
@@ -25,7 +25,7 @@ export default function ServiceAreasPage() {
   function edit(a: Area | null) {
     setSelected(a);
     setName(a?.name ?? '');
-    setCity(a?.city ?? '');
+    setCity(a?.city ?? SERVICE_CITY);
     setActive(a?.active ?? true);
     setBoundary(a?.boundary ?? []);
   }

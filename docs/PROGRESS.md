@@ -4,6 +4,16 @@ _Last updated: 2026-11-19_
 
 ## Status: all phases written; backend (139 tests) and JS checks pass; deployed to one EC2 server (us-east-1, sslip.io names) with EAS builds of both apps.
 
+## 2026-11-19 (late night) — Hyderabad as the service city; plain background
+
+- **Hyderabad:** one setting in `packages/api-client/src/location.ts` (`SERVICE_CITY`, `SERVICE_CITY_CENTER`,
+  `SERVICE_CITY_BOUNDS`). Admin maps open on Hyderabad, new schools and service areas start with city "Hyderabad"
+  and a Hyderabad pin, address search is biased to Greater Hyderabad, and the parent address picker opens on
+  Hyderabad with the city filled in. The demo seed uses Banjara Hills (500034); tests, fixtures, the Maestro flow and
+  the load script use Hyderabad coordinates (shifted by one offset so distances between points are unchanged).
+  Schools and service areas already saved on the live server are data and were not changed.
+- **Background:** the school doodles are gone; screens use plain steel (ADR-0022 updated).
+
 ## 2026-11-19 (night) — admin panel redesign, rider screens, deployed, new EAS builds
 
 - **Admin panel** on "Chalk & Turmeric" (ADR-0022): new tokens, Khand + Hind, light sidebar with chalk pill, flat

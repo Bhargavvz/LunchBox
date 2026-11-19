@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RouteOptimizerTest {
 
     private static final Instant T0 = Instant.parse("2026-10-19T04:00:00Z"); // 09:30 IST
-    private static final GeoPoint START = new GeoPoint(12.9716, 77.5946);
+    private static final GeoPoint START = new GeoPoint(17.3866, 78.4913);
 
     static Stream<RouteOptimizer> optimizers() {
         return Stream.of(new SchoolClusterRouteOptimizer(), new OrToolsRouteOptimizer());
@@ -40,12 +40,12 @@ class RouteOptimizerTest {
         List<PickupTask> pickups = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             UUID school = i % 2 == 0 ? schoolA : schoolB;
-            GeoPoint home = new GeoPoint(12.96 + rnd.nextDouble() * 0.03, 77.58 + rnd.nextDouble() * 0.03);
+            GeoPoint home = new GeoPoint(17.375 + rnd.nextDouble() * 0.03, 78.4767 + rnd.nextDouble() * 0.03);
             pickups.add(new PickupTask(UUID.randomUUID(), school, home, T0, T0.plus(Duration.ofMinutes(75))));
         }
         List<DropTarget> drops = List.of(
-                new DropTarget(schoolA, new GeoPoint(12.975, 77.60), T0.plus(Duration.ofMinutes(90)), T0.plus(Duration.ofMinutes(150))),
-                new DropTarget(schoolB, new GeoPoint(12.965, 77.61), T0.plus(Duration.ofMinutes(90)), T0.plus(Duration.ofMinutes(150))));
+                new DropTarget(schoolA, new GeoPoint(17.39, 78.4967), T0.plus(Duration.ofMinutes(90)), T0.plus(Duration.ofMinutes(150))),
+                new DropTarget(schoolB, new GeoPoint(17.38, 78.5067), T0.plus(Duration.ofMinutes(90)), T0.plus(Duration.ofMinutes(150))));
         return new RoutingProblem(START, T0.minus(Duration.ofMinutes(20)), capacity, 18 / 3.6, Duration.ofMinutes(2),
                 Duration.ofMinutes(4), pickups, drops);
     }
@@ -105,7 +105,7 @@ class RouteOptimizerTest {
         UUID school = UUID.randomUUID();
         PickupTask far = new PickupTask(UUID.randomUUID(), school, new GeoPoint(13.30, 77.90), T0, T0.plusSeconds(600));
         RoutingProblem p = new RoutingProblem(START, T0, 5, 18 / 3.6, Duration.ofMinutes(2), Duration.ofMinutes(4),
-                List.of(far), List.of(new DropTarget(school, new GeoPoint(12.975, 77.60), T0, T0.plusSeconds(900))));
+                List.of(far), List.of(new DropTarget(school, new GeoPoint(17.39, 78.4967), T0, T0.plusSeconds(900))));
         RoutePlan plan = new SchoolClusterRouteOptimizer().optimize(p);
         assertThat(plan.lateOrUnservedOrderIds()).containsExactly(far.orderId());
     }

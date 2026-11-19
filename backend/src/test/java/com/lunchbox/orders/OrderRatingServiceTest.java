@@ -50,7 +50,7 @@ class OrderRatingServiceTest {
         when(users.requireParentId(parentUser)).thenReturn(parentId);
         order = Order.manual(UUID.randomUUID(), parentId, UUID.randomUUID(), UUID.randomUUID(), null,
                 LocalDate.of(2026, 10, 20), DELIVERED_AT.minusSeconds(7200), DELIVERED_AT.minusSeconds(4800),
-                DELIVERED_AT.plusSeconds(600), Geo.point(12.97, 77.59));
+                DELIVERED_AT.plusSeconds(600), Geo.point(17.385, 78.4867));
         ReflectionTestUtils.setField(order, "id", UUID.randomUUID());
         order.assignPartner(partnerId);
         order.applyTransition(OrderStatus.DELIVERED, null, DELIVERED_AT);
@@ -81,7 +81,7 @@ class OrderRatingServiceTest {
     void onlyDeliveredOrdersCanBeRated() {
         Order pending = Order.manual(UUID.randomUUID(), parentId, UUID.randomUUID(), UUID.randomUUID(), null,
                 LocalDate.of(2026, 10, 21), DELIVERED_AT, DELIVERED_AT.plusSeconds(1800), DELIVERED_AT.plusSeconds(3600),
-                Geo.point(12.97, 77.59));
+                Geo.point(17.385, 78.4867));
         ReflectionTestUtils.setField(pending, "id", UUID.randomUUID());
         when(orders.findForUpdate(pending.getId())).thenReturn(Optional.of(pending));
 

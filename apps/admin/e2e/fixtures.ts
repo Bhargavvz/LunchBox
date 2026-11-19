@@ -98,7 +98,7 @@ export const sampleOrder = {
   schoolName: 'Delhi Public School',
   partnerId: null,
   addressId: 'a1',
-  pickupLocation: { lat: 12.97, lng: 77.59 },
+  pickupLocation: { lat: 17.385, lng: 78.4867 },
   pickupWindowStart: '2026-10-19T04:30:00Z',
   pickupWindowEnd: '2026-10-19T05:15:00Z',
   deliveryDeadline: '2026-10-19T06:45:00Z',

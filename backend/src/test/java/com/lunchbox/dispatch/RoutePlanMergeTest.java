@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class RoutePlanMergeTest {
 
-    private static final GeoPoint HOME = new GeoPoint(12.9784, 77.6408);
-    private static final GeoPoint SCHOOL = new GeoPoint(12.9719, 77.6412);
+    private static final GeoPoint HOME = new GeoPoint(17.3934, 78.5375);
+    private static final GeoPoint SCHOOL = new GeoPoint(17.3869, 78.5379);
     private static final Instant AT = Instant.parse("2026-11-16T05:00:00Z");
 
     @Test

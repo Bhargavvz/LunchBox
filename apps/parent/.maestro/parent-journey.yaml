@@ -49,12 +49,10 @@ appId: in.lunchbox.parent.development
 - tapOn:
     id: "address-line1"
 - inputText: "12 Lotus Residency"
-- tapOn:
-    id: "address-city"
-- inputText: "Bengaluru"
+# The city starts as Hyderabad, the city LunchBox serves.
 - tapOn:
     id: "address-pincode"
-- inputText: "560025"
+- inputText: "500034"
 - tapOn:
     id: "address-save"
 - tapOn: "Monthly.*"

@@ -10,4 +10,5 @@ export {
   type TrackingMessage,
 } from './realtime';
 export * from './format';
+export * from './location';
 export type * from './types';
