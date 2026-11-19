@@ -1,7 +1,7 @@
 import '../src/i18n';
 import { Hind_400Regular, Hind_500Medium, Hind_600SemiBold, Hind_700Bold } from '@expo-google-fonts/hind';
 import { Khand_600SemiBold, Khand_700Bold } from '@expo-google-fonts/khand';
-import { Loading, ScreenBackdrop, ThemeProvider, ToastProvider, useTheme } from '@lunchbox/ui';
+import { Loading, ThemeProvider, ToastProvider, useTheme } from '@lunchbox/ui';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -9,7 +9,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { SchoolDoodles } from '../src/components/SchoolDoodles';
 import { realtime } from '../src/lib/api';
 import { bindNotificationTaps, onTokenRefresh, registerForPush } from '../src/lib/push';
 import { queryClient } from '../src/lib/queryClient';
@@ -100,9 +99,7 @@ export default function RootLayout() {
           <ToastProvider>
             <StatusBar style="auto" />
             <AuthGate />
-            <ScreenBackdrop.Provider value={<SchoolDoodles />}>
-              <Navigator />
-            </ScreenBackdrop.Provider>
+            <Navigator />
           </ToastProvider>
         </QueryClientProvider>
       </ThemeProvider>

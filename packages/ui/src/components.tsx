@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, ChevronRight, Info, TriangleAlert, type LucideIcon } from 'lucide-react-native';
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -187,12 +187,6 @@ export function Divider({ inset = 0 }: { inset?: number }) {
  * Page container. Tab screens pass `safeTop` (they have no navigation header); `footer` pins the primary action
  * above the home indicator so it is always reachable with a thumb.
  */
-/**
- * Optional decoration drawn behind every Screen's content (the parent app's school doodles). Apps that do not provide
- * one keep the plain background.
- */
-export const ScreenBackdrop = createContext<ReactNode>(null);
-
 export function Screen({
   children,
   scroll = true,
@@ -218,7 +212,6 @@ export function Screen({
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const backdrop = useContext(ScreenBackdrop);
   const pad = padded ? t.spacing(5) : 0;
   const content: ViewStyle = {
     paddingHorizontal: pad,
@@ -245,11 +238,6 @@ export function Screen({
   );
   const page = (
     <View style={{ flex: 1, backgroundColor: t.colors.background }} testID={testID}>
-      {backdrop ? (
-        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-          {backdrop}
-        </View>
-      ) : null}
       {body}
       {/* Screens without a header scroll under a transparent status bar; this strip keeps the clock readable. */}
       {safeTop ? (
