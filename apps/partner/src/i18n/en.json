@@ -121,7 +121,17 @@
     "matchMark": "Match this mark on the lid before you take the box.",
     "slidePickup": "Slide to confirm pickup",
     "boxesHere": "Boxes for this school",
-    "classShort": "Class {{cls}}"
+    "classShort": "Class {{cls}}",
+    "declineTitle": "Can't take this pickup?",
+    "declineHint": "Hand it back before you set off. It goes to another rider and you won't be offered it again.",
+    "decline": "Hand back this order",
+    "declined": "Order handed back. Your route is updated.",
+    "declineReasons": {
+      "vehicle": "Vehicle problem",
+      "unwell": "Not feeling well",
+      "tooFar": "Too far today",
+      "emergency": "Personal emergency"
+    }
   },
   "handover": {
     "title": "Handover photo",

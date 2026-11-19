@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react-native';
 import { Alert } from 'react-native';
 import { ChildForm } from '../../src/components/ChildForm';
+import { PickupDaysEditor } from '../../src/components/PickupDaysEditor';
 import { api } from '../../src/lib/api';
 import { errorMessage } from '../../src/lib/queryClient';
 
@@ -53,6 +54,8 @@ export default function EditChildScreen() {
         }
       }}
       footerExtra={<Button title={t('children.remove')} variant="dangerSoft" icon={Trash2} onPress={remove} />}
-    />
+    >
+      <PickupDaysEditor childId={childId} schoolId={child.data.schoolId} />
+    </ChildForm>
   );
 }

@@ -1,5 +1,5 @@
 import { ApiError } from './errors';
-import { addDays, etaText, rupees, todayIst, istTimeRange } from './format';
+import { addDays, clockRange, clockTime, etaText, istTimeRange, rupees, sortDays, todayIst, weekdayOf } from './format';
 
 describe('format', () => {
   it('formats paise as rupees', () => {
@@ -44,5 +44,21 @@ describe('istTimeRange', () => {
   });
   it('keeps both suffixes across noon', () => {
     expect(istTimeRange('2026-11-16T06:15:00Z', '2026-11-16T06:45:00Z').text).toBe('11:45 am – 12:15 pm');
+  });
+});
+
+describe('school times', () => {
+  it('formats a time of day from the API', () => {
+    expect(clockTime('10:00:00')).toBe('10:00 am');
+    expect(clockTime('12:15')).toBe('12:15 pm');
+  });
+  it('shares am/pm in a range', () => {
+    expect(clockRange('10:00:00', '10:45:00')).toBe('10:00 – 10:45 am');
+    expect(clockRange('11:45', '12:15')).toBe('11:45 am – 12:15 pm');
+  });
+  it('orders days Monday first and finds a weekday', () => {
+    expect(sortDays(['SATURDAY', 'MONDAY', 'WEDNESDAY'])).toEqual(['MONDAY', 'WEDNESDAY', 'SATURDAY']);
+    expect(weekdayOf('2026-11-07')).toBe('SATURDAY');
+    expect(weekdayOf('2026-11-08')).toBe('SUNDAY');
   });
 });

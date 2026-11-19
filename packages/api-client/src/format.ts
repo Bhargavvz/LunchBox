@@ -64,3 +64,36 @@ export function istTimeRange(fromIso: string | null | undefined, toIso: string |
   const shared = !!a && !!b && a[2]!.toLowerCase() === b[2]!.toLowerCase();
   return { from: shared ? a![1]! : from, to, text: `${shared ? a![1] : from} – ${to}` };
 }
+
+/** "10:00:00" or "10:00" (a time of day in IST, as the API sends LocalTime) → "10:00 am". */
+export function clockTime(time: string | null | undefined, locale = 'en-IN'): string {
+  if (!time) return '';
+  const [h, m] = time.split(':').map(Number);
+  if (h === undefined || m === undefined || Number.isNaN(h) || Number.isNaN(m)) return time;
+  return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(2000, 0, 1, h, m)))
+    .toLowerCase();
+}
+
+/** A range of two times of day, sharing am/pm when both ends have it: "10:00 – 10:45 am". */
+export function clockRange(from: string | null | undefined, to: string | null | undefined, locale = 'en-IN'): string {
+  const a = clockTime(from, locale);
+  const b = clockTime(to, locale);
+  const ma = a.match(/^(.*?)\s*(am|pm)$/i);
+  const mb = b.match(/^(.*?)\s*(am|pm)$/i);
+  return ma && mb && ma[2] === mb[2] ? `${ma[1]} – ${b}` : `${a} – ${b}`;
+}
+
+export const WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const;
+export type Weekday = (typeof WEEKDAYS)[number];
+
+/** Days in calendar order (Monday first), whatever order they arrive in. */
+export function sortDays<T extends string>(days: Iterable<T>): T[] {
+  const set = new Set<string>(days);
+  return WEEKDAYS.filter((d) => set.has(d)) as unknown as T[];
+}
+
+/** The weekday of a yyyy-MM-dd date. */
+export function weekdayOf(date: string): Weekday {
+  return WEEKDAYS[(new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7]!;
+}

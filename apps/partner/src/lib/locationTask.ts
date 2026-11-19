@@ -49,7 +49,10 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
     });
   }
   if (toSend.length === 0) return;
-  const viaSocket = toSend.length === 1 && realtime.sendLocation(toSend[0]!);
+  // Fixes queued while offline go first over HTTP (the server ignores any older than the newest it has), then the
+  // newest fix goes live over the socket when it is open.
+  const hasPending = (await AsyncStorage.getItem(PENDING_KEY)) !== null;
+  const viaSocket = !hasPending && toSend.length === 1 && realtime.sendLocation(toSend[0]!);
   if (!viaSocket) {
     await flushPending(toSend);
   }
@@ -65,7 +68,9 @@ export async function startRouteTracking(): Promise<boolean> {
   await Location.startLocationUpdatesAsync(LOCATION_TASK, {
     accuracy: Location.Accuracy.High,
     timeInterval: 5_000,
-    distanceInterval: 10,
+    // 0, not a distance: with a distance filter Android stops calling back while the rider waits at a door or gate,
+    // the 60 s heartbeat never goes out and the rider looks offline. `shouldSend` decides what is actually sent.
+    distanceInterval: 0,
     deferredUpdatesInterval: 5_000,
     pausesUpdatesAutomatically: false,
     activityType: Location.ActivityType.AutomotiveNavigation,

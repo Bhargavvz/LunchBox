@@ -45,6 +45,7 @@ import { runOrQueue } from '../../src/lib/offlineQueue';
 import { errorMessage } from '../../src/lib/queryClient';
 
 const PICKUP_REASONS = ['noAnswer', 'notReady', 'wrongAddress'] as const;
+const DECLINE_REASONS = ['vehicle', 'unwell', 'tooFar', 'emergency'] as const;
 const DROP_REASONS = ['schoolClosed', 'refused', 'damaged'] as const;
 
 export default function StopScreen() {
@@ -101,6 +102,17 @@ export default function StopScreen() {
         body: { reason: reason.trim(), location: await currentPosition() },
       }),
     onSuccess: (r) => done(r.queued, t('stop.reported')),
+    onError: fail,
+  });
+  const [declineReason, setDeclineReason] = useState<string | null>(null);
+  const decline = useMutation({
+    mutationFn: (orderId: string) => api.partner.decline(orderId, t(`stop.declineReasons.${declineReason}`)),
+    onSuccess: (data) => {
+      haptic.success();
+      qc.setQueryData(['route'], data);
+      toast(t('stop.declined'), 'success');
+      router.back();
+    },
     onError: fail,
   });
   const deliveryFailed = useMutation({
@@ -373,6 +385,21 @@ export default function StopScreen() {
       ) : null}
 
       {open ? problem : null}
+
+      {/* Before setting off, a rider can hand an order back; it goes to another rider and is not offered again. */}
+      {stop.pickup && stop.pickup.orderStatus === 'ASSIGNED' ? (
+        <Card tone="sunken" gap={3} testID="decline-card">
+          <Text variant="bodyStrong">{t('stop.declineTitle')}</Text>
+          <Text variant="caption" muted>{t('stop.declineHint')}</Text>
+          <Row gap={2} wrap>
+            {DECLINE_REASONS.map((r) => (
+              <Chip key={r} label={t(`stop.declineReasons.${r}`)} selected={declineReason === r} onPress={() => setDeclineReason(r)} />
+            ))}
+          </Row>
+          <Button title={t('stop.decline')} variant="dangerSoft" disabled={!declineReason} loading={decline.isPending}
+                  onPress={() => decline.mutate(stop.pickup!.orderId)} testID="decline-order" />
+        </Card>
+      ) : null}
     </Screen>
   );
 }

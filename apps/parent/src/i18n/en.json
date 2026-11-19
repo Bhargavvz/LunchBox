@@ -162,7 +162,9 @@
     },
     "ratingLabel": "Rated {{rating}} out of 5",
     "journey": "Journey",
-    "recenter": "Follow partner"
+    "recenter": "Follow partner",
+    "lastSeen_one": "Rider's location updated 1 minute ago",
+    "lastSeen_other": "Rider's location updated {{count}} minutes ago"
   },
   "children": {
     "title": "Your children",
@@ -214,7 +216,13 @@
     "renew": "Renew for {{price}}",
     "finishPayment": "Complete payment of {{price}}",
     "renewDue": "Renewal due",
-    "renewed": "Plan renewed until {{date}}"
+    "renewed": "Plan renewed until {{date}}",
+    "pickupDaysTitle": "Pickup days",
+    "pickupDaysHint": "Changes apply from {{date}}.",
+    "saveDays": "Save pickup days",
+    "daysSaved": "Pickup days updated",
+    "schoolOpenMore": "{{school}} is also open on {{days}}. Add them to your plan's days if you like.",
+    "planAllows": "Your plan covers up to {{count}} days a week."
   },
   "address": {
     "title": "Pickup addresses",
@@ -282,11 +290,26 @@
     "perLunch": "About {{price}} a lunch",
     "daysCount_one": "1 day",
     "daysCount_other": "{{count}} days",
-    "tooManyDays": "This plan covers up to {{count}} days a week. Remove a day or choose a bigger plan."
+    "tooManyDays": "This plan covers up to {{count}} days a week. Remove a day or choose a bigger plan.",
+    "schoolDaysOnly": "{{school}} is open on {{days}}. Choose from these days.",
+    "coupon": "Coupon code",
+    "applyCoupon": "Apply",
+    "couponApplied": "{{code}} applied: {{amount}} off",
+    "removeCoupon": "Remove",
+    "trial_one": "1-day free trial: nothing to pay today",
+    "trial_other": "{{count}}-day free trial: nothing to pay today",
+    "startTrial": "Start free trial",
+    "trialStarted": "Your free trial runs until {{date}}. Renew from Plans to continue after it.",
+    "includes": "Includes",
+    "notOnDays": "Not available on {{days}}",
+    "firstDay": "First pickup",
+    "noSchoolDay": "No school days in the next two weeks. Check the school's holidays.",
+    "total": "To pay",
+    "discount": "Discount"
   },
   "calendar": {
     "title": "Leave days",
-    "intro": "Tap a school day to skip pickup. Changes close at the daily cut-off.",
+    "intro": "Tap a pickup day to skip it. Changes close at the daily cut-off.",
     "onLeave": "On leave",
     "holiday": "School holiday",
     "chooseChild": "Choose a child",
@@ -295,9 +318,21 @@
     "noChildren": "Add a child first, then mark leave days here.",
     "legendPickup": "Pickup day",
     "noPickup": "No pickup",
-    "leaveCount_one": "{{name}} has one leave day in the next 30 days",
-    "leaveCount_other": "{{name}} has {{count}} leave days in the next 30 days",
-    "noLeave": "No leave days marked for {{name}}"
+    "leaveCount_one": "{{name}} has one leave day coming up",
+    "leaveCount_other": "{{name}} has {{count}} leave days coming up",
+    "noLeave": "No leave days marked for {{name}}",
+    "renew": "Renew to continue",
+    "legendRenew": "Plan not paid",
+    "notPlanDay": "Not in your plan",
+    "noSchool": "No school",
+    "beforeStart": "Before the plan starts",
+    "planEnded": "Plan ended",
+    "noPlan": "No plan",
+    "closed": "Changes are closed for this day",
+    "timings": "Pickup {{from}}–{{to}} · at school by {{by}}",
+    "planDays": "Plan days: {{days}}",
+    "noPlanHint": "Start a plan to see pickup days here.",
+    "ordered": "Booked"
   },
   "notifications": {
     "title": "Notifications",
@@ -471,6 +506,26 @@
     "forWhom": "Which child is this plan for?",
     "securePayment": "Payments are processed securely by Razorpay (UPI, cards, net banking, wallets). LunchBox never sees or stores your card details.",
     "history": "Payment history & receipts",
-    "historyHint": "Download a receipt for any payment"
+    "historyHint": "Download a receipt for any payment",
+    "trialDays_one": "1-day free trial",
+    "trialDays_other": "{{count}}-day free trial",
+    "featureYes": "Yes",
+    "featureNo": "No",
+    "hidden": "By invitation"
+  },
+  "school": {
+    "title": "School timings",
+    "pickup": "Pickup from home",
+    "atSchool": "At school by",
+    "lunch": "Lunch",
+    "workingDays": "School days",
+    "holidays": "Coming holidays",
+    "noHolidays": "No holidays announced",
+    "pickupRange": "{{from}} – {{to}}",
+    "loading": "Loading school details",
+    "explain": "A rider collects the lunchbox in this window and hands it over at the gate before the delivery deadline."
+  },
+  "tracking": {
+    "notInPlan": "Live tracking is not part of this plan. You will still get updates at each step."
   }
 }

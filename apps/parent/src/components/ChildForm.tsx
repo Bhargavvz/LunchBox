@@ -25,6 +25,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 import { z } from 'zod';
 import { api } from '../lib/api';
+import { SchoolInfoCard, SchoolInfoLoading, useSchoolDetails } from './SchoolInfo';
 
 const NAME = /^[\p{L}\p{M} .'-]{1,80}$/u;
 
@@ -55,11 +56,14 @@ export function ChildForm({
   onSubmit,
   error,
   footerExtra,
+  children,
 }: {
   initial?: ChildResponse;
   onSubmit: (values: ChildRequest) => Promise<void>;
   error?: string | null;
   footerExtra?: ReactNode;
+  /** Extra sections below the form fields (e.g. pickup days on the edit screen). */
+  children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -86,6 +90,9 @@ export function ChildForm({
     },
   });
   const preview = [watch('firstName'), watch('lastName')].filter(Boolean).join(' ').trim();
+  const selectedSchoolId = watch('schoolId');
+  // Timings, pickup window, open days and holidays of the chosen school, so the parent knows what to expect.
+  const details = useSchoolDetails(school && selectedSchoolId ? selectedSchoolId : null);
 
   const submit = handleSubmit((v) =>
     onSubmit({
@@ -148,6 +155,7 @@ export function ChildForm({
 
       <SectionHeader title={t('children.school')} />
       {school ? (
+        <>
         <Row gap={3} style={{ backgroundColor: theme.colors.primarySoft, borderRadius: theme.radius.md, padding: 14 }}>
           <Icon as={CircleCheck} size={20} color="onPrimarySoft" />
           <View style={{ flex: 1 }}>
@@ -159,6 +167,8 @@ export function ChildForm({
             <Text variant="label" tone="primary">{t('common.change')}</Text>
           </Pressable>
         </Row>
+        {details.data ? <SchoolInfoCard school={details.data} compact /> : details.isLoading ? <SchoolInfoLoading /> : null}
+        </>
       ) : (
         <>
           <TextField label={t('children.searchSchool')} icon={Search} placeholder={t('children.searchPlaceholder')}
@@ -205,6 +215,7 @@ export function ChildForm({
       <SectionHeader title={t('children.notes')} />
       {field('allergiesNote', t('children.allergies'), t('children.errors.allergies'),
         { multiline: true, maxLength: 1000, counter: true, hint: t('children.allergiesHint') })}
+      {children}
     </Screen>
   );
 }

@@ -38,7 +38,7 @@ export default function OrderTrackingScreen() {
   const { height: screenHeight } = useWindowDimensions();
   const labels = useStatusLabels();
   const detail = useQuery({ queryKey: ['order', orderId], queryFn: () => api.orders.detail(orderId) });
-  const { snapshot, position, etaSeconds } = useOrderTracking(orderId);
+  const { snapshot, position, etaSeconds, ageMinutes } = useOrderTracking(orderId);
   const photo = useMutation({
     mutationFn: () => api.orders.handoverPhoto(orderId),
     onSuccess: (r) => void Linking.openURL(r.url),
@@ -58,7 +58,7 @@ export default function OrderTrackingScreen() {
   const order = detail.data!.order;
   const snap = snapshot.data;
   const live = !!snap && isLive(snap.status);
-  const showMap = live && !!snap?.liveTrackingEnabled && !!snap.destination;
+  const showMap = live && !!snap?.liveTrackingEnabled && snap.includedInPlan !== false && !!snap.destination;
   const toHome = snap?.destinationType === 'HOME';
   const destinationLabel = toHome ? t('track.home') : order.schoolName ?? t('today.rail.school');
 
@@ -81,12 +81,16 @@ export default function OrderTrackingScreen() {
         <Text muted>
           {live && etaSeconds !== null ? `${order.childName} · ${order.schoolName}` : order.schoolName}
         </Text>
+        {showMap && ageMinutes !== null && ageMinutes >= 2 ? (
+          <Text variant="caption" tone="danger" testID="location-stale">{t('track.lastSeen', { count: ageMinutes })}</Text>
+        ) : null}
       </View>
 
       <JourneyRail status={order.status}
                    labels={{ home: t('today.rail.home'), road: t('today.rail.road'), school: t('today.rail.school') }} />
 
-      {live && !snap?.liveTrackingEnabled ? <Banner tone="info">{t('track.consentOff')}</Banner> : null}
+      {live && snap && snap.includedInPlan === false ? <Banner tone="info">{t('tracking.notInPlan')}</Banner>
+        : live && !snap?.liveTrackingEnabled ? <Banner tone="info">{t('track.consentOff')}</Banner> : null}
 
       {!live && order.status !== 'DELIVERED' ? (
         <Card tone="sunken">

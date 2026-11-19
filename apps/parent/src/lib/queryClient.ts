@@ -1,5 +1,15 @@
 import { ApiError } from '@lunchbox/api-client';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, focusManager } from '@tanstack/react-query';
+import { AppState, Platform } from 'react-native';
+
+// React Native has no window focus: refetch stale queries (today's orders, tracking) when the app comes back to the
+// foreground, so a parent returning to the app never looks at a frozen screen.
+focusManager.setEventListener((handleFocus) => {
+  const sub = AppState.addEventListener('change', (state) => {
+    if (Platform.OS !== 'web') handleFocus(state === 'active');
+  });
+  return () => sub.remove();
+});
 
 export const queryClient = new QueryClient({
   defaultOptions: {
