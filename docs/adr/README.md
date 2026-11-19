@@ -24,3 +24,5 @@
 | [0020](0020-single-server-deployment.md) | One server with Docker Compose instead of Terraform/ECS |
 | [0021](0021-firebase-storage-for-handover-photos.md) | Handover photos in Firebase Storage instead of Amazon S3 |
 | [0022](0022-chalk-and-turmeric-design-system.md) | "Chalk & Turmeric" design system for the apps and the admin panel |
+| [0023](0023-rider-allocation-engine.md) | Rider allocation as a min-cost assignment with batching, fairness and reliability |
+| [0024](0024-configurable-plans-and-coupons.md) | Configurable plans: feature definitions, enforced entitlements and coupons |

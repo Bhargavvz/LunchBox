@@ -48,6 +48,21 @@
         "EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA": "true"
       },
       "environment": "production"
+    },
+    "playstore": {
+      "extends": "production",
+      "channel": "playstore",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://api.18-211-99-232.sslip.io",
+        "EXPO_PUBLIC_WS_URL": "wss://api.18-211-99-232.sslip.io/ws",
+        "EXPO_PUBLIC_FAKE_PAYMENTS": "false",
+        "EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA": "false"
+      },
+      "environment": "production"
     }
   },
   "submit": {

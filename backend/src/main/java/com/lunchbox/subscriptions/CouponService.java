@@ -23,10 +23,13 @@ public class CouponService {
     private final CouponRedemptionRepository redemptions;
     private final SubscriptionRepository subscriptions;
     private final AuditService audit;
+    private final com.lunchbox.common.ratelimit.RateLimiter rateLimiter;
     private final Clock clock;
 
     public CouponService(CouponRepository coupons, CouponRedemptionRepository redemptions,
-                         SubscriptionRepository subscriptions, AuditService audit, Clock clock) {
+                         SubscriptionRepository subscriptions, AuditService audit,
+                         com.lunchbox.common.ratelimit.RateLimiter rateLimiter, Clock clock) {
+        this.rateLimiter = rateLimiter;
         this.coupons = coupons;
         this.redemptions = redemptions;
         this.subscriptions = subscriptions;
@@ -83,6 +86,7 @@ public class CouponService {
      */
     @Transactional(readOnly = true)
     public Applied check(String rawCode, Plan plan, UUID parentId) {
+        rateLimiter.consume(com.lunchbox.common.ratelimit.RateLimitPolicy.COUPON_CHECK, "coupon:" + parentId);
         Coupon c = coupons.findByCodeIgnoreCase(normalise(rawCode))
                 .orElseThrow(() -> Errors.unprocessable("coupon_invalid", "This coupon code is not valid."));
         LocalDate today = TimeZones.todayIst(clock);

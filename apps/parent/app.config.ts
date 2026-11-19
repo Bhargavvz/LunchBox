@@ -19,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'lunchbox-parent',
   owner: 'bhargavvzz',
   scheme: 'lunchbox',
-  version: '0.1.0',
+  version: '1.0.0',
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
   icon: './assets/icon.png',
@@ -42,7 +42,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     googleServicesFile: ifPresent(process.env.GOOGLE_SERVICES_JSON ?? './google-services.json'),
     config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_ANDROID_KEY } },
     permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'POST_NOTIFICATIONS', 'CAMERA'],
-    blockedPermissions: ['ACCESS_BACKGROUND_LOCATION'],
+    // Not needed: background location (only the rider app tracks), microphone, broad media access (the system photo
+    // picker needs none) and overlays. Keeps the Play data-safety and permissions declarations minimal.
+    blockedPermissions: ['ACCESS_BACKGROUND_LOCATION', 'android.permission.RECORD_AUDIO', 'android.permission.SYSTEM_ALERT_WINDOW', 'android.permission.READ_EXTERNAL_STORAGE', 'android.permission.WRITE_EXTERNAL_STORAGE', 'android.permission.READ_MEDIA_IMAGES', 'android.permission.READ_MEDIA_VIDEO', 'android.permission.READ_MEDIA_AUDIO'],
   },
   plugins: [
     'expo-router',
@@ -59,7 +61,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     '@react-native-firebase/auth',
     ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 180, resizeMode: 'contain', backgroundColor: '#1D4F47',
       dark: { image: './assets/splash-icon.png', backgroundColor: '#0E1513' } }],
-    ['expo-build-properties', { ios: { useFrameworks: 'static' }, android: { minSdkVersion: 24 } }],
+    ['expo-build-properties', {
+      ios: { useFrameworks: 'static' },
+      // Play requires a recent target API; R8 shrinks and obfuscates release builds (Razorpay needs its keep rules).
+      android: { minSdkVersion: 24, compileSdkVersion: 36, targetSdkVersion: 36, enableProguardInReleaseBuilds: true,
+        enableShrinkResourcesInReleaseBuilds: true, extraProguardRules: [
+  '-keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }',
+  '-keepattributes JavascriptInterface',
+  '-keepattributes *Annotation*',
+  '-dontwarn com.razorpay.**',
+  '-keep class com.razorpay.** { *; }',
+  '-optimizations !method/inlining/*',
+  '-keepclasseswithmembers class * { public void onPayment*(...); }',
+].join('\n') },
+    }],
   ],
   experiments: { typedRoutes: true },
   extra: {

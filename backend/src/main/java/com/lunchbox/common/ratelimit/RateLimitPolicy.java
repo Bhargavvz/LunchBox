@@ -12,6 +12,8 @@ public enum RateLimitPolicy {
     PICKUP_VERIFY(5, 600),
     /** Masked-call initiation, keyed by partner. */
     MASKED_CALL(10, 600),
+    /** Coupon code checks, keyed by parent: stops guessing codes. */
+    COUPON_CHECK(10, 600),
     /** Location pings, keyed by partner (pings are already throttled client-side). */
     LOCATION(120, 60);
 

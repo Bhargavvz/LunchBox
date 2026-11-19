@@ -19,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'lunchbox-partner',
   owner: 'bhargavvzz',
   scheme: 'lunchboxpartner',
-  version: '0.1.0',
+  version: '1.0.0',
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
   icon: './assets/icon.png',
@@ -52,6 +52,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'CAMERA',
       'POST_NOTIFICATIONS',
     ],
+    // The camera scans QR codes and takes photos; no microphone, broad media access or overlays.
+    blockedPermissions: ['android.permission.RECORD_AUDIO', 'android.permission.SYSTEM_ALERT_WINDOW', 'android.permission.READ_EXTERNAL_STORAGE', 'android.permission.WRITE_EXTERNAL_STORAGE', 'android.permission.READ_MEDIA_IMAGES', 'android.permission.READ_MEDIA_VIDEO', 'android.permission.READ_MEDIA_AUDIO'],
   },
   plugins: [
     'expo-router',
@@ -66,12 +68,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         isAndroidForegroundServiceEnabled: true,
       },
     ],
-    ['expo-camera', { cameraPermission: 'The camera scans pickup QR codes and takes handover photos.' }],
+    ['expo-camera', { cameraPermission: 'The camera scans pickup QR codes and takes handover photos.', recordAudioAndroid: false }],
     '@react-native-firebase/app',
     '@react-native-firebase/auth',
     ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 180, resizeMode: 'contain', backgroundColor: '#16201D',
       dark: { image: './assets/splash-icon.png', backgroundColor: '#0E1513' } }],
-    ['expo-build-properties', { ios: { useFrameworks: 'static' }, android: { minSdkVersion: 24 } }],
+    ['expo-build-properties', {
+      ios: { useFrameworks: 'static' },
+      android: { minSdkVersion: 24, compileSdkVersion: 36, targetSdkVersion: 36, enableProguardInReleaseBuilds: true,
+        enableShrinkResourcesInReleaseBuilds: true },
+    }],
   ],
   experiments: { typedRoutes: true },
   extra: {

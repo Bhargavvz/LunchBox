@@ -1,5 +1,5 @@
 import type * as ImagePickerTypes from 'expo-image-picker';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { api } from './api';
 
 export type PhotoSource = 'camera' | 'library';
@@ -18,10 +18,14 @@ export const openSettings = () => Linking.openSettings();
 export async function pickPhoto(source: PhotoSource): Promise<string | null> {
   // Native camera/gallery modules load on demand, only when the parent changes their photo.
   const ImagePicker = await import('expo-image-picker');
-  const permission = source === 'camera'
-    ? await ImagePicker.requestCameraPermissionsAsync()
-    : await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) throw new PhotoPermissionError(source, permission.canAskAgain);
+  // Android's system photo picker needs no storage permission (and Play only allows broad photo access to apps that
+  // need it), so the library permission is asked for on iOS only.
+  if (source === 'camera' || Platform.OS === 'ios') {
+    const permission = source === 'camera'
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) throw new PhotoPermissionError(source, permission.canAskAgain);
+  }
   const options: ImagePickerTypes.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 1 };
   const result = source === 'camera'
     ? await ImagePicker.launchCameraAsync({ ...options, cameraType: ImagePicker.CameraType.front })

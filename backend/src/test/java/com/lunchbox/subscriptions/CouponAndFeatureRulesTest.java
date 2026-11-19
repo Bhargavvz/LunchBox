@@ -28,8 +28,9 @@ class CouponAndFeatureRulesTest {
     private final CouponRepository coupons = mock(CouponRepository.class);
     private final CouponRedemptionRepository redemptions = mock(CouponRedemptionRepository.class);
     private final SubscriptionRepository subscriptions = mock(SubscriptionRepository.class);
+    private final com.lunchbox.common.ratelimit.RateLimiter limiter = mock(com.lunchbox.common.ratelimit.RateLimiter.class);
     private final CouponService service = new CouponService(coupons, redemptions, subscriptions, mock(AuditService.class),
-            Clock.fixed(NOW, ZoneOffset.UTC));
+            limiter, Clock.fixed(NOW, ZoneOffset.UTC));
     private final Plan plan = plan();
     private final UUID parent = UUID.randomUUID();
 
@@ -94,6 +95,15 @@ class CouponAndFeatureRulesTest {
         when(paid.getPeriodsPaid()).thenReturn(1);
         when(subscriptions.findByParentIdOrderByCreatedAtDesc(parent)).thenReturn(List.of(paid));
         assertCode("coupon_first_only");
+    }
+
+    @Test
+    void guessingCodesIsRateLimitedPerParent() {
+        coupon(Coupon.Kind.FLAT, 50000);
+        org.mockito.Mockito.doThrow(new com.lunchbox.common.error.TooManyRequestsException(60))
+                .when(limiter).consume(com.lunchbox.common.ratelimit.RateLimitPolicy.COUPON_CHECK, "coupon:" + parent);
+        assertThatThrownBy(() -> service.check("SAVE", plan, parent))
+                .isInstanceOf(com.lunchbox.common.error.TooManyRequestsException.class);
     }
 
     @Test

@@ -1,8 +1,37 @@
 # Progress
 
-_Last updated: 2026-11-19_
+_Last updated: 2026-11-20_
 
-## Status: all phases written; backend (139 tests) and JS checks pass; deployed to one EC2 server (us-east-1, sslip.io names) with EAS builds of both apps.
+## Status: all phases written; backend 302 tests and JS checks pass; deployed to one EC2 server (us-east-1, sslip.io names) with EAS builds of both apps (APK and Play bundle).
+
+## 2026-11-20 — production readiness round: OTP, allocation engine, plans, calendar, tracking, admin, Play Store
+
+- **Sign-in:** Resend now sends a new SMS (Android needed `forceResend`); shared `useOtpSignIn` with growing resend
+  waits, 5 codes per 30 min, 5 wrong codes, 10-minute expiry with a countdown; phone change gets the same flow.
+- **Rider allocation (ADR-0023):** min-cost flow (OR-Tools) + local search for school batching; road distances via
+  Google Routes when `GOOGLE_ROUTES_API_KEY` is set (cached), estimates otherwise; zones, shift times, offline riders,
+  reachability, rating, reliability, priority plans; weights in `allocation.weights`; every run and decision logged
+  with reasons and runner-up; riders can decline; offline riders released or flagged; ops alerts for orders without a
+  rider. Simulation report in `docs/reports/allocation-simulation.md`.
+- **Plans (ADR-0024):** feature definitions admins extend; enforced features (children per family, allowed days, leave
+  per month, cancellation, priority delivery, live tracking); visibility, trial, fixed duration, subscriber cap;
+  coupons (rate-limited checks, priced into the Razorpay order, redeemed on payment).
+- **Calendar and schools:** `GET /children/{id}/calendar` worked out by the order rules; `GET /schools/{id}` for parents;
+  Saturday/Sunday work everywhere (checkout offers only the school's days; parents can change pickup days; removing a
+  working day cancels its orders). Parent screens show school timings, pickup window and holidays.
+- **Tracking and search:** rider heartbeat reaches the server while waiting (no distance filter); the parent map takes
+  the newest fix from socket or snapshot, polls while the socket is quiet, refreshes on foreground and shows stale
+  positions; parent address search; admin searches debounced.
+- **Admin:** Rider allocation, Payments, Children, school details, editable rider profiles with zones, rebuilt Logs
+  (summaries, severity, filters, CSV), typed Settings, plan editor + coupons + feature types, roles matrix, PDF reports,
+  public Privacy policy and Delete account pages. Fixed: every chart was blank (recharts + React 19 react-is).
+- **Demo data:** load/remove in one step (`docs/runbooks/demo-data.md`), harmless to real work (`AdminDataIT`).
+- **Play Store:** API 36, R8 + resource shrinking, minimal permissions, version 1.0.0, `playstore` AAB profile,
+  feature graphics, listing text, data safety answers, checklist (`docs/release/store-checklist.md`).
+- **Reports:** `docs/reports/test-report-2026-11.md`, `docs/reports/security-review-2026-11.md`.
+- **Verified:** backend 302 tests; 15 JS tasks; migrations V13–V15 on an existing database; admin pages against a
+  local stack with demo data (no console errors). **Not verified:** real Razorpay, a full route on a phone, Google
+  Routes distances (no key), Play-installed builds.
 
 ## 2026-11-19 (late night) — Hyderabad as the service city; plain background
 
