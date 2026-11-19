@@ -79,6 +79,12 @@ Repository → Settings → Environments → New environment **`production`** (a
   `SSH_KNOWN_HOSTS` (output of `ssh-keyscan <Elastic IP>`).
 
 ## 8. Deploy
+**From this PC (no GitHub setup needed):** `scripts/deploy-from-pc.sh <server-ip> <key.pem>` builds the backend image
+and the admin site locally, copies them over SSH and restarts. Without your own domain it uses the free
+`api.<ip-with-dashes>.sslip.io` / `admin.<ip-with-dashes>.sslip.io` names, which get real HTTPS certificates; add the
+admin name under Firebase → Authentication → Settings → Authorized domains.
+
+**From GitHub Actions:**
 Push to `main` yourself, then Actions → **Deploy** → *Run workflow*. It builds the backend image (pushed to GitHub
 Container Registry, free), builds the admin site, copies both to the server and restarts the containers, then waits
 until `/actuator/health` is `UP`. Repeat this for every release.

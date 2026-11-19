@@ -126,7 +126,7 @@ jobs:
           cd '$DEPLOY_PATH'
           test -f .env || { echo ".env is missing in $DEPLOY_PATH (copy .env.example and fill it in)"; exit 1; }
           chmod +x backup.sh
-          rm -rf admin.old && { [ -d admin ] && mv admin admin.old || true; } && mv admin.new admin
+          rm -rf admin.old && mkdir -p admin && cp -a admin admin.old && find admin -mindepth 1 -delete && cp -a admin.new/. admin/ && rm -rf admin.new
           export BACKEND_IMAGE='${{ needs.backend-image.outputs.image }}'
           sed -i '/^BACKEND_IMAGE=/d' .env && echo "BACKEND_IMAGE=\$BACKEND_IMAGE" >> .env
           docker compose -f docker-compose.prod.yml pull

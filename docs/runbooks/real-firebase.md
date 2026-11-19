@@ -45,14 +45,15 @@ and install it as in `android-emulator.md` (same for `apps/partner`).
 - Riders: create them in the admin with their real phone number and press **Approve rider**; they can then sign in.
 
 ## If sign-in says `[auth/app-not-authorized] … Invalid app info in play_integrity_token`
-The debug APKs are signed with SHA-1 `5E:8F:16:06…` / SHA-256 `FA:C6:17:45…` (checked with `apksigner`), and both are
-registered, so this comes from app verification, not the fingerprints:
-1. Google Cloud console → project **lunchboxappv1** → APIs & Services → Library → **Google Play Integrity API** →
-   **Enable**. Wait a few minutes.
-2. Make sure the SHA-256 is on the app with the package the build uses: `in.lunchbox.parent.development` and
-   `in.lunchbox.partner.development` for development builds (not only `in.lunchbox.parent`).
-3. On the emulator, use an image *with Google Play*. An app not installed from Play cannot pass Play Integrity, and
-   Firebase then shows a reCAPTCHA page instead, which is expected.
-4. Test numbers (Authentication → Sign-in method → Phone → *Phone numbers for testing*) still go through this check.
+Play Integrity only recognises apps installed from Google Play. Development clients, emulator builds and EAS preview
+APKs fail it even with the API enabled and the right fingerprints (Google answers "App is not found").
+- Those builds set `EXPO_PUBLIC_FIREBASE_FORCE_RECAPTCHA=true` (`.env`, and the `development` and `preview`
+  profiles in `eas.json`): Firebase then verifies with a reCAPTCHA page in the browser and real numbers get an SMS.
+  On a fresh emulator Chrome shows its first-run screen once (*Stay signed out*).
+- Production builds (`eas.json` → `production`) set it to `false` and use Play Integrity, which needs the
+  **Google Play Integrity API** enabled (done 2026-11-15) and the Play Console *App signing key* SHA-256 on the
+  Firebase Android app.
+- `EXPO_PUBLIC_FIREBASE_TEST_NUMBERS_ONLY=true` skips verification entirely for the console's test numbers (real
+  numbers are refused while it is on). Use it for repeated testing; real SMS count against Firebase's daily quota.
 
 To go back: `./scripts/use-auth.ps1 -Target emulator` and `./scripts/dev-backend.ps1` (and rebuild the apps).

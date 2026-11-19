@@ -20,7 +20,8 @@ First-time setup of the server, DNS, photo bucket, `.env` and GitHub settings: [
 - Backend: on the server, set `BACKEND_IMAGE` in `/opt/lunchbox/.env` to the previous tag
   (`docker image ls ghcr.io/*/backend`) and run `docker compose -f docker-compose.prod.yml up -d`. Or re-run the
   Deploy workflow on the previous commit. Never roll back a migration by hand; ship a forward fix.
-- Admin: the previous site is kept in `/opt/lunchbox/admin.old`: `mv admin admin.bad && mv admin.old admin`.
+- Admin: the previous site is kept in `/opt/lunchbox/admin.old`. Copy it back into place (Caddy bind-mounts
+  `admin/`, so never rename the folder): `find admin -mindepth 1 -delete && cp -a admin.old/. admin/`.
 - Mobile: `eas update --branch production --message "rollback"` republishes the previous JS bundle.
 
 ## Database
